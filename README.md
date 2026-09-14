@@ -1,0 +1,313 @@
+# AQUASENSE+
+
+## Project Overview
+
+AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository currently focuses on the **Barangay Administrative Website** for Barangay San Antonio officials and environmental staff.
+
+Only Phase 1 is implemented. No Flutter application, ESP32 firmware, hardware integration, operational monitoring, or incentive processing has been built.
+
+## Current Version
+
+**Version: 0.1.9**
+
+The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
+
+## GitHub Repository
+
+Repository: [HyoYoung05/aquasense](https://github.com/HyoYoung05/aquasense) (private; requires access).
+
+The source, SQL imports, artwork, tests, and development-only credential reference are versioned. `.gitignore` excludes this machine's `config/local.php`, runtime logs, and uploaded surrender photos. XAMPP services, database contents, Windows startup tasks, and the global phpMyAdmin configuration are not uploaded; follow the installation instructions when setting up another machine. GitHub stores the source code and does not run the PHP/MySQL website through GitHub Pages.
+
+To clone into a new XAMPP installation, run this from `C:\xampp\htdocs` after signing in to GitHub:
+
+```powershell
+git clone https://github.com/HyoYoung05/aquasense.git
+```
+
+Import the SQL files using the steps below. `.gitattributes` keeps text line endings consistent across machines and preserves the PNG artwork as binary.
+
+## Current Development Phase
+
+**Phase 1 — Core Website Foundation.** Authentication, the complete relational schema, and a protected administrative layout are implemented. Later navigation items are labeled “Soon”; they are not working modules.
+
+## Technology Stack
+
+- XAMPP and Apache
+- PHP with PDO and native PHP sessions
+- MySQL/MariaDB and phpMyAdmin
+- HTML5, CSS3, and vanilla JavaScript
+
+No framework, package installation, build pipeline, or additional application server is required. All assets are local; there are no third-party fonts, analytics, or CDN dependencies.
+
+## Requirements
+
+- Windows 10 or Windows 11
+- XAMPP with PHP 8.1 or newer and MariaDB 10.4 or newer
+- PHP extensions: `pdo_mysql`; `curl` for integration tests
+- A modern browser
+- Git (optional)
+- Apache `AllowOverride All` (the usual XAMPP htdocs configuration) so the included `.htaccess` protections apply
+
+Verified here with Apache 2.4.58, PHP 8.5.5, and XAMPP MariaDB 10.4.32. Browser visual verification is still outstanding because no browser connection was available.
+
+## Installation
+
+These are the standard steps for a healthy XAMPP installation. See **Current machine database workaround** below for the existing database problem on the development machine used for this release.
+
+1. Install XAMPP.
+2. Copy or clone the project into `C:\xampp\htdocs\aquasense\`.
+3. Open XAMPP Control Panel and start **Apache**.
+4. Start **MySQL**.
+5. Open [phpMyAdmin](http://localhost/phpmyadmin/).
+6. Create a database named **aquasense**, using `utf8mb4_unicode_ci`.
+7. Select **aquasense**, choose **Import**, select `database/schema.sql`, and click **Import/Go**. The SQL also includes `CREATE DATABASE IF NOT EXISTS` and `USE aquasense`; no individual table creation is necessary.
+8. Import `database/sample-data.sql` the same way, after the schema import succeeds.
+9. If your local database credentials differ, copy `config/local.example.php` to `config/local.php` and adjust the settings. Defaults are host `localhost`, port `3306`, user `root`, and an empty password for the local XAMPP setup only.
+10. Open [AQUASENSE+](http://localhost/aquasense/) and sign in with a development account below.
+
+Import each SQL file **once into a fresh installation**. Imports intentionally do not drop tables or overwrite existing accounts. Back up existing data before migrations; rerunning `schema.sql` against an installed schema will report that tables already exist. The sample import uses a transaction to prevent partially seeded data.
+
+## Development Login
+
+Open [credentials.txt](credentials.txt) locally in your editor for the development account emails, login identifiers, passwords, and separate phpMyAdmin credentials. Apache blocks this file from browser access. The website uses email addresses rather than separate usernames; this reference does not create accounts or update passwords.
+
+**DEVELOPMENT ACCOUNT ONLY — do not use these accounts or credentials in production.** All names and business details are fictional; `.test` email addresses do not receive mail.
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Barangay Administrator | `admin@aquasense.test` | `AquaSense!2026` |
+| Barangay Environmental Staff | `staff@aquasense.test` | `AquaSense!2026` |
+
+`sample-data.sql` contains only PHP `password_hash()` output, not plaintext passwords in user records. Login uses `password_verify()` and rehashes passwords when the configured PHP default changes. The future Carinderia Owner role exists without a sample owner account and cannot access the administrative website.
+
+## Database
+
+- **Name:** `aquasense`
+- **Structure:** [database/schema.sql](database/schema.sql), 17 InnoDB tables with foreign keys, indexes, uniqueness constraints, timestamps, and numeric checks.
+- **Development records:** [database/sample-data.sql](database/sample-data.sql), three roles, two staff accounts, one fictional establishment, one trap, one simulated device, one assignment, configurable settings, and setup ledger/audit entries.
+- **Configuration:** `config/config.php`; optional ignored overrides in `config/local.php`.
+- **Connection:** `config/database.php`, PDO, `utf8mb4`, exceptions, and native prepared statements.
+- **Time:** stored timestamps use UTC; the interface displays Asia/Manila time.
+
+Environment overrides: `AQUASENSE_DB_HOST`, `AQUASENSE_DB_PORT`, `AQUASENSE_DB_NAME`, `AQUASENSE_DB_USER`, and `AQUASENSE_DB_PASSWORD`. Values in `config/local.php` take precedence. Production secrets must not be committed to Git.
+
+### Tables and relationships
+
+| Table | Purpose and relationships |
+| --- | --- |
+| `roles` | One role has many users; administrator, environmental staff, and future owner. |
+| `users` | Each user has one role. Referenced by submissions, reviews, distributions, account activity, and record authorship. Deactivate rather than delete users with history. |
+| `establishments` | One establishment has many grease traps and oil surrenders. Optional `owner_user_id` links a future owner account; the recorded owner name supports registration before an account exists. |
+| `grease_traps` | Each trap belongs to an establishment and stores capacity and ordered, configurable thresholds. |
+| `devices` | Unique device code, optional hashed future API credential, firmware, and last-seen time. No API credentials or hardware are enabled yet. |
+| `device_assignments` | Links devices to traps over time. Unique generated columns allow only one current device per trap and one current trap per device. End an assignment before reassigning; retain historical rows. |
+| `sensor_readings` | Many readings per assignment. The assignment identifies the device, trap, and establishment without duplicating potentially inconsistent identifiers. Stores measurement time, level classification, and a simulation flag. |
+| `alerts` | Belongs to an assignment and optionally a reading; includes type, severity, status, and acknowledging/resolving users. Offline alerts need not have a reading. |
+| `oil_surrenders` | Belongs to an establishment and submitting user; optionally references a sensor reading and reviewing user. |
+| `oil_surrender_photos` | Many photos per surrender. Stores randomized resulting paths, associated surrender, uploader, and timestamp. Actual upload code is not implemented. |
+| `incentive_rules` | Effective-dated, unit-aware oil-to-rice rules. No conversion rate is seeded or assumed as program policy. |
+| `incentive_transactions` | References a surrender and rule and stores the awarded amount. A unique surrender foreign key prevents a second reward for the same surrender. |
+| `compliance_ledger` | Preserves business events with optional establishment, author, and related record reference. No editing or deletion interface. |
+| `audit_logs` | Separate administrative audit trail. Login, failed login, and logout are recorded now; future modules must add their own events. |
+| `system_settings` | Named configurable defaults, including an initial emulsion temperature of 40°C. The settings editor is a later phase. |
+| `password_resets` | Future single-use reset token hashes, expiry, and use time. Token issuance, redemption, and delivery are not implemented. |
+| `login_attempts` | Shared server-side sign-in throttling by hashed email or client IP within a configured window. |
+
+Foreign keys preserve referenced history and do not cascade-delete records. Ledger/audit `record_type` + `record_id` pairs are generic references, not foreign keys; future service functions must validate them. These generic columns each contain one value, not bundled records.
+
+Future business logic must additionally enforce same-establishment evidence, reading/alert assignment consistency, effective rule selection, immutable rule versions once used, approved-only incentives, and transactional approval + reward + ledger writes. SQL uniqueness prevents duplicate rewards but does not itself perform approval. Device connectivity and present trap condition will be derived from timestamps and the latest reading. Historical reading classifications will be preserved when thresholds change.
+
+Initial temperature, flow, turbidity, and level defaults are development configuration, not field-validated sensor limits. There are **no sensor readings, generated alerts, surrender transactions, or rice awards** in the seed. A simulated device record is not a connected device.
+
+## Project Structure
+
+```text
+aquasense/
+  .htaccess                    directory and private-file protections
+  .gitignore                   excludes secrets, runtime logs, uploaded photos
+  index.php                    main localhost entry point
+  README.md
+  VERSION.md
+  credentials.txt              local development login reference; blocked over HTTP
+  config/
+    config.php                 application version and configuration
+    database.php               reusable PDO connection
+    local.example.php          optional local settings template
+    local.php                  ignored machine-specific overrides, if needed
+  database/
+    schema.sql                 full website database foundation
+    sample-data.sql            fictional development seed
+  public/
+    index.php                  public entry redirect
+    login.php                  login and validation
+    logout.php                 CSRF-protected POST logout
+    forgot-password.php        account assistance interface
+    reset-password.php         clearly unavailable recovery scaffold
+  admin/
+    index.php                  protected redirect
+    dashboard.php              protected Phase 1 overview and account activity
+  includes/
+    bootstrap.php              configuration, sessions, security headers, errors
+    auth.php                   authentication and authorization helpers
+    functions.php              escaping, CSRF, URLs, icons, and audit helpers
+    header.php / sidebar.php / footer.php
+    auth-header.php / auth-footer.php / error.php
+  assets/
+    css/style.css              responsive layout and component styles
+    js/app.js                  password visibility and mobile navigation
+    images/                    reserved local assets
+  api/                         reserved and access-blocked until Phase 3
+  uploads/surrender-photos/    reserved and blocked from direct HTTP access
+  logs/                        protected runtime errors, excluded from Git
+  tests/
+    foundation.php             HTTP and relational integrity checks
+    session-expiry.php         session inactivity verification
+```
+
+Protected directories have their own `.htaccess` files. No placeholder PHP endpoints for later modules are published. Keep any future administrative page behind `includes/bootstrap.php` followed by `require_staff()` or `require_roles(['administrator'])` before emitting HTML. Hiding menu items is not an authorization control.
+
+## Features
+
+### Completed
+
+- XAMPP-compatible project structure and main localhost entry point.
+- Full relational database foundation and fictional development seed.
+- PDO connection and separated local configuration.
+- Administrator and environmental staff sign-in with generic invalid-login feedback.
+- Session regeneration on login, inactivity expiry, and current database role/activity checks on protected requests.
+- Secure POST logout with CSRF checks, session destruction, and old-session rejection.
+- Login throttling and account authentication audit events.
+- Protected reusable dashboard, header, sidebar, and version footer.
+- Responsive desktop, tablet, and mobile CSS; menu toggle, password visibility control, labels, keyboard focus, and skip link.
+- Full-page teal/green authentication background with centered, semi-transparent water artwork. The login card uses a 38%-opaque teal surface and a wide, two-column landscape layout, stacking on narrow screens while keeping text fully opaque.
+- Compact, centered login layout capped at 1320px on wide monitors, with fluid spacing and typography. The story and card stack at viewport widths of 1024px or less; the card's inner columns stack at 680px or less.
+- Screen-edge authentication header and footer: brand at the upper left, administrative tag at the upper center, Barangay information at the lower left, and authorization text at the lower right. Reserved content padding and mobile rows keep these fixed elements clear of the form.
+- Dashboard setup status, account details, and current-user authentication history.
+- Honest account-recovery interface and reset schema scaffold.
+- Installation, security, versioning, and test documentation.
+
+### In Progress / Verification Remaining
+
+- Browser visual review of desktop, tablet, mobile, and keyboard interaction. Browser automation was unavailable in this session.
+- Recovery of this machine's pre-existing default XAMPP MariaDB instance; an isolated XAMPP MariaDB instance supports the working local site in the meantime.
+
+### Planned — not implemented
+
+- **Phase 2:** operational summary dashboard; establishment, trap, and device management.
+- **Phase 3:** authenticated sensor API, telemetry insertion utility, simulated readings, monitoring history, and charts.
+- **Phase 4:** configurable thresholds, warning generation, acknowledgment/resolution, and offline detection.
+- **Phase 5:** surrender submissions, secure photo uploads and authorized delivery, human evidence comparison, approval/rejection.
+- **Phase 6:** configurable incentive rules, atomic reward processing, distribution, and compliance ledger interface.
+- **Phase 7:** report filters, daily/weekly/monthly reports, CSV export, modular future PDF export, and broader audit coverage.
+- **Phase 8:** full security, integration, and usability review; account management and secure password recovery delivery.
+- Flutter mobile application, ESP32 firmware, physical sensors, and hardware calibration are outside this task.
+
+## Sensor Integration
+
+Website development will use simulated telemetry in Phase 3. The current seed only establishes a fictional device assignment; it inserts no telemetry. The future flow is **ESP32 → authenticated PHP API → MySQL → administrative dashboard**. `api/` is currently blocked. The endpoint, validation, alert logic, simulation utility, and device credential provisioning are not present yet.
+
+## Security
+
+- Password hashes and `password_verify()`; automatic hash upgrades on successful login.
+- Native PDO prepared statements for user-supplied values; fixed SQL for static schema/introspection operations.
+- Strict cookie-only PHP sessions, `HttpOnly`, `SameSite=Lax`, and `Secure` when served over HTTPS. Local `http://localhost` necessarily uses a non-Secure cookie.
+- Session ID regeneration after login and a 30-minute configurable inactivity limit.
+- Database-backed active-account and role checks for every administrative request.
+- CSRF tokens on login and logout; state changes use POST. Invalid tokens return HTTP 403.
+- Server-side validation and HTML output escaping, including account names and submitted email values.
+- Five sign-in attempts per hashed email or direct client IP within a 15-minute default window; successful attempts remove their own attempt entry. Older entries no longer count; scheduled retention cleanup is a future maintenance task.
+- Content Security Policy, no framing, MIME-sniffing protection, and no-store account responses.
+- `.htaccess` denial of configuration, includes, SQL, logs, tests, and uploads; directory listing disabled.
+- Generic service errors; detailed diagnostics only in protected `logs/php-error.log`.
+- Login/logout audit records; logout still ends access if database auditing fails, with an explanatory user notice and protected server log.
+
+No upload handler exists yet. Direct access to the reserved upload folder is denied. Full MIME/extension/size validation, randomized filenames, and authenticated photo serving must be implemented together in Phase 5. Production deployment, TLS, a least-privilege database account, backup/restore procedures, and a comprehensive security assessment remain later work. This prototype is not labeled production ready.
+
+## Running AQUASENSE+
+
+Start Apache and MySQL from XAMPP Control Panel, then open **http://localhost/aquasense/**. The root directs unauthenticated visitors to sign in. Successful staff login opens `/admin/dashboard.php`. Use the sign-out icon in the top bar to end the session. Returning to the dashboard afterward must redirect to login.
+
+No `npm`, Composer, PHP development server, or other application server is needed.
+
+## Tests
+
+From PowerShell in the project directory, with Apache and the configured database running:
+
+```powershell
+& C:\xampp\php\php.exe tests\foundation.php --allow-local-fixtures
+& C:\xampp\php\php.exe tests\session-expiry.php
+```
+
+`foundation.php` is **development-only**. It creates temporary accounts and a test rate-limit entry in the configured database, rolls back relational constraint fixtures, and removes its test accounts, their audit entries, and throttling entries in `finally`. Anonymous failed-login audit events may remain as a truthful record of the tests. Do not run against production or while other people are actively testing sign-in from the same IP. A forcibly terminated test may require removal of the explicitly named `foundation-*` fixtures.
+
+The 54 integration checks cover SQL seed and constraints, real Apache routes, administrator/staff access, owner/inactive rejection, account revocation, invalid login, CSRF, session regeneration, logout/session replay, escaped output, throttling, private directories, recovery disclosures, and static assets. The separate expiry check verifies the inactivity boundary without waiting 30 minutes.
+
+PHP syntax checks:
+
+```powershell
+rg --files -g '*.php' | ForEach-Object { & C:\xampp\php\php.exe -l $_ }
+```
+
+Before Phase 2, manually inspect login and dashboard at desktop, tablet, and mobile widths, toggle password visibility, open/close mobile navigation, check keyboard focus, and test sign-out in a real browser. HTTP checks do not substitute for rendered visual review.
+
+## Troubleshooting
+
+| Issue | What to check |
+| --- | --- |
+| Apache will not start | Read XAMPP Apache logs and check whether another service already uses port 80 or 443. Stop or reconfigure the conflicting service deliberately. |
+| MySQL will not start | Read XAMPP MySQL logs and check its configured port. Back up data before attempting database repair. |
+| Port conflict | Match the database port in `config/local.php`; match Apache's configured port in the browser URL. The documented URL assumes Apache port 80. |
+| Database not found / missing tables | Create `aquasense`, then import the schema followed by sample data into the same server used by the PHP configuration. |
+| Database connection error / service unavailable | Check MySQL is running, host/port/user/password in local settings, and protected `logs/php-error.log`. Raw database errors are intentionally hidden from browser users. |
+| Incorrect project directory / 404 | Ensure the root `index.php` is at `C:\xampp\htdocs\aquasense\index.php`, not an extra nested folder. Adjust `base_path` if deliberately installed elsewhere. |
+| Login failure | Import sample data, use the documented email and case-sensitive password, and ensure the account is active and has a staff role. |
+| Too many sign-in attempts | Wait for the configured 15-minute window. Failed attempts share an IP budget even across different browser sessions. |
+| Form expired | Reload the login/dashboard page and retry. A stale tab or another sign-out may have invalidated its CSRF token. |
+| SQL import reports existing tables | The schema has already been imported or a previous import was partial. Do not overwrite a database containing useful records. Inspect and back up before choosing a fresh database. |
+| Private SQL/configuration files accessible through HTTP | Apache is not honoring `.htaccess`. Enable the relevant htdocs override and deny access before exposing the website. |
+| No data in monitoring / inactive menu items | Expected in Phase 1. These modules are scheduled for later development. |
+
+### Current machine database workaround
+
+On 2026-09-14, the already-running MariaDB on port **3306** reported pre-existing InnoDB corruption (“log sequence number … is in the future”). The schema import stalled while creating `roles`. The import client was stopped and its query cancellation requested. No existing database files or unrelated databases were repaired, removed, or replaced. An empty/partial `aquasense` database may remain on that original instance; do not assume it is a successful install.
+
+The working website uses **XAMPP's own MariaDB binary** with a separate fresh data directory:
+
+- Binary: `C:\xampp\mysql\bin\mysqld.exe`
+- Data: `C:\xampp\tmp\aquasense-mariadb`
+- Server configuration: `C:\xampp\tmp\aquasense-mariadb\my.ini`
+- Address: `127.0.0.1:3307`, bound to loopback only
+- Local development database: `aquasense`, user `root`, empty local password
+- PHP override: ignored `config/local.php` selects host `127.0.0.1` and port `3307`
+
+Both SQL files were imported and the integration checks passed on that fresh MariaDB instance. Apache continues serving the requested **http://localhost/aquasense/** URL. A Windows Task Scheduler task named **AQUASENSE Local Database** now starts the isolated database when the current Windows user signs in. It runs with normal user permissions and a hidden PowerShell window, independently of the assistant's process lifetime. It is not a Windows service. The XAMPP Control Panel MySQL button controls the original instance, not this task.
+
+The task starts automatically at Windows sign-in. If it has been stopped, start the already-initialized isolated database using PowerShell:
+
+```powershell
+Start-ScheduledTask -TaskName 'AQUASENSE Local Database'
+```
+
+Do not reinitialize the data directory or repeat the imports. To shut down **only this isolated database**:
+
+```powershell
+& C:\xampp\mysql\bin\mysqladmin.exe -h 127.0.0.1 -P 3307 -u root shutdown
+```
+
+On this machine, phpMyAdmin now defaults to server entry **1**, labeled **AQUASENSE+ (working database - port 3307)**. Entry **2** is an alternate link to the same working server so previously shared links still work. The original port 3306 configuration is preserved as entry **3**, labeled **Original XAMPP (port 3306 - database repair needed)**. Open **http://localhost/phpmyadmin/index.php?server=1&db=aquasense**, and use the local database username `root` with the password left empty. These are database credentials, not the website's administrator login. Refresh old tabs after changing connections. The tables and sample data on port 3307 already exist; do not repeat the imports. The original phpMyAdmin configuration was backed up under `C:\xampp\tmp\aquasense-config-backups` before each change. This connection selects the healthy database; it does not repair the damaged original instance. Command-line access to the working copy is also available:
+
+```powershell
+& C:\xampp\mysql\bin\mysql.exe -h 127.0.0.1 -P 3307 -u root aquasense
+```
+
+On a healthy XAMPP installation use the standard import workflow above and omit this machine-specific override. Once the original database environment is repaired and the intended data migrated, update/remove `config/local.php` deliberately to return to port 3306. Repairing the existing XAMPP databases is separate work.
+
+## Development Status
+
+The Phase 1 implementation and automated functional checks are complete. Browser visual/usability review remains unverified, and the original XAMPP database problem remains unresolved. Use v0.1.9 as a foundation prototype, not a completed monitoring system. Recommended next task: verify the rendered Phase 1 screens in a browser and settle the database setup, then implement **Phase 2 — Administrative Core** when authorized.
+
+## Versioning
+
+Use Semantic Versioning: **MAJOR.MINOR.PATCH**. Major versions represent architectural/production-level changes, minor versions add features or complete phases, and patch versions fix defects or small improvements. Versions below 1.0.0 are prototypes.
+
+For every meaningful completed release, update `APP_VERSION` in `config/config.php`, this README's current version, and `VERSION.md` with the date, additions, changes, fixes, and known issues. All PHP pages display the constant; do not hardcode page-specific versions. Do not release 1.0.0 before the defined capstone scope is implemented and tested.

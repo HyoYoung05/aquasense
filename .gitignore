@@ -1,0 +1,10 @@
+/config/local.php
+/logs/*
+!/logs/.htaccess
+!/logs/.gitkeep
+/uploads/surrender-photos/*
+!/uploads/surrender-photos/.gitkeep
+/.idea/
+/.vscode/
+Thumbs.db
+.DS_Store
