@@ -8,7 +8,7 @@ Only Phase 1 is implemented. No Flutter application, ESP32 firmware, hardware in
 
 ## Current Version
 
-**Version: 0.1.9**
+**Version: 0.1.10**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -51,6 +51,8 @@ No framework, package installation, build pipeline, or additional application se
 Verified here with Apache 2.4.58, PHP 8.5.5, and XAMPP MariaDB 10.4.32. Browser visual verification is still outstanding because no browser connection was available.
 
 ## Installation
+
+For a plain-text walkthrough, open [SETUP-INSTRUCTIONS.txt](SETUP-INSTRUCTIONS.txt). It covers downloading the project, XAMPP startup, SQL imports, local settings, both types of login, verification, updates, and troubleshooting.
 
 These are the standard steps for a healthy XAMPP installation. See **Current machine database workaround** below for the existing database problem on the development machine used for this release.
 
@@ -128,6 +130,7 @@ aquasense/
   index.php                    main localhost entry point
   README.md
   VERSION.md
+  SETUP-INSTRUCTIONS.txt       plain-text installation and troubleshooting guide
   credentials.txt              local development login reference; blocked over HTTP
   config/
     config.php                 application version and configuration
@@ -304,7 +307,7 @@ On a healthy XAMPP installation use the standard import workflow above and omit 
 
 ## Development Status
 
-The Phase 1 implementation and automated functional checks are complete. Browser visual/usability review remains unverified, and the original XAMPP database problem remains unresolved. Use v0.1.9 as a foundation prototype, not a completed monitoring system. Recommended next task: verify the rendered Phase 1 screens in a browser and settle the database setup, then implement **Phase 2 — Administrative Core** when authorized.
+The Phase 1 implementation and automated functional checks are complete. Browser visual/usability review remains unverified, and the original XAMPP database problem remains unresolved. Use v0.1.10 as a foundation prototype, not a completed monitoring system. Recommended next task: verify the rendered Phase 1 screens in a browser and settle the database setup, then implement **Phase 2 — Administrative Core** when authorized.
 
 ## Versioning
 

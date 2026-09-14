@@ -1,0 +1,218 @@
+AQUASENSE+ - SETUP INSTRUCTIONS
+==============================
+
+This guide sets up the Phase 1 administrative website on a Windows computer.
+The website runs with XAMPP, PHP, and MySQL/MariaDB.
+For the current version and development status, see VERSION.md and README.md.
+
+1. REQUIREMENTS
+---------------
+- Windows 10 or Windows 11.
+- XAMPP with PHP 8.1 or newer and MariaDB 10.4 or newer.
+- PHP PDO MySQL extension enabled (pdo_mysql).
+- A modern web browser.
+- Git, if you want to clone and update the repository using commands.
+- Access to the private GitHub repository:
+  https://github.com/HyoYoung05/aquasense
+
+No Node.js server, Composer installation, or frontend build step is required.
+
+2. GET THE PROJECT FILES
+-----------------------
+Choose ONE method on a new computer:
+
+Method A - Git clone:
+  Sign in to GitHub using your Git credential manager or GitHub CLI.
+  Open PowerShell and run:
+
+    cd C:\xampp\htdocs
+    git clone https://github.com/HyoYoung05/aquasense.git
+
+Method B - Download ZIP:
+  Sign in to GitHub and open the repository above.
+  Click Code, then Download ZIP.
+  Extract the ZIP and name the project folder aquasense.
+  Place the folder inside C:\xampp\htdocs.
+
+The final location MUST be:
+  C:\xampp\htdocs\aquasense\index.php
+
+Avoid an extra nested folder such as:
+  C:\xampp\htdocs\aquasense\aquasense-main\index.php
+
+If you already have this project locally, do not clone over it. See section 8.
+
+3. START XAMPP
+--------------
+Open XAMPP Control Panel.
+Click Start beside Apache.
+Click Start beside MySQL.
+
+For a standard healthy XAMPP installation, this guide assumes:
+  Apache port: 80
+  Database host: localhost
+  Database port: 3306
+  Database username: root
+  Database password: empty, unless you changed it
+
+These are local development defaults, not production settings.
+
+4. IMPORT THE DATABASE
+----------------------
+Open this address in your browser:
+  http://localhost/phpmyadmin/
+
+If phpMyAdmin asks you to sign in, use your local MySQL credentials.
+For an unchanged local XAMPP setup, use root and leave the password empty.
+Do not use the AQUASENSE+ website email/password in phpMyAdmin.
+
+On a fresh installation:
+  a. Create a database named aquasense.
+  b. Use the collation utf8mb4_unicode_ci.
+  c. Select the aquasense database.
+  d. Click Import.
+  e. Choose C:\xampp\htdocs\aquasense\database\schema.sql.
+  f. Click Import/Go and wait for the success message.
+  g. Click Import again.
+  h. Choose C:\xampp\htdocs\aquasense\database\sample-data.sql.
+  i. Click Import/Go and wait for the success message.
+
+Import schema.sql BEFORE sample-data.sql. Both files must use the same server.
+After import, the database should contain 17 tables and two development users.
+
+Import these files only once into a fresh database. They are not update scripts.
+If tables already exist, inspect the database before doing anything further.
+Back up useful records before making database changes.
+
+5. CHECK THE WEBSITE'S DATABASE SETTINGS
+---------------------------------------
+The standard defaults are in config/config.php.
+The connection code is in config/database.php.
+
+If your database host, port, username, password, or project folder differs:
+  a. Copy config/local.example.php to config/local.php.
+  b. Open config/local.php in your editor.
+  c. Set db_host, db_port, db_name, db_user, and db_password to your local values.
+  d. Keep base_path as /aquasense for the documented project location.
+  e. Save the file.
+
+config/local.php is intentionally excluded from GitHub. Each computer uses
+its own local settings. Never commit real database passwords.
+
+6. OPEN AND SIGN IN TO THE WEBSITE
+---------------------------------
+Open:
+  http://localhost/aquasense/
+
+DEVELOPMENT ACCOUNTS ONLY:
+
+Barangay Administrator:
+  Email: admin@aquasense.test
+  Password: AquaSense!2026
+
+Barangay Environmental Staff:
+  Email: staff@aquasense.test
+  Password: AquaSense!2026
+
+The website uses an email address, not a separate username.
+Passwords are case-sensitive. These accounts are inserted by sample-data.sql.
+See credentials.txt locally in your editor for the separate login references.
+
+7. CONFIRM THE SETUP WORKS
+-------------------------
+- The root website address opens the login page.
+- A development account can sign in and open the dashboard.
+- The background artwork and styles load.
+- The top-bar sign-out button ends the session.
+- After signing out, opening the address below redirects to login:
+    http://localhost/aquasense/admin/dashboard.php
+
+For optional automated checks, open PowerShell in the project folder and run:
+
+  & C:\xampp\php\php.exe tests\foundation.php --allow-local-fixtures
+  & C:\xampp\php\php.exe tests\session-expiry.php
+
+These checks require the running local website and configured database.
+The foundation test also requires PHP curl and the imported development seed.
+It creates temporary test accounts and cleans them up. Run only against a
+development database; failed-login audit events may remain after testing.
+
+Phase 1 includes authentication and the dashboard foundation. Menu items
+marked Soon, sensor monitoring, surrender processing, and incentives are not
+implemented yet. Password reset delivery is also not enabled.
+
+8. START THE SITE LATER OR DOWNLOAD UPDATES
+-----------------------------------------
+For a standard setup, start Apache and MySQL in XAMPP before opening the site.
+
+If you cloned the repository, save/commit your own work before updating.
+From the project folder, use:
+
+  git status
+  git pull --ff-only origin main
+
+If Git reports local changes or diverging branches, stop and resolve them;
+do not discard your work. After updating, read VERSION.md and any migration
+instructions. Do not re-import schema.sql or sample-data.sql on every update.
+Refresh the browser after downloading interface changes.
+
+9. IMPORTANT NOTE ABOUT THE ORIGINAL DEVELOPMENT COMPUTER
+--------------------------------------------------------
+The original development computer has a damaged MariaDB instance on port 3306.
+It uses an ISOLATED working instance on 127.0.0.1, port 3307 instead.
+This workaround is NOT required on a new, healthy XAMPP installation.
+
+On that original computer only:
+- config/local.php selects port 3307.
+- A Windows task named AQUASENSE Local Database manages the isolated server.
+- XAMPP Control Panel's MySQL button manages the original server, not this task.
+- To request startup of the existing task, use PowerShell:
+
+    Start-ScheduledTask -TaskName 'AQUASENSE Local Database'
+
+- Use this phpMyAdmin address for the configured working connection:
+    http://localhost/phpmyadmin/index.php?server=1&db=aquasense
+- Choose AQUASENSE+ (working database - port 3307).
+- Database username: root. Password: leave empty.
+- The working database is already imported; do not import the schema again.
+
+The task, live database files, and global phpMyAdmin configuration are NOT
+included in GitHub. If port 3307 refuses connections even after startup is
+requested, consult the task status and MariaDB logs; do not switch blindly
+to the damaged database. Full details are in README.md.
+
+10. TROUBLESHOOTING
+-------------------
+404 / page not found:
+  Check the project location and use http://localhost/aquasense/.
+  Apache must be running. Opening the PHP file directly will not run the site.
+
+Apache or MySQL will not start:
+  Check XAMPP's logs and whether another program uses its configured port.
+
+Connection refused / error 2002 / service unavailable:
+  Confirm the intended database server is running and its port matches
+  config/local.php. The website and phpMyAdmin must use the intended server.
+
+Error 1932 - table does not exist in engine:
+  This indicates a storage-engine problem. On the original development PC,
+  check that you selected the healthy port 3307 connection. Do not delete
+  ibdata1 or other database files; other projects may depend on them.
+
+Unknown database / missing tables:
+  Confirm you imported both SQL files on the same server used by the website.
+
+Login rejected:
+  Use the website email/password from section 6, verify sample-data.sql was
+  imported, and check that the account is active and has a staff role.
+  After too many failed attempts, wait for the configured 15-minute window.
+
+Detailed application errors:
+  Open logs/php-error.log locally. Browser users see a generic error instead.
+
+credentials.txt or SQL files return HTTP 403:
+  Expected. These files are blocked from direct browser access. Open them
+  locally in your editor or select the SQL files through phpMyAdmin Import.
+
+GitHub does not run this PHP/MySQL application as a GitHub Pages website.
+It stores the source. Use XAMPP to run the application locally.

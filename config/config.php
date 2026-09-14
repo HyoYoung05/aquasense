@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-define('APP_VERSION', '0.1.9');
+define('APP_VERSION', '0.1.10');
 
 // Override local defaults in ignored config/local.php or with environment variables.
 $local = is_file(__DIR__ . '/local.php') ? require __DIR__ . '/local.php' : [];

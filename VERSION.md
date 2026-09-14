@@ -2,7 +2,30 @@
 
 ## Current Version
 
-0.1.9
+0.1.10
+
+## 0.1.10
+
+Date: 2026-09-14
+
+Development Phase: Phase 1 — Plain-text setup guide
+
+### Added
+
+- `SETUP-INSTRUCTIONS.txt` with cloning/ZIP download, XAMPP startup, ordered SQL imports, local configuration, development logins, verification, safe updates, and troubleshooting.
+
+### Changed
+
+- README links to the new guide and includes it in the project structure.
+- Setup instructions distinguish a standard port 3306 installation from the original computer's port 3307 workaround.
+
+### Fixed
+
+- None.
+
+### Known Issues
+
+- Documentation does not install or repair local services. Existing database-recovery and browser-verification limitations remain unchanged.
 
 ## 0.1.9
 
