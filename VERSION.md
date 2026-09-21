@@ -2,7 +2,168 @@
 
 ## Current Version
 
-0.1.10
+0.3.0
+
+## 0.3.0
+
+Date: 2026-09-21
+
+Development Phase: One-sensor ESP32 ultrasonic bench test
+
+- Added a development-only JSON POST device telemetry endpoint with separate hashed device credentials, assignment checks, size/range validation, saved calibration, and per-device rate limiting.
+- Added migration 002 for nullable temperature, explicit test readings, WARNING status, and per-device ultrasonic calibration in the existing database.
+- Added CLI provisioning for a separate temporary AQS-001 device/trap without replacing existing demo assignments.
+- Updated the owner API to return distance/test metadata and preserve absent temperature as NULL; Flutter 0.1.6+7 handles that payload.
+- Added integration coverage for calculations, credential boundaries, assignment restrictions, stored readings, stale data, and owner API compatibility.
+- Sensor model/wiring, upload, and physical end-to-end readings remain unverified. No other sensors, battery system, automation, or production ingestion added.
+- Temporary configuration and test records remain until the user explicitly requests removal.
+
+
+Verification on 2026-09-21:
+- Ultrasonic device integration: 51 checks passed; synthetic fixture readings removed afterward.
+- Existing PHP suites: production configuration 12, mobile API 30, CORS 36, foundation 54, plus session expiry passed.
+- PHP syntax: 39 files passed. Git whitespace check passed.
+- Production-mode CLI probe returned the disabled-test message before any database access.
+- Private firmware configuration/metadata returned HTTP 403 and matched Git exclusion patterns.
+- Flutter analysis passed and all 28 tests passed. Updated debug APK assembled successfully.
+- Physical sensor wiring, calibration, upload, and live end-to-end measurements remain unverified.
+## 0.2.3
+
+Date: 2026-09-15
+
+Development Phase: Flutter Web CORS preflight correction
+
+### Fixed
+
+- Flutter Web development origins on dynamic localhost and 127.0.0.1 ports are accepted when the API is reached through the development PC's LAN address.
+- OPTIONS is completed with HTTP 204 before the database layer, bearer authentication, endpoint method checks, and JSON body parsing.
+- CORS advertises Content-Type, Authorization, and Accept while echoing only an allowed exact origin.
+
+### Security
+
+- Production permits only explicitly configured HTTPS origins, forces localhost preview off, and never returns a wildcard origin or browser credential cookies.
+- Invalid ports, deceptive localhost hostnames, arbitrary LAN/external origins, unsupported methods, and unsupported request headers remain rejected.
+- Development-only CORS logging records method, origin, allow decision, and OPTIONS handling without request bodies, passwords, tokens, or database credentials.
+
+### Verification
+
+- Manual LAN OPTIONS from `http://localhost:49840`: HTTP 204 with the exact origin, methods, headers, and Vary response.
+- Manual development owner POST after preflight: HTTP 200; logout: HTTP 200.
+- CORS policy/integration suite: 36 checks passed.
+- Existing mobile API: 30 checks; administrative website/database: 54 checks; production configuration: 12 checks.
+- Flutter 0.1.5+6 analysis passed and all 25 tests passed, including debug-web-only CORS diagnostics.
+- Flutter Web compiled and launched in headless Chrome on port 49840 with the configured LAN API root.
+
+### Compatibility
+
+- Native Android requests without an Origin header are unchanged.
+- No schema, database credential, website CSRF, bearer-token, or Apache access-rule changes were required.
+## 0.2.2
+
+Date: 2026-09-15
+
+Development Phase: Portable production deployment configuration
+
+### Added
+
+- Environment-driven development/production configuration, exact trusted proxy and Flutter-web origin lists, and an ignored production configuration template.
+- HTTPS enforcement, secure production sessions, HSTS, configurable private upload/log paths, and storage traversal protection.
+- Production deployment guides for PHP/MySQL hosting, Flutter release builds, database setup, and future ESP32 clients.
+- A 12-check production configuration test that runs without production credentials or a live database.
+
+### Changed
+
+- Server environment variables take precedence over local machine settings; committed PHP configuration no longer supplies database identity or credentials.
+- Flutter 0.1.3 requires one explicit API_BASE_URL on every platform and release builds reject non-HTTPS URLs.
+- Companion Flutter 0.1.4+5 catches startup configuration failures and paints a safe error screen instead of remaining black.
+- Development sample data is documented as manual development-only data, and the mobile fixture helper refuses production mode.
+- Documentation and text/Markdown files are denied over Apache alongside existing private artifacts.
+
+### Verification
+
+- PHP syntax passed for every PHP file.
+- Production configuration: 12 checks passed.
+- Mobile API: 30 checks; browser-origin API: 15 checks; website/database: 54 checks; session expiry passed.
+- Flutter analysis passed, all 20 tests passed, and a release APK assembled with the HTTPS configuration template.
+
+### Deployment status
+
+- The source is ready to configure on a standard PHP host or VPS without XAMPP paths or code rewrites.
+- A real production hostname, hosting account, TLS certificate, database credentials, storage paths, monitoring, backups, and real user provisioning are still deployment inputs and are not stored in Git.
+
+## 0.2.1
+
+Date: 2026-09-15
+
+Development Phase: Mobile Phase 1 local browser connection fix
+
+### Fixed
+
+- Local Flutter browser previews can complete CORS preflights and authenticated API requests when mobile_allow_local_web_preview is enabled.
+- Localhost/127.0.0.1 origins are accepted only from a loopback connection. Other origins, unsupported methods and unsupported headers are rejected.
+- Default configuration keeps browser preview disabled; this machine's ignored local.php enables it, and local.example.php documents the development option.
+
+### Verification
+
+- 15 browser-origin HTTP checks and 30 existing mobile API checks passed.
+- PHP syntax check passed. No schema changes or credential changes required.
+
+## 0.2.0
+
+Date: 2026-09-14
+
+Development Phase: Shared backend support for Mobile Phase 1. Administrative UI remains Phase 1.
+
+### Added
+
+- Owner-only JSON login, profile, dashboard and logout endpoints in the existing PHP API.
+- Hashed bearer tokens, bounded expiry, password-change/role/deactivation checks, shared login throttling and audit events.
+- Dashboard scope enforced from database ownership; configurable backend status and freshness with simulated/no-data/stale labels.
+- Additive mobile_tokens migration and CLI-only guarded demo owner/linkage/telemetry helper.
+- 30 API integration checks covering account isolation, authorization, token lifecycle and status boundaries.
+
+### Changed
+
+- API .htaccess exposes only four mobile endpoint files and forwards bearer authorization to PHP.
+- Existing foundation test accepts additive tables while checking every original required table.
+- README, setup instructions and credentials describe the mobile app connection and optional development owner.
+
+### Verification
+
+- All 30 mobile API integration checks passed against local Apache/MariaDB.
+- Existing website: 54 checks plus the session-expiry test passed.
+- Flutter app is versioned independently at 0.1.0 in sibling aquasense_mobile.
+
+### Known limitations
+
+- Development telemetry is simulated; hardware integration and later mobile/admin modules remain unimplemented.
+- Existing local MariaDB uses port 3307; original 3306 database recovery is outside this change.
+- Production HTTPS and mobile release distribution are not configured.
+
+## 0.1.11
+
+Date: 2026-09-14
+
+Development Phase: Phase 1 — Renamed website folder
+
+### Added
+
+- Documentation for the current nested installation at `C:\xampp\htdocs\AQUASENSE+\aquasense-web`.
+
+### Changed
+
+- Default application base path and configuration example now use `/aquasense-web`.
+- The ignored local configuration uses `/AQUASENSE+/aquasense-web` to match this computer's actual directory.
+- Setup and credential references use the new folder name; cloning instructions specify `aquasense-web` as the destination folder.
+
+### Fixed
+
+- Redirects, assets, form submissions, and session cookie paths no longer point at the removed `/aquasense` directory.
+
+### Known Issues
+
+- Database name and GitHub repository remain `aquasense`; renaming the folder does not require a SQL import.
+- Existing local database-recovery and browser-verification limitations remain unchanged.
 
 ## 0.1.10
 

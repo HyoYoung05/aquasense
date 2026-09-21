@@ -4,13 +4,28 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository currently focuses on the **Barangay Administrative Website** for Barangay San Antonio officials and environmental staff.
 
-Only Phase 1 is implemented. No Flutter application, ESP32 firmware, hardware integration, operational monitoring, or incentive processing has been built.
+The administrative website remains at its Phase 1 foundation. Backend version 0.3.0 adds a development-only ultrasonic ingestion endpoint for the sibling ESP32 bench-test sketch. The owner API is used by Flutter (`../aquasense_mobile`, version 0.1.6+7). Physical hardware validation, administrative monitoring modules, and incentive processing remain incomplete.
 
 ## Current Version
 
-**Version: 0.1.10**
+**Version: 0.3.0**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
+
+## Production Architecture
+
+XAMPP is only the local development environment. Production deploys this same PHP code and its MySQL/MariaDB database to an always-on public PHP host or VPS:
+
+```text
+ESP32 devices -> HTTPS -> PHP API -> MySQL/MariaDB
+                                ^
+                                |-- Barangay administrative website
+                                `-- Carinderia Flutter application
+```
+
+Server secrets come from `AQUASENSE_*` environment variables or ignored `config/local.php`; environment variables take precedence. Production mode requires explicit database/storage settings, rejects HTTP, uses secure session cookies, and accepts proxy HTTPS headers only from configured proxy IPs. Upload and log locations are configurable, and the Flutter release receives one HTTPS API root through `API_BASE_URL`. See [DEPLOYMENT.md](DEPLOYMENT.md) for the server, database, Flutter, and future ESP32 release procedure.
+
+A Tailscale network or temporary tunnel remains useful for development testing, but it is not production hosting because availability would still depend on the development computer.
 
 ## GitHub Repository
 
@@ -21,7 +36,7 @@ The source, SQL imports, artwork, tests, and development-only credential referen
 To clone into a new XAMPP installation, run this from `C:\xampp\htdocs` after signing in to GitHub:
 
 ```powershell
-git clone https://github.com/HyoYoung05/aquasense.git
+git clone https://github.com/HyoYoung05/aquasense.git aquasense-web
 ```
 
 Import the SQL files using the steps below. `.gitattributes` keeps text line endings consistent across machines and preserves the PNG artwork as binary.
@@ -52,20 +67,22 @@ Verified here with Apache 2.4.58, PHP 8.5.5, and XAMPP MariaDB 10.4.32. Browser 
 
 ## Installation
 
+**Current computer:** the website is located at `C:\xampp\htdocs\AQUASENSE+\aquasense-web\`. Open **http://localhost/AQUASENSE+/aquasense-web/**. The ignored `config/local.php` sets `base_path` to `/AQUASENSE+/aquasense-web` for this nested location. The standard steps below install directly under `htdocs` and use `/aquasense-web`. The database remains named `aquasense` in both cases.
+
 For a plain-text walkthrough, open [SETUP-INSTRUCTIONS.txt](SETUP-INSTRUCTIONS.txt). It covers downloading the project, XAMPP startup, SQL imports, local settings, both types of login, verification, updates, and troubleshooting.
 
 These are the standard steps for a healthy XAMPP installation. See **Current machine database workaround** below for the existing database problem on the development machine used for this release.
 
 1. Install XAMPP.
-2. Copy or clone the project into `C:\xampp\htdocs\aquasense\`.
+2. Copy or clone the project into `C:\xampp\htdocs\aquasense-web\`.
 3. Open XAMPP Control Panel and start **Apache**.
 4. Start **MySQL**.
 5. Open [phpMyAdmin](http://localhost/phpmyadmin/).
 6. Create a database named **aquasense**, using `utf8mb4_unicode_ci`.
-7. Select **aquasense**, choose **Import**, select `database/schema.sql`, and click **Import/Go**. The SQL also includes `CREATE DATABASE IF NOT EXISTS` and `USE aquasense`; no individual table creation is necessary.
+7. Select **aquasense**, choose **Import**, select `database/schema.sql`, and click **Import/Go**. The SQL creates tables in the database selected by the importer, so production hosts may use their assigned database name without editing the schema.
 8. Import `database/sample-data.sql` the same way, after the schema import succeeds.
-9. If your local database credentials differ, copy `config/local.example.php` to `config/local.php` and adjust the settings. Defaults are host `localhost`, port `3306`, user `root`, and an empty password for the local XAMPP setup only.
-10. Open [AQUASENSE+](http://localhost/aquasense/) and sign in with a development account below.
+9. If your local database credentials differ, copy `config/local.example.php` to `config/local.php` and adjust the settings. Set every development database value in the ignored file; the committed application has no database username, database name, or password defaults.
+10. Open [AQUASENSE+](http://localhost/aquasense-web/) and sign in with a development account below.
 
 Import each SQL file **once into a fresh installation**. Imports intentionally do not drop tables or overwrite existing accounts. Back up existing data before migrations; rerunning `schema.sql` against an installed schema will report that tables already exist. The sample import uses a transaction to prevent partially seeded data.
 
@@ -80,7 +97,27 @@ Open [credentials.txt](credentials.txt) locally in your editor for the developme
 | Barangay Administrator | `admin@aquasense.test` | `AquaSense!2026` |
 | Barangay Environmental Staff | `staff@aquasense.test` | `AquaSense!2026` |
 
-`sample-data.sql` contains only PHP `password_hash()` output, not plaintext passwords in user records. Login uses `password_verify()` and rehashes passwords when the configured PHP default changes. The future Carinderia Owner role exists without a sample owner account and cannot access the administrative website.
+`sample-data.sql` contains only PHP `password_hash()` output, not plaintext passwords in user records. Login uses `password_verify()` and rehashes passwords when the configured PHP default changes. The optional mobile development helper creates `owner@aquasense.test` with password `AquaSense!2026` and links fictional Demo Kusina. Owners cannot access the administrative website.
+
+## Owner mobile API (backend 0.2.3)
+
+The existing backend now provides `api/mobile/login.php`, `profile.php`, `dashboard.php`, and `logout.php`. See [API contract](api/README.md). The Flutter project remains in the sibling `aquasense_mobile` folder; it is not inside this Git repository.
+
+For an existing or fresh installation, select the `aquasense` database and import `database/migrations/001-mobile-tokens.sql` after the original schema. It adds the token table. Then apply `database/migrations/002-ultrasonic-test.sql` once for the current dashboard reader (19 tables after both migrations). Do not rerun the full schema on an existing database.
+
+For local development only, run from the website directory:
+
+```powershell
+C:\xampp\php\php.exe database\mobile-development.php --allow-demo-data --add-reading
+```
+
+This also applies the migration, creates the fictional owner only if absent, links only unclaimed Demo Kusina, and optionally inserts a clearly simulated reading. It refuses conflicting ownership and never resets passwords. Existing production records must not use this demo helper. The helper is CLI-only and the database directory remains blocked by Apache.
+
+Bearer tokens are random, stored only as hashes in MariaDB, and default to a 24-hour expiry (`mobile_token_lifetime_seconds` in PHP configuration). Active owner role, password fingerprint and current establishment ownership are enforced on each request. Staff session authentication remains separate. Only the four named endpoint files are exposed; the API root and documentation remain blocked.
+
+The dashboard derives status and freshness from database configuration. It returns only owned active establishments and their traps, marks simulated/stale records, and never fabricates telemetry when no readings exist. Full monitoring history, alert management, surrender and incentives are future work. Local debug HTTP must be replaced with HTTPS for deployment.
+
+Verify the new API with `C:\xampp\php\php.exe tests\mobile-api.php --allow-local-fixtures` (30 checks); existing website tests still pass (54 checks plus session expiry). Temporary test users, establishments, devices, readings and tokens are removed after the tests.
 
 ## Database
 
@@ -91,15 +128,15 @@ Open [credentials.txt](credentials.txt) locally in your editor for the developme
 - **Connection:** `config/database.php`, PDO, `utf8mb4`, exceptions, and native prepared statements.
 - **Time:** stored timestamps use UTC; the interface displays Asia/Manila time.
 
-Environment overrides: `AQUASENSE_DB_HOST`, `AQUASENSE_DB_PORT`, `AQUASENSE_DB_NAME`, `AQUASENSE_DB_USER`, and `AQUASENSE_DB_PASSWORD`. Values in `config/local.php` take precedence. Production secrets must not be committed to Git.
+Environment overrides: `AQUASENSE_DB_HOST`, `AQUASENSE_DB_PORT`, `AQUASENSE_DB_NAME`, `AQUASENSE_DB_USER`, and `AQUASENSE_DB_PASSWORD`. Server environment variables take precedence over `config/local.php`. Production secrets must not be committed to Git.
 
 ### Tables and relationships
 
 | Table | Purpose and relationships |
 | --- | --- |
-| `roles` | One role has many users; administrator, environmental staff, and future owner. |
+| `roles` | One role has many users; administrator, environmental staff, and owner. |
 | `users` | Each user has one role. Referenced by submissions, reviews, distributions, account activity, and record authorship. Deactivate rather than delete users with history. |
-| `establishments` | One establishment has many grease traps and oil surrenders. Optional `owner_user_id` links a future owner account; the recorded owner name supports registration before an account exists. |
+| `establishments` | One establishment has many grease traps and oil surrenders. Optional `owner_user_id` links the owner account; the recorded owner name supports registration before an account exists. |
 | `grease_traps` | Each trap belongs to an establishment and stores capacity and ordered, configurable thresholds. |
 | `devices` | Unique device code, optional hashed future API credential, firmware, and last-seen time. No API credentials or hardware are enabled yet. |
 | `device_assignments` | Links devices to traps over time. Unique generated columns allow only one current device per trap and one current trap per device. End an assignment before reassigning; retain historical rows. |
@@ -113,9 +150,10 @@ Environment overrides: `AQUASENSE_DB_HOST`, `AQUASENSE_DB_PORT`, `AQUASENSE_DB_N
 | `audit_logs` | Separate administrative audit trail. Login, failed login, and logout are recorded now; future modules must add their own events. |
 | `system_settings` | Named configurable defaults, including an initial emulsion temperature of 40°C. The settings editor is a later phase. |
 | `password_resets` | Future single-use reset token hashes, expiry, and use time. Token issuance, redemption, and delivery are not implemented. |
+| `mobile_tokens` | Additive migration: hashed mobile bearer sessions, password fingerprint and expiry; each token belongs to a user. |
 | `login_attempts` | Shared server-side sign-in throttling by hashed email or client IP within a configured window. |
 
-Foreign keys preserve referenced history and do not cascade-delete records. Ledger/audit `record_type` + `record_id` pairs are generic references, not foreign keys; future service functions must validate them. These generic columns each contain one value, not bundled records.
+Business-record foreign keys preserve history and do not cascade-delete records. The additive mobile_tokens table cascades token deletion when its user is removed. Ledger/audit `record_type` + `record_id` pairs are generic references, not foreign keys; future service functions must validate them. These generic columns each contain one value, not bundled records.
 
 Future business logic must additionally enforce same-establishment evidence, reading/alert assignment consistency, effective rule selection, immutable rule versions once used, approved-only incentives, and transactional approval + reward + ledger writes. SQL uniqueness prevents duplicate rewards but does not itself perform approval. Device connectivity and present trap condition will be derived from timestamps and the latest reading. Historical reading classifications will be preserved when thresholds change.
 
@@ -124,7 +162,7 @@ Initial temperature, flow, turbidity, and level defaults are development configu
 ## Project Structure
 
 ```text
-aquasense/
+aquasense-web/
   .htaccess                    directory and private-file protections
   .gitignore                   excludes secrets, runtime logs, uploaded photos
   index.php                    main localhost entry point
@@ -159,7 +197,7 @@ aquasense/
     css/style.css              responsive layout and component styles
     js/app.js                  password visibility and mobile navigation
     images/                    reserved local assets
-  api/                         reserved and access-blocked until Phase 3
+  api/mobile/                  owner login/profile/dashboard/logout JSON endpoints
   uploads/surrender-photos/    reserved and blocked from direct HTTP access
   logs/                        protected runtime errors, excluded from Git
   tests/
@@ -203,11 +241,11 @@ Protected directories have their own `.htaccess` files. No placeholder PHP endpo
 - **Phase 6:** configurable incentive rules, atomic reward processing, distribution, and compliance ledger interface.
 - **Phase 7:** report filters, daily/weekly/monthly reports, CSV export, modular future PDF export, and broader audit coverage.
 - **Phase 8:** full security, integration, and usability review; account management and secure password recovery delivery.
-- Flutter mobile application, ESP32 firmware, physical sensors, and hardware calibration are outside this task.
+- The sibling Flutter app now implements Mobile Phase 1. The sibling ESP32 sketch now supports one ultrasonic bench test; physical sensor validation and calibration remain incomplete.
 
 ## Sensor Integration
 
-Website development will use simulated telemetry in Phase 3. The current seed only establishes a fictional device assignment; it inserts no telemetry. The future flow is **ESP32 → authenticated PHP API → MySQL → administrative dashboard**. `api/` is currently blocked. The endpoint, validation, alert logic, simulation utility, and device credential provisioning are not present yet.
+The original sample-data import creates a fictional device assignment without telemetry. The optional CLI mobile-development helper can now add a simulated reading. The owner dashboard reads these shared records, while development ultrasonic ingestion and separate device credentials are now implemented. Administrative monitoring/history, production ingestion, and alert persistence remain future work. Four owner API routes and one development-only device route are exposed.
 
 ## Security
 
@@ -224,11 +262,11 @@ Website development will use simulated telemetry in Phase 3. The current seed on
 - Generic service errors; detailed diagnostics only in protected `logs/php-error.log`.
 - Login/logout audit records; logout still ends access if database auditing fails, with an explanatory user notice and protected server log.
 
-No upload handler exists yet. Direct access to the reserved upload folder is denied. Full MIME/extension/size validation, randomized filenames, and authenticated photo serving must be implemented together in Phase 5. Production deployment, TLS, a least-privilege database account, backup/restore procedures, and a comprehensive security assessment remain later work. This prototype is not labeled production ready.
+No upload handler exists yet. The configurable private storage root and direct-access denial are ready for that future handler; full MIME/extension/size validation, randomized filenames, and authenticated photo serving must be implemented together in Phase 5. The code is portable to a TLS-enabled PHP host, but an actual production launch still requires a selected host/domain, least-privilege database account, backups, monitoring, real accounts, and deployment verification.
 
 ## Running AQUASENSE+
 
-Start Apache and MySQL from XAMPP Control Panel, then open **http://localhost/aquasense/**. The root directs unauthenticated visitors to sign in. Successful staff login opens `/admin/dashboard.php`. Use the sign-out icon in the top bar to end the session. Returning to the dashboard afterward must redirect to login.
+Start Apache and MySQL from XAMPP Control Panel, then open **http://localhost/aquasense-web/**. The root directs unauthenticated visitors to sign in. Successful staff login opens `/admin/dashboard.php`. Use the sign-out icon in the top bar to end the session. Returning to the dashboard afterward must redirect to login.
 
 No `npm`, Composer, PHP development server, or other application server is needed.
 
@@ -262,7 +300,7 @@ Before Phase 2, manually inspect login and dashboard at desktop, tablet, and mob
 | Port conflict | Match the database port in `config/local.php`; match Apache's configured port in the browser URL. The documented URL assumes Apache port 80. |
 | Database not found / missing tables | Create `aquasense`, then import the schema followed by sample data into the same server used by the PHP configuration. |
 | Database connection error / service unavailable | Check MySQL is running, host/port/user/password in local settings, and protected `logs/php-error.log`. Raw database errors are intentionally hidden from browser users. |
-| Incorrect project directory / 404 | Ensure the root `index.php` is at `C:\xampp\htdocs\aquasense\index.php`, not an extra nested folder. Adjust `base_path` if deliberately installed elsewhere. |
+| Incorrect project directory / 404 | Ensure the root `index.php` is at `C:\xampp\htdocs\aquasense-web\index.php`, not an extra nested folder. Adjust `base_path` if deliberately installed elsewhere. |
 | Login failure | Import sample data, use the documented email and case-sensitive password, and ensure the account is active and has a staff role. |
 | Too many sign-in attempts | Wait for the configured 15-minute window. Failed attempts share an IP budget even across different browser sessions. |
 | Form expired | Reload the login/dashboard page and retry. A stale tab or another sign-out may have invalidated its CSRF token. |
@@ -283,7 +321,7 @@ The working website uses **XAMPP's own MariaDB binary** with a separate fresh da
 - Local development database: `aquasense`, user `root`, empty local password
 - PHP override: ignored `config/local.php` selects host `127.0.0.1` and port `3307`
 
-Both SQL files were imported and the integration checks passed on that fresh MariaDB instance. Apache continues serving the requested **http://localhost/aquasense/** URL. A Windows Task Scheduler task named **AQUASENSE Local Database** now starts the isolated database when the current Windows user signs in. It runs with normal user permissions and a hidden PowerShell window, independently of the assistant's process lifetime. It is not a Windows service. The XAMPP Control Panel MySQL button controls the original instance, not this task.
+Both SQL files were imported and the integration checks passed on that fresh MariaDB instance. Apache continues serving the requested **http://localhost/aquasense-web/** URL. A Windows Task Scheduler task named **AQUASENSE Local Database** now starts the isolated database when the current Windows user signs in. It runs with normal user permissions and a hidden PowerShell window, independently of the assistant's process lifetime. It is not a Windows service. The XAMPP Control Panel MySQL button controls the original instance, not this task.
 
 The task starts automatically at Windows sign-in. If it has been stopped, start the already-initialized isolated database using PowerShell:
 
@@ -307,10 +345,45 @@ On a healthy XAMPP installation use the standard import workflow above and omit 
 
 ## Development Status
 
-The Phase 1 implementation and automated functional checks are complete. Browser visual/usability review remains unverified, and the original XAMPP database problem remains unresolved. Use v0.1.10 as a foundation prototype, not a completed monitoring system. Recommended next task: verify the rendered Phase 1 screens in a browser and settle the database setup, then implement **Phase 2 — Administrative Core** when authorized.
+The Phase 1 implementation and automated functional checks are complete. Browser visual/usability review remains unverified, and the original XAMPP database problem remains unresolved. Use backend v0.3.0 as a portable foundation prototype, not a completed monitoring system. Recommended next task: verify the rendered Phase 1 screens in a browser and settle the database setup, then implement **Phase 2 — Administrative Core** when authorized.
 
 ## Versioning
 
 Use Semantic Versioning: **MAJOR.MINOR.PATCH**. Major versions represent architectural/production-level changes, minor versions add features or complete phases, and patch versions fix defects or small improvements. Versions below 1.0.0 are prototypes.
 
 For every meaningful completed release, update `APP_VERSION` in `config/config.php`, this README's current version, and `VERSION.md` with the date, additions, changes, fixes, and known issues. All PHP pages display the constant; do not hardcode page-specific versions. Do not release 1.0.0 before the defined capstone scope is implemented and tested.
+
+## Flutter Web development CORS (0.2.3)
+
+For local development, set `'mobile_allow_local_web_preview' => true` in the ignored `config/local.php` file. The committed default is `false`. Development then accepts only exact origins matching `http://localhost:<port>` or `http://127.0.0.1:<port>`, where the port is 1 through 65535. The browser may call Apache through the computer's LAN address; origin validation does not depend on the client's source IP.
+
+Allowed preflights return HTTP 204 before database access, bearer authentication, endpoint method checks, or JSON parsing. Responses echo the allowed origin and advertise `GET, POST, OPTIONS` plus `Content-Type, Authorization, Accept`, with `Vary: Origin`. Browser credential cookies and wildcard origins are not enabled.
+
+Production ignores the local-preview switch and accepts only explicitly configured HTTPS origins from `AQUASENSE_MOBILE_WEB_ORIGINS`. Native Android calls have no browser Origin header and are unaffected.
+
+Mobile 0.1.5+6 requires an explicit `API_BASE_URL` for every target. A Flutter Web debug build now identifies likely API URL or CORS/OPTIONS failures without showing server internals; release builds keep a generic connection message.
+
+Verification: `php tests/mobile-cors.php` passed 36 policy and integration checks; the mobile API suite passed 30 checks. Manual preflight from `http://localhost:49840` returned HTTP 204 with the exact required headers, owner login/logout succeeded through the same browser origin, and Flutter Web compiled and launched in headless Chrome on port 49840 with the configured LAN API root. See `api/README.md` for the endpoint contract.
+## Single ultrasonic bench test (0.3.0)
+
+The separate `../aquasense-esp32/` project contains an Arduino IDE sketch, HC-SR04 reference wiring, formula, and setup instructions. The physical sensor model still needs confirmation. This test implements only distance/fill telemetry; no extra sensors, battery system, actuator, or administrative monitoring UI was added.
+
+`POST api/device/telemetry.php` accepts the five documented JSON fields with a separate 64-hex bearer device key. Only a registered active device may write to its active assigned trap. PHP validates ranges and the saved calibration, computes the authoritative percentage/status, records server UTC time, and limits successful writes to at most one per two seconds. The endpoint returns 404 outside development mode.
+
+Apply `database/migrations/002-ultrasonic-test.sql` **once**, after migration 001, to the existing database. It makes absent temperature nullable, adds the test flag and WARNING status, and creates `device_ultrasonic_test_config` (19 tables after both migrations). Fresh installations also require both migrations. No separate database or MySQL connection from the ESP32 is used.
+
+On this computer, AQS-001 is assigned to a separate temporary test trap **12** under Demo Kusina. Existing demo readings are preserved. Calibration defaults are empty 30cm, full 5cm, warning 75%, critical 90%; synchronize the firmware and saved server calibration when changing them. Physical samples store `is_test=1`, `is_simulated=0`, and NULL for absent sensors. No physical sensor reading has been claimed; regression fixtures are deleted after tests.
+
+The owner API returns distance, percentage, test marker, and nullable temperature. Flutter 0.1.6+7 supports this payload. The shared PHP reader can be used by the website later. Rebuild older mobile APKs before testing these records.
+
+For another development installation with the demo owner present, provision once with `php database/ultrasonic-test-setup.php --allow-test-fixture --output=../aquasense-esp32/device.local.json`. It creates the separate device/trap and refuses to overwrite an existing device or credential file. Do not rerun it here. Read the ESP32 README for wiring and upload instructions.
+
+Validation: `php tests/ultrasonic-api.php --allow-local-fixtures`. Test credentials stay in ignored files; the firmware folder denies Apache HTTP access. All temporary firmware files, credentials, and test records must remain until the user explicitly requests cleanup. Production deployment must also apply migration 002 for the updated dashboard reader, but must not provision test fixtures.
+Verification on 2026-09-21:
+- Ultrasonic device integration: 51 checks passed; synthetic fixture readings removed afterward.
+- Existing PHP suites: production configuration 12, mobile API 30, CORS 36, foundation 54, plus session expiry passed.
+- PHP syntax: 39 files passed. Git whitespace check passed.
+- Production-mode CLI probe returned the disabled-test message before any database access.
+- Private firmware configuration/metadata returned HTTP 403 and matched Git exclusion patterns.
+- Flutter analysis passed and all 28 tests passed. Updated debug APK assembled successfully.
+- Physical sensor wiring, calibration, upload, and live end-to-end measurements remain unverified.

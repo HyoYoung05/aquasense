@@ -1,7 +1,7 @@
--- DEVELOPMENT DATA ONLY. Import once, after schema.sql, into a fresh installation.
+-- DEVELOPMENT DATA ONLY. Never import automatically or into production.
+-- Import manually once, after schema.sql, into a fresh development installation.
 -- Both fictional staff accounts use AquaSense!2026, hashed with PHP password_hash().
 -- No real residents, sensor measurements, or incentive conversion rules are seeded.
-USE aquasense;
 SET time_zone = '+00:00';
 START TRANSACTION;
 

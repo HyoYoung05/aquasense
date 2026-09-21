@@ -12,7 +12,11 @@ if (!in_array('--allow-local-fixtures', $argv, true)) {
 }
 require dirname(__DIR__) . '/includes/bootstrap.php';
 
-$base = 'http://localhost' . rtrim($config['base_path'], '/');
+$base = $config['test_base_url'] ?? null;
+if (!is_string($base) || !filter_var($base, FILTER_VALIDATE_URL)) {
+    throw new RuntimeException('Set AQUASENSE_TEST_BASE_URL or test_base_url in ignored local.php.');
+}
+$base = rtrim($base, '/');
 $checks = 0;
 $fixtureIds = [];
 $fixtureEmails = [];
@@ -84,7 +88,11 @@ function expect_constraint(string $sql, array $values, string $label): void
 try {
     $pdo = db();
     $tables = $pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
-    check(count($tables) === 17, 'Schema has all 17 foundation and future-module tables');
+    $requiredTables = ['roles', 'users', 'establishments', 'grease_traps', 'devices',
+        'device_assignments', 'sensor_readings', 'alerts', 'oil_surrenders', 'oil_surrender_photos',
+        'incentive_rules', 'incentive_transactions', 'compliance_ledger', 'audit_logs',
+        'system_settings', 'password_resets', 'login_attempts'];
+    check(array_diff($requiredTables, $tables) === [], 'All 17 foundation tables exist; additive migrations are allowed');
     $sample = $pdo->prepare('SELECT password_hash FROM users WHERE email = ?');
     $sample->execute(['admin@aquasense.test']);
     check(password_verify('AquaSense!2026', (string) $sample->fetchColumn()), 'Development administrator hash verifies');

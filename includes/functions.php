@@ -12,6 +12,32 @@ function url(string $path = ''): string
     return rtrim($config['base_path'], '/') . '/' . ltrim($path, '/');
 }
 
+function request_is_https(): bool
+{
+    global $config;
+    if (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off') {
+        return true;
+    }
+    $remote = $_SERVER['REMOTE_ADDR'] ?? '';
+    if (!in_array($remote, $config['trusted_proxy_ips'], true)) {
+        return false;
+    }
+    $forwarded = strtolower(trim(explode(',', $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')[0]));
+    return $forwarded === 'https';
+}
+
+function storage_path(string $relative = ''): string
+{
+    global $config;
+    if (str_contains($relative, chr(0))
+        || preg_match('~(^|[\\/])\.\.([\\/]|$)~', $relative)) {
+        throw new InvalidArgumentException('Invalid storage path.');
+    }
+    $root = rtrim((string) $config['storage_path'], '/\\');
+    return $relative === '' ? $root : $root . DIRECTORY_SEPARATOR
+        . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, ltrim($relative, '/\\'));
+}
+
 function redirect(string $path): never
 {
     header('Location: ' . url($path), true, 303);
@@ -53,7 +79,7 @@ function audit(string $action, ?int $userId = null, ?string $recordType = null, 
 function client_ip(): string
 {
     // Do not trust forwarded headers supplied by clients.
-    $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '0.0.0.0';
 }
 

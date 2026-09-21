@@ -26,19 +26,19 @@ Method A - Git clone:
   Open PowerShell and run:
 
     cd C:\xampp\htdocs
-    git clone https://github.com/HyoYoung05/aquasense.git
+    git clone https://github.com/HyoYoung05/aquasense.git aquasense-web
 
 Method B - Download ZIP:
   Sign in to GitHub and open the repository above.
   Click Code, then Download ZIP.
-  Extract the ZIP and name the project folder aquasense.
+  Extract the ZIP and name the project folder aquasense-web.
   Place the folder inside C:\xampp\htdocs.
 
 The final location MUST be:
-  C:\xampp\htdocs\aquasense\index.php
+  C:\xampp\htdocs\aquasense-web\index.php
 
 Avoid an extra nested folder such as:
-  C:\xampp\htdocs\aquasense\aquasense-main\index.php
+  C:\xampp\htdocs\aquasense-web\aquasense-main\index.php
 
 If you already have this project locally, do not clone over it. See section 8.
 
@@ -71,10 +71,10 @@ On a fresh installation:
   b. Use the collation utf8mb4_unicode_ci.
   c. Select the aquasense database.
   d. Click Import.
-  e. Choose C:\xampp\htdocs\aquasense\database\schema.sql.
+  e. Choose C:\xampp\htdocs\aquasense-web\database\schema.sql.
   f. Click Import/Go and wait for the success message.
   g. Click Import again.
-  h. Choose C:\xampp\htdocs\aquasense\database\sample-data.sql.
+  h. Choose C:\xampp\htdocs\aquasense-web\database\sample-data.sql.
   i. Click Import/Go and wait for the success message.
 
 Import schema.sql BEFORE sample-data.sql. Both files must use the same server.
@@ -93,7 +93,7 @@ If your database host, port, username, password, or project folder differs:
   a. Copy config/local.example.php to config/local.php.
   b. Open config/local.php in your editor.
   c. Set db_host, db_port, db_name, db_user, and db_password to your local values.
-  d. Keep base_path as /aquasense for the documented project location.
+  d. Keep base_path as /aquasense-web for a folder directly inside htdocs.
   e. Save the file.
 
 config/local.php is intentionally excluded from GitHub. Each computer uses
@@ -102,7 +102,7 @@ its own local settings. Never commit real database passwords.
 6. OPEN AND SIGN IN TO THE WEBSITE
 ---------------------------------
 Open:
-  http://localhost/aquasense/
+  http://localhost/aquasense-web/
 
 DEVELOPMENT ACCOUNTS ONLY:
 
@@ -125,7 +125,7 @@ See credentials.txt locally in your editor for the separate login references.
 - The background artwork and styles load.
 - The top-bar sign-out button ends the session.
 - After signing out, opening the address below redirects to login:
-    http://localhost/aquasense/admin/dashboard.php
+    http://localhost/aquasense-web/admin/dashboard.php
 
 For optional automated checks, open PowerShell in the project folder and run:
 
@@ -163,6 +163,12 @@ It uses an ISOLATED working instance on 127.0.0.1, port 3307 instead.
 This workaround is NOT required on a new, healthy XAMPP installation.
 
 On that original computer only:
+- The website is now located at:
+    C:\xampp\htdocs\AQUASENSE+\aquasense-web\
+- Open:
+    http://localhost/AQUASENSE+/aquasense-web/
+- config/local.php sets base_path to /AQUASENSE+/aquasense-web.
+- The database name remains aquasense. A folder rename needs no SQL import.
 - config/local.php selects port 3307.
 - A Windows task named AQUASENSE Local Database manages the isolated server.
 - XAMPP Control Panel's MySQL button manages the original server, not this task.
@@ -184,7 +190,7 @@ to the damaged database. Full details are in README.md.
 10. TROUBLESHOOTING
 -------------------
 404 / page not found:
-  Check the project location and use http://localhost/aquasense/.
+  Check the project location and use http://localhost/aquasense-web/.
   Apache must be running. Opening the PHP file directly will not run the site.
 
 Apache or MySQL will not start:
@@ -216,3 +222,70 @@ credentials.txt or SQL files return HTTP 403:
 
 GitHub does not run this PHP/MySQL application as a GitHub Pages website.
 It stores the source. Use XAMPP to run the application locally.
+
+MOBILE OWNER APP / SHARED API (BACKEND 0.2.3)
+-------------------------------------------
+The separate sibling aquasense_mobile folder contains Flutter Phase 1 (0.1.5+6).
+Its README has SDK, emulator, LAN, login and run instructions.
+
+On existing installations, import database/migrations/001-mobile-tokens.sql
+into the aquasense database. Fresh installs also need the original schema and
+sample-data imports first. Never reimport the full schema into an existing DB.
+
+For local fictional owner data, run from aquasense-web:
+  C:\xampp\php\php.exe database\mobile-development.php --allow-demo-data --add-reading
+This applies the additive migration, safely creates/links the demo owner and
+inserts one simulated reading. Existing owner passwords are not reset.
+
+Owner login: owner@aquasense.test / AquaSense!2026 (mobile only, development only).
+API on this computer: http://localhost/AQUASENSE+/aquasense-web/api/mobile
+Android emulator host: replace localhost with 10.0.2.2.
+Physical phone: use this PC's private LAN IP and the same Wi-Fi network.
+The app only contacts Apache/PHP, never MySQL/phpMyAdmin. Production uses HTTPS.
+
+Verify: C:\xampp\php\php.exe tests\mobile-api.php --allow-local-fixtures
+See api/README.md for the four endpoint contracts and authentication behavior.
+
+CHROME CONNECTION TIMEOUT FIX (MOBILE 0.1.1 / BACKEND 0.2.1)
+Chrome uses localhost; 10.0.2.2 is only for the native Android emulator.
+Set 'mobile_allow_local_web_preview' => true in config/local.php for local browser
+preview (already enabled here). Disable it in deployment.
+Stop the running Flutter process with Ctrl+C and run from aquasense_mobile:
+  flutter run -d chrome --web-port=5173
+Use the same preview port to preserve browser sessions. No password change or
+SQL import is required for this fix.
+
+PRODUCTION DEPLOYMENT (BACKEND 0.2.3 / MOBILE 0.1.5+6)
+---------------------------------------------------
+XAMPP is for local development only. To make AQUASENSE+ available when this
+computer is off, deploy the PHP project and MySQL/MariaDB database to an
+always-on PHP host or VPS with a public domain and valid HTTPS certificate.
+Tailscale or a temporary tunnel does not replace production hosting.
+
+Do not import database/sample-data.sql or run database/mobile-development.php
+in production. Configure AQUASENSE_APP_ENV=production and the AQUASENSE_DB_*,
+AQUASENSE_STORAGE_PATH and AQUASENSE_LOG_PATH secrets through the hosting panel
+or an ignored config/local.php based on config/production.example.php.
+
+Build the Flutter release with one ignored config file:
+  Copy config/api.production.example.json to config/api.production.json
+  Set API_BASE_URL to the deployed HTTPS URL ending in /api/mobile
+  flutter build apk --release --dart-define-from-file=config/api.production.json
+
+The app and future ESP32 firmware contact the public PHP API, never MySQL or
+phpMyAdmin. Full server, database, proxy, storage, Flutter, ESP32 and release
+checks are in DEPLOYMENT.md. Run php tests/production-config.php before release.
+FLUTTER WEB DYNAMIC-PORT CORS (BACKEND 0.2.3)
+---------------------------------------------
+With mobile_allow_local_web_preview enabled in ignored config/local.php,
+http://localhost:<port> and http://127.0.0.1:<port> are accepted for any valid
+port. Flutter may call Apache through this PC's LAN address. OPTIONS returns 204
+before authentication. Production disables this rule and uses only configured
+HTTPS origins. Verify with php tests/mobile-cors.php --allow-local-fixtures.
+
+BACKEND 0.3.0 SCHEMA UPDATE
+Apply database/migrations/002-ultrasonic-test.sql once after migration 001, including
+when deploying the updated owner dashboard reader. Back up first. This preserves
+existing readings and supports absent temperature. The new device telemetry test
+endpoint is disabled outside development. Do not provision test fixtures in production.
+See the sibling aquasense-esp32/README.md for local one-sensor testing.

@@ -1,7 +1,5 @@
--- AQUASENSE+ Phase 1: import into a new database with phpMyAdmin.
+-- AQUASENSE+ Phase 1: select an empty target database, then import this file.
 -- No DROP statements: an existing installation is never silently overwritten.
-CREATE DATABASE IF NOT EXISTS aquasense CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE aquasense;
 SET time_zone = '+00:00';
 
 CREATE TABLE roles (

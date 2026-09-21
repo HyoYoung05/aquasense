@@ -19,6 +19,12 @@ set_exception_handler(function (Throwable $exception): void {
 });
 
 if (PHP_SAPI !== 'cli') {
+    if ($config['require_https'] && !request_is_https()) {
+        http_response_code(426);
+        header('Upgrade: TLS/1.2');
+        header('Content-Type: text/plain; charset=utf-8');
+        exit('AQUASENSE+ requires HTTPS.');
+    }
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: DENY');
     header('Referrer-Policy: same-origin');
@@ -31,11 +37,14 @@ if (PHP_SAPI !== 'cli') {
     session_set_cookie_params([
         'lifetime' => 0,
         'path' => rtrim($config['base_path'], '/') . '/',
-        'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+        'secure' => request_is_https(),
         'httponly' => true,
         'samesite' => 'Lax',
     ]);
     session_start();
+    if ($config['environment'] === 'production') {
+        header('Strict-Transport-Security: max-age=31536000');
+    }
 }
 
 require_once __DIR__ . '/auth.php';

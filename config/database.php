@@ -6,6 +6,15 @@ function db(): PDO
     static $connection = null;
     global $config;
     if ($connection === null) {
+        foreach (['db_host', 'db_port', 'db_name', 'db_user'] as $key) {
+            if (!is_string($config[$key] ?? null) || trim($config[$key]) === '') {
+                throw new RuntimeException('Database configuration is incomplete. Missing ' . $key . '.');
+            }
+        }
+        if ($config['environment'] === 'production'
+            && (!is_string($config['db_password'] ?? null) || $config['db_password'] === '')) {
+            throw new RuntimeException('Production requires a non-empty database password.');
+        }
         $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
             $config['db_host'], $config['db_port'], $config['db_name']);
         $connection = new PDO($dsn, $config['db_user'], $config['db_password'], [

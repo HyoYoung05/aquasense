@@ -1,0 +1,5 @@
+Require all denied
+SetEnvIf Authorization "(.+)" HTTP_AUTHORIZATION=$1
+<FilesMatch "^(login|logout|profile|dashboard)\.php$">
+    Require all granted
+</FilesMatch>
