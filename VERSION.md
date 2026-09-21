@@ -4,6 +4,15 @@
 
 0.3.0
 
+## Repository packaging update - 2026-09-21
+
+- Added `esp32/` with ultrasonic firmware 0.1.1, GPIO5/GPIO18 configuration,
+  wiring/setup documentation, and VS Code IntelliSense support.
+- Included the PHP telemetry and mobile API source needed for the test flow.
+- Excluded machine-specific headers, device keys, Wi-Fi credentials, generated
+  compiler databases, and firmware binaries; only configuration templates are shared.
+- PHP remains 0.3.0. ESP32 compilation passed; valid physical telemetry is still unverified.
+
 ## 0.3.0
 
 Date: 2026-09-21

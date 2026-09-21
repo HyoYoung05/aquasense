@@ -10,3 +10,6 @@ Thumbs.db
 .DS_Store
 /.env
 /.env.*
+/esp32/**/*.local.h
+/esp32/**/*.local.json
+/esp32/build/

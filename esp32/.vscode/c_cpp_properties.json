@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "name": "AQUASENSE ESP32",
+            "compileCommands": [
+                "${workspaceFolder}/.vscode/compile_commands.local.json"
+            ]
+        }
+    ],
+    "version": 4
+}

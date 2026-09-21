@@ -8,6 +8,14 @@ The administrative website remains at its Phase 1 foundation. Backend version 0.
 
 ## Current Version
 
+The repository also includes the temporary [ESP32 ultrasonic test](esp32/README.md),
+firmware **0.1.1**, configured for HC-SR04 TRIG GPIO5 and ECHO GPIO18 through a voltage
+divider. Open `esp32/UltrasonicTest/UltrasonicTest.ino` in Arduino IDE. Copy
+`config.example.h` to an ignored `config.local.h` and supply your own network,
+API endpoint, and provisioned device credentials. Local Wi-Fi passwords, device keys,
+compiler databases, and firmware binaries are excluded from GitHub. The Flutter source
+and APK remain in the separate local `aquasense_mobile` project and are not in this repository.
+
 **Version: 0.3.0**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
