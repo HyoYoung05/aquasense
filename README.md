@@ -337,6 +337,15 @@ The task starts automatically at Windows sign-in. If it has been stopped, start 
 Start-ScheduledTask -TaskName 'AQUASENSE Local Database'
 ```
 
+If phpMyAdmin reports `HY000/2002` or “target machine actively refused it” while
+the **AQUASENSE+ (working database - port 3307)** server is selected, Apache is
+running but the isolated database is not listening. The XAMPP MySQL button does
+not start this port-3307 instance. Start the scheduled task above, wait a few
+seconds, then refresh phpMyAdmin. On 2026-09-26 this exact condition was verified:
+the task had been disabled, port 3307 was unreachable, and the original port-3306
+instance continued logging its existing InnoDB corruption. The task was enabled,
+the isolated server was started, and direct access to `aquasense.roles` succeeded.
+
 Do not reinitialize the data directory or repeat the imports. To shut down **only this isolated database**:
 
 ```powershell

@@ -4,6 +4,17 @@
 
 0.3.0
 
+## Local database availability update - 2026-09-26
+
+- Diagnosed phpMyAdmin `HY000/2002`: Apache was available, but the isolated
+  AQUASENSE+ MariaDB server was not listening on `127.0.0.1:3307`.
+- Re-enabled the existing `AQUASENSE Local Database` scheduled task and started
+  the isolated server without changing or reinitializing its data directory.
+- Verified port 3307, MariaDB 10.4.32, the `aquasense` database, and three rows
+  in `roles` using the configured local `root` account with an empty password.
+- Documented recovery steps in README.md. The original corrupt port-3306 data
+  remains unchanged, and application version 0.3.0 is unchanged.
+
 ## Repository packaging update - 2026-09-21
 
 - Added `esp32/` with ultrasonic firmware 0.1.1, GPIO5/GPIO18 configuration,
