@@ -70,6 +70,37 @@ function post_string(string $key): string
     return is_string($value) ? trim($value) : '';
 }
 
+function flash(string $type, string $message): void
+{
+    $_SESSION['flash'] = ['type' => $type, 'message' => $message];
+}
+
+function consume_flash(): ?array
+{
+    $value = $_SESSION['flash'] ?? null;
+    unset($_SESSION['flash']);
+    return is_array($value) ? $value : null;
+}
+
+function query_id(string $key = 'id'): ?int
+{
+    $value = filter_input(INPUT_GET, $key, FILTER_VALIDATE_INT,
+        ['options' => ['min_range' => 1]]);
+    return is_int($value) ? $value : null;
+}
+
+function post_id(string $key): ?int
+{
+    $value = filter_input(INPUT_POST, $key, FILTER_VALIDATE_INT,
+        ['options' => ['min_range' => 1]]);
+    return is_int($value) ? $value : null;
+}
+
+function selected(string|int|null $value, string|int|null $expected): string
+{
+    return (string) $value === (string) $expected ? ' selected' : '';
+}
+
 function audit(string $action, ?int $userId = null, ?string $recordType = null, ?int $recordId = null): void
 {
     $statement = db()->prepare('INSERT INTO audit_logs (user_id, action, record_type, record_id, ip_address) VALUES (?, ?, ?, ?, ?)');
@@ -101,6 +132,10 @@ function icon(string $name, string $class = ''): string
     $paths = [
         'dashboard' => '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
         'store' => '<path d="M3 10 5 4h14l2 6M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M5 13v7h14v-7M10 20v-5h4v5"/>',
+        'device' => '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 11h6M10 17h4"/>',
+        'plus' => '<path d="M12 5v14M5 12h14"/>',
+        'edit' => '<path d="m4 20 4-1 11-11-3-3L5 16l-1 4ZM14 7l3 3"/>',
+        'search' => '<circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/>',
         'activity' => '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
         'bell' => '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
         'oil' => '<path d="M9 3h6v4l4 4v10H5V11l4-4V3ZM9 7h6M5 14h14"/>',

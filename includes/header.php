@@ -7,6 +7,7 @@
     <title><?= e($pageTitle) ?> · AQUASENSE+</title>
     <link rel="stylesheet" href="<?= e(url('assets/css/style.css')) ?>?v=<?= e(APP_VERSION) ?>">
     <script src="<?= e(url('assets/js/app.js')) ?>" defer></script>
+    <?php if (!empty($pageScript)): ?><script src="<?= e(url($pageScript)) ?>?v=<?= e(APP_VERSION) ?>" defer></script><?php endif; ?>
 </head>
 <body class="dashboard-page">
 <a class="skip-link" href="#main-content">Skip to content</a>

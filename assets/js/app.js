@@ -45,3 +45,9 @@ window.matchMedia('(max-width: 760px)').addEventListener('change', (event) => {
         menuToggle?.setAttribute('aria-expanded', 'false');
     }
 });
+
+for (const form of document.querySelectorAll('form[data-confirm]')) {
+    form.addEventListener('submit', (event) => {
+        if (!window.confirm(form.dataset.confirm)) event.preventDefault();
+    });
+}

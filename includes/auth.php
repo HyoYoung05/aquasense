@@ -48,6 +48,11 @@ function require_staff(): array
     return require_roles(['administrator', 'environmental_staff']);
 }
 
+function require_administrator(): array
+{
+    return require_roles(['administrator']);
+}
+
 function attempt_login(string $email, string $password): ?string
 {
     global $config;

@@ -1,4 +1,4 @@
--- AQUASENSE+ Phase 1: select an empty target database, then import this file.
+-- AQUASENSE+ database foundation through Phase 2: select an empty target database, then import this file.
 -- No DROP statements: an existing installation is never silently overwritten.
 SET time_zone = '+00:00';
 
@@ -32,6 +32,7 @@ CREATE TABLE establishments (
     address VARCHAR(500) NOT NULL,
     contact_number VARCHAR(30) NULL,
     email VARCHAR(190) NULL,
+    notes TEXT NULL,
     registration_date DATE NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_by BIGINT UNSIGNED NULL,

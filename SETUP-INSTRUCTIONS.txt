@@ -1,7 +1,7 @@
 AQUASENSE+ - SETUP INSTRUCTIONS
 ==============================
 
-This guide sets up the Phase 1 administrative website on a Windows computer.
+This guide sets up the Phase 2 administrative website on a Windows computer.
 The website runs with XAMPP, PHP, and MySQL/MariaDB.
 For the current version and development status, see VERSION.md and README.md.
 
@@ -76,9 +76,13 @@ On a fresh installation:
   g. Click Import again.
   h. Choose C:\xampp\htdocs\aquasense-web\database\sample-data.sql.
   i. Click Import/Go and wait for the success message.
+  j. Import database\migrations\001-mobile-tokens.sql.
+  k. Import database\migrations\002-ultrasonic-test.sql.
+  l. Import database\migrations\003-phase2-administrative-core.sql.
 
-Import schema.sql BEFORE sample-data.sql. Both files must use the same server.
-After import, the database should contain 17 tables and two development users.
+Import schema.sql BEFORE sample-data.sql, then apply migrations in numeric order.
+All files must use the same server. After the complete import, the database should
+contain 19 tables, the nullable establishment notes column, and two staff users.
 
 Import these files only once into a fresh database. They are not update scripts.
 If tables already exist, inspect the database before doing anything further.
@@ -131,15 +135,18 @@ For optional automated checks, open PowerShell in the project folder and run:
 
   & C:\xampp\php\php.exe tests\foundation.php --allow-local-fixtures
   & C:\xampp\php\php.exe tests\session-expiry.php
+  & C:\xampp\php\php.exe tests\phase2.php --allow-local-fixtures
 
 These checks require the running local website and configured database.
 The foundation test also requires PHP curl and the imported development seed.
 It creates temporary test accounts and cleans them up. Run only against a
 development database; failed-login audit events may remain after testing.
 
-Phase 1 includes authentication and the dashboard foundation. Menu items
-marked Soon, sensor monitoring, surrender processing, and incentives are not
-implemented yet. Password reset delivery is also not enabled.
+Phase 2 includes the real-data administrative dashboard plus establishment,
+grease-trap, device, activation, and assignment management. Administrators can
+write; environmental staff can inspect these records but cannot change them.
+Monitoring history, automated alerts, surrender processing, incentives, reports,
+and password-reset delivery are not implemented yet.
 
 8. START THE SITE LATER OR DOWNLOAD UPDATES
 -----------------------------------------
@@ -289,3 +296,17 @@ when deploying the updated owner dashboard reader. Back up first. This preserves
 existing readings and supports absent temperature. The new device telemetry test
 endpoint is disabled outside development. Do not provision test fixtures in production.
 See the sibling aquasense-esp32/README.md for local one-sensor testing.
+
+BACKEND 0.4.0 / PHASE 2 SCHEMA UPDATE
+------------------------------------
+Back up the existing aquasense database. Select that same database in phpMyAdmin,
+then import database/migrations/003-phase2-administrative-core.sql once. The
+migration adds only a nullable notes column to establishments and preserves all
+existing establishments, traps, devices, assignments, telemetry, and accounts.
+Do not re-import schema.sql or sample-data.sql into an existing installation.
+
+After migration, sign in as the development administrator and verify Dashboard,
+Establishments, Grease Traps, and Devices. The existing AQS-001 test device is
+shown from the database; stale telemetry is reported as OFFLINE rather than being
+made current. Run tests/phase2.php only against a development database because it
+creates named temporary records and removes them when the suite finishes.

@@ -4,7 +4,7 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository currently focuses on the **Barangay Administrative Website** for Barangay San Antonio officials and environmental staff.
 
-The administrative website remains at its Phase 1 foundation. Backend version 0.3.0 adds a development-only ultrasonic ingestion endpoint for the sibling ESP32 bench-test sketch. The owner API is used by Flutter (`../aquasense_mobile`, version 0.1.6+7). Physical hardware validation, administrative monitoring modules, and incentive processing remain incomplete.
+The administrative website now includes the **Phase 2 Administrative Core**: a real-data dashboard plus establishment, grease-trap, and device management. Backend version 0.4.0 retains the development-only ultrasonic compatibility endpoint and owner API. Full production telemetry, automated alerts, surrender processing, and incentives remain later phases.
 
 ## Current Version
 
@@ -16,7 +16,7 @@ API endpoint, and provisioned device credentials. Local Wi-Fi passwords, device 
 compiler databases, and firmware binaries are excluded from GitHub. The Flutter source
 and APK remain in the separate local `aquasense_mobile` project and are not in this repository.
 
-**Version: 0.3.0**
+**Version: 0.4.0**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -51,7 +51,17 @@ Import the SQL files using the steps below. `.gitattributes` keeps text line end
 
 ## Current Development Phase
 
-**Phase 1 — Core Website Foundation.** Authentication, the complete relational schema, and a protected administrative layout are implemented. Later navigation items are labeled “Soon”; they are not working modules.
+**Phase 2 — Administrative Core.** The authenticated workspace now provides database-backed operational summaries, establishment management, grease-trap configuration, device registration, and assignment history. Later-phase navigation opens clear scope placeholders rather than dead links.
+
+### Phase 2 administrative features
+
+- Dashboard summary cards, grease-trap status, recent alerts, account activity, and vanilla-JavaScript charts use current database values only.
+- Administrators can create, edit, activate, and deactivate establishments, grease traps, and devices. The interface retains records instead of deleting them.
+- Environmental staff have authenticated read access; their management POST requests receive HTTP 403.
+- Threshold validation enforces `low < medium < high < critical <= 100`.
+- Device assignment history is retained, and cross-establishment selections are rejected.
+- Missing sensor measurements say **No data yet**, **Awaiting device**, or **Awaiting telemetry**.
+- Important changes are recorded in `audit_logs` without sensitive form values.
 
 ## Technology Stack
 
@@ -89,8 +99,9 @@ These are the standard steps for a healthy XAMPP installation. See **Current mac
 6. Create a database named **aquasense**, using `utf8mb4_unicode_ci`.
 7. Select **aquasense**, choose **Import**, select `database/schema.sql`, and click **Import/Go**. The SQL creates tables in the database selected by the importer, so production hosts may use their assigned database name without editing the schema.
 8. Import `database/sample-data.sql` the same way, after the schema import succeeds.
-9. If your local database credentials differ, copy `config/local.example.php` to `config/local.php` and adjust the settings. Set every development database value in the ignored file; the committed application has no database username, database name, or password defaults.
-10. Open [AQUASENSE+](http://localhost/aquasense-web/) and sign in with a development account below.
+9. Apply migrations `001-mobile-tokens.sql`, `002-ultrasonic-test.sql`, and `003-phase2-administrative-core.sql` in numeric order. Migration 003 safely adds nullable establishment notes.
+10. If your local database credentials differ, copy `config/local.example.php` to `config/local.php` and adjust the settings. Set every development database value in the ignored file; the committed application has no database username, database name, or password defaults.
+11. Open [AQUASENSE+](http://localhost/aquasense-web/) and sign in with a development account below.
 
 Import each SQL file **once into a fresh installation**. Imports intentionally do not drop tables or overwrite existing accounts. Back up existing data before migrations; rerunning `schema.sql` against an installed schema will report that tables already exist. The sample import uses a transaction to prevent partially seeded data.
 
@@ -111,7 +122,7 @@ Open [credentials.txt](credentials.txt) locally in your editor for the developme
 
 The existing backend now provides `api/mobile/login.php`, `profile.php`, `dashboard.php`, and `logout.php`. See [API contract](api/README.md). The Flutter project remains in the sibling `aquasense_mobile` folder; it is not inside this Git repository.
 
-For an existing or fresh installation, select the `aquasense` database and import `database/migrations/001-mobile-tokens.sql` after the original schema. It adds the token table. Then apply `database/migrations/002-ultrasonic-test.sql` once for the current dashboard reader (19 tables after both migrations). Do not rerun the full schema on an existing database.
+For an existing or fresh installation, select the `aquasense` database and import migrations 001, 002, and 003 in order. Do not rerun the full schema on an existing database.
 
 For local development only, run from the website directory:
 
@@ -144,9 +155,9 @@ Environment overrides: `AQUASENSE_DB_HOST`, `AQUASENSE_DB_PORT`, `AQUASENSE_DB_N
 | --- | --- |
 | `roles` | One role has many users; administrator, environmental staff, and owner. |
 | `users` | Each user has one role. Referenced by submissions, reviews, distributions, account activity, and record authorship. Deactivate rather than delete users with history. |
-| `establishments` | One establishment has many grease traps and oil surrenders. Optional `owner_user_id` links the owner account; the recorded owner name supports registration before an account exists. |
+| `establishments` | One establishment has many grease traps and oil surrenders. Optional `owner_user_id` links the owner account; recorded owner details and Phase 2 notes support registration before an account exists. |
 | `grease_traps` | Each trap belongs to an establishment and stores capacity and ordered, configurable thresholds. |
-| `devices` | Unique device code, optional hashed future API credential, firmware, and last-seen time. No API credentials or hardware are enabled yet. |
+| `devices` | Unique human-readable device code, optional hashed API credential, firmware, activation state, and last-seen time. Phase 2 never exposes credential hashes. |
 | `device_assignments` | Links devices to traps over time. Unique generated columns allow only one current device per trap and one current trap per device. End an assignment before reassigning; retain historical rows. |
 | `sensor_readings` | Many readings per assignment. The assignment identifies the device, trap, and establishment without duplicating potentially inconsistent identifiers. Stores measurement time, level classification, and a simulation flag. |
 | `alerts` | Belongs to an assignment and optionally a reading; includes type, severity, status, and acknowledging/resolving users. Offline alerts need not have a reading. |
@@ -186,6 +197,7 @@ aquasense-web/
   database/
     schema.sql                 full website database foundation
     sample-data.sql            fictional development seed
+    migrations/003-...sql      additive Phase 2 establishment notes migration
   public/
     index.php                  public entry redirect
     login.php                  login and validation
@@ -194,26 +206,37 @@ aquasense-web/
     reset-password.php         clearly unavailable recovery scaffold
   admin/
     index.php                  protected redirect
-    dashboard.php              protected Phase 1 overview and account activity
+    dashboard.php              real-data operational summary and account activity
+    establishments.php         searchable establishment management
+    establishment-view.php     establishment details and related records
+    grease-traps.php           trap registration and threshold management
+    grease-trap-view.php       trap details and basic telemetry history
+    devices.php                device registration and assignment management
+    device-view.php            device details and assignment history
+    placeholder.php            protected later-phase scope notices
   includes/
     bootstrap.php              configuration, sessions, security headers, errors
     auth.php                   authentication and authorization helpers
     functions.php              escaping, CSRF, URLs, icons, and audit helpers
+    admin-core.php              Phase 2 validation and transactional services
     header.php / sidebar.php / footer.php
     auth-header.php / auth-footer.php / error.php
   assets/
     css/style.css              responsive layout and component styles
-    js/app.js                  password visibility and mobile navigation
+    js/app.js                  password visibility, navigation, confirmations
+    js/admin-dashboard.js      database-backed summary charts
+    js/admin-forms.js          establishment/trap assignment filtering
     images/                    reserved local assets
   api/mobile/                  owner login/profile/dashboard/logout JSON endpoints
   uploads/surrender-photos/    reserved and blocked from direct HTTP access
   logs/                        protected runtime errors, excluded from Git
   tests/
     foundation.php             HTTP and relational integrity checks
+    phase2.php                 Phase 2 authorization and data-integrity checks
     session-expiry.php         session inactivity verification
 ```
 
-Protected directories have their own `.htaccess` files. No placeholder PHP endpoints for later modules are published. Keep any future administrative page behind `includes/bootstrap.php` followed by `require_staff()` or `require_roles(['administrator'])` before emitting HTML. Hiding menu items is not an authorization control.
+Protected directories have their own `.htaccess` files. Later modules use one protected, whitelisted scope-notice page; it performs no unfinished workflow action. Keep any future administrative page behind `includes/bootstrap.php` followed by `require_staff()` or `require_roles(['administrator'])` before emitting HTML. Hiding menu items is not an authorization control.
 
 ## Features
 
@@ -232,6 +255,10 @@ Protected directories have their own `.htaccess` files. No placeholder PHP endpo
 - Compact, centered login layout capped at 1320px on wide monitors, with fluid spacing and typography. The story and card stack at viewport widths of 1024px or less; the card's inner columns stack at 680px or less.
 - Screen-edge authentication header and footer: brand at the upper left, administrative tag at the upper center, Barangay information at the lower left, and authorization text at the lower right. Reserved content padding and mobile rows keep these fixed elements clear of the form.
 - Dashboard setup status, account details, and current-user authentication history.
+- Database-backed operational totals, trap/device states, recent alerts, and summary charts without fabricated readings.
+- Administrator management for establishments, grease traps, devices, activation state, and device assignment history.
+- Environmental-staff read access with server-enforced administrator-only writes.
+- Ordered threshold validation, cross-establishment assignment protection, CSRF checks, escaped output, prepared statements, and management audit events.
 - Honest account-recovery interface and reset schema scaffold.
 - Installation, security, versioning, and test documentation.
 
@@ -242,7 +269,6 @@ Protected directories have their own `.htaccess` files. No placeholder PHP endpo
 
 ### Planned — not implemented
 
-- **Phase 2:** operational summary dashboard; establishment, trap, and device management.
 - **Phase 3:** authenticated sensor API, telemetry insertion utility, simulated readings, monitoring history, and charts.
 - **Phase 4:** configurable thresholds, warning generation, acknowledgment/resolution, and offline detection.
 - **Phase 5:** surrender submissions, secure photo uploads and authorized delivery, human evidence comparison, approval/rejection.
@@ -262,7 +288,8 @@ The original sample-data import creates a fictional device assignment without te
 - Strict cookie-only PHP sessions, `HttpOnly`, `SameSite=Lax`, and `Secure` when served over HTTPS. Local `http://localhost` necessarily uses a non-Secure cookie.
 - Session ID regeneration after login and a 30-minute configurable inactivity limit.
 - Database-backed active-account and role checks for every administrative request.
-- CSRF tokens on login and logout; state changes use POST. Invalid tokens return HTTP 403.
+- CSRF tokens on login, logout, and every Phase 2 management action; state changes use POST. Invalid tokens return HTTP 403.
+- Administrator-only establishment, trap, and device writes are enforced on the server; environmental staff retain read-only access.
 - Server-side validation and HTML output escaping, including account names and submitted email values.
 - Five sign-in attempts per hashed email or direct client IP within a 15-minute default window; successful attempts remove their own attempt entry. Older entries no longer count; scheduled retention cleanup is a future maintenance task.
 - Content Security Policy, no framing, MIME-sniffing protection, and no-store account responses.
@@ -285,11 +312,12 @@ From PowerShell in the project directory, with Apache and the configured databas
 ```powershell
 & C:\xampp\php\php.exe tests\foundation.php --allow-local-fixtures
 & C:\xampp\php\php.exe tests\session-expiry.php
+& C:\xampp\php\php.exe tests\phase2.php --allow-local-fixtures
 ```
 
 `foundation.php` is **development-only**. It creates temporary accounts and a test rate-limit entry in the configured database, rolls back relational constraint fixtures, and removes its test accounts, their audit entries, and throttling entries in `finally`. Anonymous failed-login audit events may remain as a truthful record of the tests. Do not run against production or while other people are actively testing sign-in from the same IP. A forcibly terminated test may require removal of the explicitly named `foundation-*` fixtures.
 
-The 54 integration checks cover SQL seed and constraints, real Apache routes, administrator/staff access, owner/inactive rejection, account revocation, invalid login, CSRF, session regeneration, logout/session replay, escaped output, throttling, private directories, recovery disclosures, and static assets. The separate expiry check verifies the inactivity boundary without waiting 30 minutes.
+The 54 foundation checks cover SQL seed and constraints, real Apache routes, administrator/staff access, owner/inactive rejection, account revocation, invalid login, CSRF, session regeneration, logout/session replay, escaped output, throttling, private directories, recovery disclosures, and static assets. The 28 Phase 2 checks cover schema migration, authenticated module routes, CRUD validation, threshold order, assignment consistency/history, administrator authorization, staff read-only enforcement, CSRF, escaping, status changes, and audit records. The separate expiry check verifies the inactivity boundary without waiting 30 minutes.
 
 PHP syntax checks:
 
@@ -297,7 +325,7 @@ PHP syntax checks:
 rg --files -g '*.php' | ForEach-Object { & C:\xampp\php\php.exe -l $_ }
 ```
 
-Before Phase 2, manually inspect login and dashboard at desktop, tablet, and mobile widths, toggle password visibility, open/close mobile navigation, check keyboard focus, and test sign-out in a real browser. HTTP checks do not substitute for rendered visual review.
+Before deployment, manually inspect login and every Phase 2 list, detail, and form at desktop, tablet, and mobile widths; test keyboard focus, navigation, validation messages, confirmation prompts, and sign-out in a real browser. HTTP checks do not substitute for rendered visual review.
 
 ## Troubleshooting
 
@@ -362,7 +390,7 @@ On a healthy XAMPP installation use the standard import workflow above and omit 
 
 ## Development Status
 
-The Phase 1 implementation and automated functional checks are complete. Browser visual/usability review remains unverified, and the original XAMPP database problem remains unresolved. Use backend v0.3.0 as a portable foundation prototype, not a completed monitoring system. Recommended next task: verify the rendered Phase 1 screens in a browser and settle the database setup, then implement **Phase 2 — Administrative Core** when authorized.
+The Phase 2 administrative core and its automated functional checks are complete. Backend v0.4.0 provides the real-data operational dashboard and administrator management for establishments, grease traps, devices, and assignments. Browser visual/usability review remains unverified because this session had no browser-control connection, and the original port-3306 XAMPP database problem remains unresolved; the isolated port-3307 database was backed up before migration 003 and remains the working local instance. The recommended next development task is **Phase 3 — Monitoring and Telemetry** after rendered Phase 2 review.
 
 ## Versioning
 

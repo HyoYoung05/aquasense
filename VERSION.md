@@ -2,7 +2,68 @@
 
 ## Current Version
 
-0.3.0
+0.4.0
+
+## 0.4.0
+
+Date: 2026-09-27
+
+Development Phase: Phase 2 — Administrative Core
+
+### Added
+
+- Added a database-backed administrative dashboard with operational totals,
+  grease-trap/device state tables, recent alerts, recent account activity, and
+  vanilla-JavaScript charts. Missing measurements remain visibly unavailable.
+- Added searchable, paginated establishment, grease-trap, and device lists plus
+  detail screens and administrator-only create, edit, activate, and deactivate
+  actions. Historical records are retained instead of being deleted.
+- Added grease-trap capacity, installation, cleaning, and ordered threshold
+  validation; device metadata and assignment management; and assignment history.
+- Added server-side protection against duplicate current assignments and against
+  assigning a device to a trap under a different selected establishment.
+- Added protected later-phase navigation notices, reusable Phase 2 validation and
+  persistence services, management audit events, confirmation prompts, and
+  responsive form/table/detail styles.
+- Added additive migration `003-phase2-administrative-core.sql` for nullable
+  establishment notes and a 28-check Phase 2 integration suite.
+
+### Changed
+
+- Environmental staff can read Phase 2 operational records; only administrators
+  can submit management actions. Direct unauthorized POST requests return HTTP 403.
+- Updated the sidebar, footer, setup guide, database documentation, and application
+  version to reflect the completed Phase 2 scope.
+- The existing AQS-001 one-sensor test records remain in the same database. Its
+  stale last-seen timestamp is represented as OFFLINE; this release inserts no
+  fake current telemetry.
+
+### Fixed
+
+- Replaced the dashboard's Phase 1 setup-only summary with current database values.
+- Replaced dead future navigation links with a protected, whitelisted scope notice.
+
+### Database and validation
+
+- Backed up the working isolated database before applying migration 003 to
+  `C:\xampp\tmp\aquasense-config-backups\pre-phase2-20260927-000744.sql`.
+- Production configuration: 12 checks; administrative foundation: 54 checks;
+  session expiry: passed; mobile CORS: 36 checks; mobile API: 30 checks;
+  ultrasonic API: 51 checks; Phase 2: 28 checks.
+- Phase 2 fixtures were removed after validation and no development sample account
+  is created automatically by migration 003.
+
+### Known Issues
+
+- Rendered desktop, tablet, mobile, and keyboard review remains outstanding because
+  no browser-control connection was available in this implementation session.
+- Full monitoring history, production sensor ingestion, automatic alerts, surrender
+  processing, incentives, reporting, and password-reset delivery remain later phases.
+- Live sensor fields can show No data yet, Awaiting device, Awaiting telemetry, or
+  OFFLINE until valid data arrives. Device heartbeat policy is not yet final.
+- The original corrupt XAMPP MariaDB instance on port 3306 remains unchanged. This
+  computer continues to use the isolated working instance on loopback port 3307.
+- This is a portable pre-1.0 prototype, not a configured production deployment.
 
 ## Local database availability update - 2026-09-26
 
