@@ -2,7 +2,196 @@
 
 ## Current Version
 
-0.4.0
+0.7.0
+
+## 0.7.0
+
+Date: 2026-09-30
+
+Development Phase: Phase 5 — Oil Surrender and Hybrid Verification
+
+### Added
+
+- Added authenticated owner multipart submission, UUID idempotency, owner history,
+  record detail, and protected photo streaming APIs.
+- Added JPEG, PNG, and WEBP evidence validation using upload state, byte limit,
+  extension, detected MIME type, and decoded image metadata.
+- Added the Barangay review queue, protected evidence preview, configurable sensor
+  evidence window, before/after telemetry comparison, and compliance history.
+- Added controlled PENDING, UNDER_REVIEW, APPROVED, and REJECTED transitions with
+  reviewer attribution, timestamps, required rejection reasons, and optimistic
+  concurrency protection.
+- Added migration 006, owner mobile API documentation, Hybrid Verification
+  documentation, and a 39-check Phase 5 suite.
+
+### Changed
+
+- Dashboard now shows pending, under-review, approved, rejected, unit-separated
+  submitted quantities, and recent oil surrenders from actual records.
+- Establishment and grease-trap details now link to relevant surrender history.
+- System Settings now controls the evidence upload limit and telemetry review window.
+- Application and displayed version advanced from 0.6.0 to 0.7.0.
+
+### Fixed
+
+- Submission retry can no longer create duplicate records for the same owner UUID.
+- Owners cannot select or view another owner's establishment, surrender, or photo.
+- A stale reviewer cannot overwrite a final decision made from another session.
+- Failed submission transactions remove any evidence file already moved to storage.
+
+### Security
+
+- Evidence storage remains configurable and directly denied over HTTP; authorized
+  PHP controllers stream files after owner or staff checks.
+- Filenames are random, paths reject traversal, executable/disguised files are
+  rejected, and raw PHP/SQL errors never enter API responses.
+- Submission, photo, review, approval, rejection, and settings actions are audited;
+  major workflow events also enter the compliance ledger without photo binary data.
+
+### Known Issues
+
+- Rice incentive calculation and rice distribution are not implemented; they remain Phase 6.
+- Photo verification is manual and contains no AI authenticity decision.
+- Sensor evidence supports review but does not prove the claimed oil quantity.
+- Flutter UI changes are outside this website/backend phase.
+
+### Database and validation
+
+- Backed up the working development database before migration 006 to
+  `C:\xampp\tmp\aquasense-config-backups\pre-phase5-20260930-204522.sql`.
+- Migration 006 extends existing surrender/photo tables and preserves all earlier data.
+- Migration 006 applies safely more than once on the development MariaDB instance.
+- Phase 5 passes 39 upload, authorization, idempotency, review, telemetry, audit,
+  compliance, and concurrency checks. Existing suites are retained for regression.
+
+## 0.6.0
+
+Date: 2026-09-30
+
+Development Phase: Phase 4 — Alert and Threshold Management
+
+### Added
+
+- Added reusable alert evaluation for level, overflow, temperature, emulsion,
+  turbidity, flow, and device-offline conditions.
+- Added deduplicated ACTIVE, ACKNOWLEDGED, and RESOLVED state with trigger counts,
+  current values, thresholds, attribution, resolution notes, and preserved history.
+- Added threshold settings, alert list/detail pages, protected admin APIs, monitoring
+  badges, detail integrations, and a cron-compatible offline checker.
+- Added migration 005 and a 32-check Phase 4 suite.
+
+### Changed
+
+- Valid telemetry evaluates alerts transactionally after storage and heartbeat update.
+- Dashboard, Monitoring, device, grease-trap, and owner-safe mobile data now use
+  actual alert records.
+
+### Fixed
+
+- Repeated critical or offline evaluations no longer create duplicate active alerts.
+- Returning telemetry resolves DEVICE_OFFLINE automatically.
+
+### Known Issues
+
+- Flutter push, email, and SMS notifications are not implemented.
+- Physical turbidity, flow, and gas sensors may not yet be connected.
+- Production must schedule the offline checker with cron or an equivalent scheduler.
+- Full oil surrender and photo verification remain Phase 5.
+
+### Database and validation
+
+- Backed up the working database before migration 005 to
+  `C:\xampp\tmp\aquasense-config-backups\pre-phase4-20260930-194630.sql`.
+- Migration 005 preserves Phase 1-3 records and extends the existing alerts table.
+- AQS-001 manual API cases passed for normal, high, critical, repeated critical,
+  emulsion, offline, and resumed conditions. Resume resolved DEVICE_OFFLINE; after
+  the device again exceeded the timeout with no new reports, the checker correctly
+  restored one active DEVICE_OFFLINE alert.
+- Phase 4 passes 32 checks. Production, foundation, session, CORS, mobile,
+  ultrasonic, Phase 2, and Phase 3 regression suites also pass.
+
+## 0.5.0
+
+Date: 2026-09-27
+
+Development Phase: Phase 3 — Sensor Telemetry and Monitoring
+
+### Added
+
+- Added a production-capable ESP32 telemetry endpoint with `X-Device-Key` or
+  compatible Bearer authentication, active assignment checks, strict JSON/range
+  validation, configurable rate control, safe errors, and transactional storage.
+- Added per-grease-trap empty/full ultrasonic calibration. Raw HC-SR04 distance is
+  authoritative; PHP calculates the stored fill percentage and level state.
+- Added optional temperature, turbidity, flow, and gas ingestion while allowing
+  absent future sensors to remain NULL.
+- Added device/server timestamps, device-reported diagnostic percentage, UUID or
+  sequence idempotency, payload conflict detection, and telemetry indexes.
+- Added session-protected latest-monitoring and historical JSON endpoints, an
+  eight-second polling page, summary/detail views, bounded date filters,
+  pagination, and actual-data waste-level/distance charts.
+- Added device credential generation/rotation with one-time plaintext display,
+  latest reading/count/credential status on device details, and current telemetry,
+  calibration, and assignment-spanning history on grease-trap details.
+- Added an administrator-only development simulator that calls the same HTTP API
+  used by ESP32 devices and is unavailable in production.
+- Added `docs/ESP32_API.md`, migration 004, and a 31-check Phase 3 suite.
+
+### Changed
+
+- Dashboard device states now use the configured database freshness timeout and
+  latest real telemetry. Monitoring values are never fabricated.
+- The prior development ultrasonic endpoint is now the portable Phase 3 endpoint;
+  production uses the same PHP code behind mandatory HTTPS.
+- AQS-001 calibration was preserved on trap 12. The manual 12.4 cm API-path test
+  created simulated reading 354 at 70.4% MEDIUM and updated its heartbeat.
+- Application, sidebar, footer, setup guide, API guide, README, and schema now
+  identify version 0.5.0 and the completed Phase 3 scope.
+
+### Fixed
+
+- Removed firmware-calculated percentage/status as the source of truth, preventing
+  inconsistent results across firmware versions.
+- Duplicate ESP32 retries with the same UUID or sequence no longer insert a second
+  reading; conflicting reuse returns HTTP 409.
+- Grease-trap history now spans prior assignments instead of reading only the
+  currently assigned device.
+
+### Database and validation
+
+- Backed up the working database before migration 004 to
+  `C:\xampp\tmp\aquasense-config-backups\pre-phase3-20260927-002828.sql`.
+- Migration 004 preserves Phase 1/2 records and adds no development account.
+- Final regression passed: production configuration 12 checks; administrative
+  foundation 54 checks; session expiry; mobile CORS 36 checks; mobile API 30
+  checks; ultrasonic/device API 52 checks; Phase 2 28 checks; Phase 3 31 checks.
+- PHP lint passed for all 22 changed PHP files, monitoring JavaScript syntax passed,
+  and `git diff --check` reported no errors.
+
+### Known Issues
+
+- HC-SR04 is the first targeted physical sensor. The Phase 3 manual reading is
+  explicitly simulated; a new physical end-to-end measurement remains outstanding.
+- Temperature, turbidity, flow, and gas fields are ready but may have no connected
+  hardware or data.
+- Full alert creation, acknowledgement, escalation, and notification delivery are
+  Phase 4. Push, email, and SMS notifications are not part of Phase 3.
+- Telemetry has indexes and bounded readers, but its long-term retention/archive
+  policy must be finalized before high-frequency large-scale deployment.
+- Rendered responsive/keyboard visual review remains outstanding because browser
+  control was unavailable in this session.
+- The damaged original XAMPP MariaDB instance on port 3306 remains unchanged; this
+  computer uses the isolated working instance on port 3307.
+
+## Local database availability update - 2026-09-30
+
+- Fixed phpMyAdmin `HY000/2002` by starting the existing enabled
+  `AQUASENSE Local Database` scheduled task after its MariaDB process had stopped.
+- Verified that the task is running, `127.0.0.1:3307` is listening, MariaDB opens
+  the `aquasense` database, and all 19 application tables are available.
+- Verified HTTP access to phpMyAdmin and the AQUASENSE+ website. No database files,
+  credentials, schema, or application code were changed, so version 0.5.0 remains
+  unchanged.
 
 ## 0.4.0
 

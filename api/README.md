@@ -1,8 +1,8 @@
-# Shared API (backend 0.3.0)
+# Shared API (backend 0.7.0)
 
-Phase 1 owner endpoints and a development ultrasonic test endpoint are implemented. Existing PDO/configuration, users,
+Owner endpoints, device telemetry, staff monitoring, Phase 4 alerts, and Phase 5 oil surrender endpoints are implemented. Existing PDO/configuration, users,
 roles, establishments, readings, audit and rate-limit records are reused.
-Root API access stays denied. api/mobile/.htaccess exposes four owner routes; api/device/.htaccess exposes only telemetry.php.
+Root API access stays denied. `api/mobile` exposes the owner account, monitoring, and surrender routes; `api/device` exposes only telemetry; and `api/admin` exposes monitoring, history, alert history, and administrator-only alert actions.
 
 The API root is deployment-configured. Production clients use the host's HTTPS
 URL ending in `/api/mobile`; no server hostname is embedded in PHP or Flutter
@@ -14,6 +14,10 @@ source. Native Android requests do not need browser CORS.
 | GET | profile.php | Bearer authorization | user |
 | GET | dashboard.php | Bearer authorization | user, establishments, generated_at, freshness_seconds |
 | POST | logout.php | Bearer authorization | message |
+| POST | oil-surrender.php | Bearer + multipart submission/photo | surrender, idempotent_replay |
+| GET | oil-surrenders.php | Bearer; optional status query | owned surrender history |
+| GET | oil-surrender.php?id= | Bearer | owned surrender detail |
+| GET | oil-surrender-photo.php?id= | Bearer | protected owned image stream |
 
 JSON envelope: {"success":true,"data":{...}} or
 {"success":false,"message":"Friendly message"}.
@@ -25,7 +29,7 @@ recorded_at (ISO 8601 UTC). Multiple owned active establishments/traps are retur
 
 All owner and establishment identity comes from bearer authentication and database
 relationships; arbitrary user_id/establishment_id query fields are ignored.
-No administrative API, history, surrender, or rewards endpoint is exposed. Device ingestion is limited to the development test route described below.
+Surrender submission and history are owner-scoped. No rewards endpoint is exposed. Administrative monitoring/history require the existing staff session.
 
 Authentication: 32 random bytes encoded as hex; only SHA-256 token hashes stored.
 A SHA-256 fingerprint of the password hash invalidates tokens on password changes.
@@ -80,18 +84,37 @@ database/authentication logic and advertise Content-Type, Authorization and Acce
 Production accepts only explicitly configured HTTPS origins; wildcard CORS and browser
 credential cookies are never enabled. Safe CORS decision logging runs only in development.
 Verification: `php tests/mobile-cors.php --allow-local-fixtures` (36 checks).
-Ultrasonic test device API (backend 0.3.0)
-----------------------------------------
-POST `device/telemetry.php` is development-only and returns 404 in production.
-Use `Content-Type: application/json` and a separate `Authorization: Bearer <device key>`.
-Exact body fields: device_id (registered code), grease_trap_id (integer),
-ultrasonic_distance (cm, 2-400), waste_level_percent (0-100), status
-(NORMAL/WARNING/CRITICAL). No owner login token or browser CSRF token is used.
-The server verifies the credential and assignment and recomputes fill/status
-from device_ultrasonic_test_config. Calibration mismatches return 422.
-Success is 201; 401/403 authentication/assignment, 413 size, 415 content type,
-429 frequency limit, 503 server failure. JSON uses the existing success/data envelope.
-Migration 002 is required. Temperature is NULL for an ultrasonic-only reading;
-is_test distinguishes bench testing from simulated readings. Mobile dashboard
-responses now include ultrasonic_distance_cm and is_test; clients must accept
-nullable temperature_c. See ../README.md and ../../aquasense-esp32/README.md.
+
+## Phase 5 owner surrender API
+
+Oil surrender submission uses normal multipart upload, a required UUID idempotency
+key, server-derived ownership, and protected photo storage. Valid types are JPEG,
+PNG, and WEBP; the initial limit is 5 MiB. Records start as PENDING, and owners
+cannot send or change review status. See `../docs/MOBILE_API.md` for the exact
+contract and `../docs/HYBRID_VERIFICATION.md` for the human review model.
+Phase 3 device and monitoring APIs (backend 0.5.0)
+-------------------------------------------------
+POST `device/telemetry.php` works in development and production; production requires
+HTTPS. Prefer `X-Device-Key`; compatible Bearer credentials remain accepted. Required
+JSON fields are device_id, grease_trap_id, and ultrasonic_distance. Optional fields
+cover diagnostic device percentage, device timestamp, UUID/sequence idempotency, and
+future temperature/turbidity/flow/gas sensors. The server verifies the active assignment,
+calculates percentage/status from trap calibration, stores structured telemetry, updates
+last_seen_at, and prevents duplicate retries. See `../docs/ESP32_API.md`.
+
+GET `admin/monitoring.php` returns the latest record for registered traps. GET
+`admin/history.php` requires grease_trap_id and supports today, 24h, 7d, 30d, or a
+custom range of at most 31 days with bounded pagination. Both require a current
+administrator or environmental-staff session and return 401 when unauthenticated.
+
+Migration 004 is required after migrations 001-003. The development simulator is a
+website page, requires an administrator, returns 404 in production, and sends through
+the real device API rather than writing to MySQL directly.
+## Phase 4 alert API
+
+`GET /api/admin/alerts.php` returns alert history for an authenticated Barangay
+administrator or environmental staff session. `POST /api/admin/alert-action.php`
+requires an administrator session, JSON, and the current CSRF token for acknowledge
+or resolve actions. Owners receive only active alerts joined to their own
+establishments through the existing mobile dashboard response and receive no alert
+management controls. Alert state is always calculated by PHP from sensor values.

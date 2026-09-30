@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-define('APP_VERSION', '0.4.0');
+define('APP_VERSION', '0.7.0');
 
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
@@ -36,6 +36,12 @@ $environmentOverrides = array_filter([
     'mobile_web_origins' => $readEnvironment('AQUASENSE_MOBILE_WEB_ORIGINS') === null
         ? null : $readList($readEnvironment('AQUASENSE_MOBILE_WEB_ORIGINS')),
     'test_base_url' => $readEnvironment('AQUASENSE_TEST_BASE_URL'),
+    'telemetry_min_interval_seconds' => $readEnvironment('AQUASENSE_TELEMETRY_MIN_INTERVAL_SECONDS'),
+    'telemetry_max_body_bytes' => $readEnvironment('AQUASENSE_TELEMETRY_MAX_BODY_BYTES'),
+    'telemetry_future_skew_seconds' => $readEnvironment('AQUASENSE_TELEMETRY_FUTURE_SKEW_SECONDS'),
+    'telemetry_max_past_seconds' => $readEnvironment('AQUASENSE_TELEMETRY_MAX_PAST_SECONDS'),
+    'telemetry_distance_min_cm' => $readEnvironment('AQUASENSE_TELEMETRY_DISTANCE_MIN_CM'),
+    'telemetry_distance_max_cm' => $readEnvironment('AQUASENSE_TELEMETRY_DISTANCE_MAX_CM'),
 ], static fn (mixed $value): bool => $value !== null);
 $config = array_replace([
     'app_name' => 'AQUASENSE+',
@@ -58,6 +64,13 @@ $config = array_replace([
     'mobile_allow_local_web_preview' => false,
     'login_max_attempts' => 5,
     'login_window_minutes' => 15,
+    'telemetry_min_interval_seconds' => 2,
+    'telemetry_max_body_bytes' => 4096,
+    'telemetry_future_skew_seconds' => 300,
+    'telemetry_max_past_seconds' => 604800,
+    'telemetry_poll_seconds' => 8,
+    'telemetry_distance_min_cm' => 2,
+    'telemetry_distance_max_cm' => 400,
 ], $local, $environmentOverrides);
 
 if (!in_array($config['environment'], ['development', 'production'], true)) {
@@ -72,6 +85,14 @@ foreach (['trusted_proxy_ips', 'mobile_web_origins'] as $listKey) {
         throw new RuntimeException($listKey . ' must be an array.');
     }
 }
+foreach (['telemetry_min_interval_seconds','telemetry_max_body_bytes','telemetry_future_skew_seconds','telemetry_max_past_seconds','telemetry_poll_seconds'] as $numberKey) {
+    if (!is_numeric($config[$numberKey]) || (int)$config[$numberKey] < 1) {
+        throw new RuntimeException($numberKey . ' must be a positive integer.');
+    }
+    $config[$numberKey] = (int)$config[$numberKey];
+}
+foreach(['telemetry_distance_min_cm','telemetry_distance_max_cm'] as $rangeKey){if(!is_numeric($config[$rangeKey]))throw new RuntimeException($rangeKey.' must be numeric.');$config[$rangeKey]=(float)$config[$rangeKey];}
+if($config['telemetry_distance_min_cm']<0||$config['telemetry_distance_max_cm']<=$config['telemetry_distance_min_cm'])throw new RuntimeException('Telemetry distance range is invalid.');
 $config['require_https'] = $config['environment'] === 'production';
 if ($config['environment'] === 'production') {
     $config['mobile_allow_local_web_preview'] = false;

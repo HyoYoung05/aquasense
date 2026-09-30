@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__.'/alert-engine.php';
 
 function mobile_reading_status(array $trap, array $reading, array $settings): string
 {
@@ -69,6 +70,7 @@ function mobile_dashboard(int $ownerId): array
         }
         $sites[] = ['id' => (int) $site['id'], 'business_name' => $site['business_name'], 'traps' => $traps];
     }
-    return ['establishments' => $sites, 'generated_at' => gmdate('Y-m-d\TH:i:s\Z'),
+    $alertQuery=db()->prepare("SELECT al.id,al.alert_type,al.severity,al.message,al.status,al.last_triggered_at,g.id grease_trap_id,g.name grease_trap_name,e.id establishment_id,e.business_name FROM alerts al JOIN device_assignments a ON a.id=al.device_assignment_id JOIN grease_traps g ON g.id=a.grease_trap_id JOIN establishments e ON e.id=g.establishment_id WHERE e.owner_user_id=? AND al.status IN ('ACTIVE','ACKNOWLEDGED') ORDER BY al.last_triggered_at DESC");$alertQuery->execute([$ownerId]);$ownerAlerts=[];foreach($alertQuery->fetchAll() as $alert){$alert['id']=(int)$alert['id'];$alert['grease_trap_id']=(int)$alert['grease_trap_id'];$alert['establishment_id']=(int)$alert['establishment_id'];$alert['label']=phase4_alert_label($alert['alert_type']);$ownerAlerts[]=$alert;}
+    return ['establishments' => $sites, 'alerts'=>$ownerAlerts, 'generated_at' => gmdate('Y-m-d\TH:i:s\Z'),
         'freshness_seconds' => (float) $settings['device_offline_timeout_minutes'] * 60];
 }

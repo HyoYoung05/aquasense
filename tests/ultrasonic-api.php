@@ -55,8 +55,8 @@ try {
     $pdo->prepare('INSERT INTO establishments (registration_code,business_name,owner_user_id,owner_name,address,registration_date)
         VALUES (?,?,?,?,?,CURRENT_DATE())')->execute([$code,'Ultrasonic fixture',$uid,'Test','Test']);
     $site = (int) $pdo->lastInsertId();
-    $pdo->prepare('INSERT INTO grease_traps (establishment_id,trap_code,name,capacity_liters,low_threshold,medium_threshold,high_threshold,critical_threshold)
-        VALUES (?,?,?,1,20,50,75,90)')->execute([$site,$code,'Test']);
+    $pdo->prepare('INSERT INTO grease_traps (establishment_id,trap_code,name,capacity_liters,low_threshold,medium_threshold,high_threshold,critical_threshold,empty_distance_cm,full_distance_cm)
+        VALUES (?,?,?,1,20,50,75,90,30,5)')->execute([$site,$code,'Test']);
     $trap = (int) $pdo->lastInsertId();
     $pdo->prepare('INSERT INTO devices (device_code,name,device_type,api_key_hash) VALUES (?,?,?,?)')
         ->execute([$code,'Fixture','ESP32_ULTRASONIC_TEST',hash('sha256',$key)]);
@@ -64,25 +64,25 @@ try {
     $pdo->prepare('INSERT INTO device_assignments (device_id,grease_trap_id,started_at) VALUES (?,?,UTC_TIMESTAMP())')->execute([$device,$trap]);
     $assignment = (int) $pdo->lastInsertId();
     $pdo->prepare('INSERT INTO device_ultrasonic_test_config VALUES (?,30,5,75,90)')->execute([$device]);
-    $body = ['device_id'=>$code,'grease_trap_id'=>$trap,'ultrasonic_distance'=>12.4,'waste_level_percent'=>70.4,'status'=>'NORMAL'];
+    $body = ['device_id'=>$code,'grease_trap_id'=>$trap,'ultrasonic_distance'=>12.4,'waste_level_percent'=>70.4,'status'=>'MEDIUM'];
     $json = json_encode($body);
     check(request_test($path)['status'] === 405, 'GET does not insert telemetry');
     check(request_test($path,'POST',$json)['status'] === 401, 'Anonymous device rejected');
     check(request_test($path,'POST',$json,str_repeat('a',64))['status'] === 401, 'Unknown device key rejected');
     check(request_test($path,'POST',$json,$key,'text/plain')['status'] === 415, 'JSON content type required');
     check(request_test($path,'POST','{',$key)['status'] === 400, 'Malformed JSON rejected');
-    check(request_test($path,'POST',str_repeat('x',2049),$key)['status'] === 413, 'Oversized body rejected');
+    check(request_test($path,'POST',str_repeat('x',4097),$key)['status'] === 413, 'Oversized body rejected');
     foreach ([
         ['grease_trap_id'=>(string)$trap], ['ultrasonic_distance'=>0], ['ultrasonic_distance'=>401],
-        ['ultrasonic_distance'=>'12.4'], ['waste_level_percent'=>101], ['status'=>'OVERFLOW'],
-        ['waste_level_percent'=>12], ['status'=>'CRITICAL'], ['temperature_c'=>25],
-        ['ultrasonic_distance'=>[]], ['status'=>[]],
+        ['ultrasonic_distance'=>'12.4'], ['waste_level_percent'=>101], ['waste_level_percent'=>-1],
+        ['status'=>'UNKNOWN'], ['temperature_c'=>'25'], ['turbidity'=>-1],
+        ['ultrasonic_distance'=>[]], ['status'=>[]], ['unexpected'=>1],
     ] as $change) {
         check(request_test($path,'POST',json_encode(array_replace($body,$change)),$key)['status'] === 422,
             'Invalid/mismatched payload rejected: ' . implode(',',array_keys($change)));
     }
-    check(request_test($path,'POST',json_encode(array_replace($body,['grease_trap_id'=>$trap+999999])),$key)['status'] === 403, 'Other trap ID rejected');
-    check(request_test($path,'POST',json_encode(array_replace($body,['device_id'=>'OTHER'])),$key)['status'] === 403, 'Device identity cannot be spoofed');
+    check(request_test($path,'POST',json_encode(array_replace($body,['grease_trap_id'=>$trap+999999])),$key)['status'] === 404, 'Unknown trap ID rejected');
+    check(request_test($path,'POST',json_encode(array_replace($body,['device_id'=>'OTHER'])),$key)['status'] === 404, 'Device identity cannot be spoofed');
     $q = $pdo->prepare('SELECT COUNT(*) FROM sensor_readings WHERE device_assignment_id=?');
     $q->execute([$assignment]);
     check((int)$q->fetchColumn() === 0, 'Rejected requests stored no telemetry');
@@ -96,7 +96,7 @@ try {
     $q=$pdo->prepare('SELECT api_key_hash,last_seen_at FROM devices WHERE id=?'); $q->execute([$device]); $d=$q->fetch();
     check($d['api_key_hash']===hash('sha256',$key) && $d['last_seen_at']!==null,'Only key hash stored; heartbeat updated on acceptance');
     check(request_test($path,'POST',$json,$key)['status'] === 429,'Rapid repeated telemetry is limited');
-    foreach ([[11.25,75,'WARNING'],[7.5,90,'CRITICAL']] as [$cm,$pct,$state]) {
+    foreach ([[11.25,75,'HIGH'],[7.5,90,'CRITICAL']] as [$cm,$pct,$state]) {
         $pdo->prepare('UPDATE devices SET last_seen_at=NULL WHERE id=?')->execute([$device]);
         $reply=request_test($path,'POST',json_encode(array_replace($body,['ultrasonic_distance'=>$cm,'waste_level_percent'=>$pct,'status'=>$state])),$key);
         check($reply['status']===201 && $reply['json']['data']['status']===$state,'Server computes '.$state.' before full');
@@ -115,7 +115,7 @@ try {
     $r=mobile_dashboard($uid)['establishments'][0]['traps'][0];
     check($r['is_stale'] && $r['status']==='OFFLINE','Missing fresh sensor data becomes offline');
     $pdo->prepare('UPDATE devices SET is_active=0 WHERE id=?')->execute([$device]);
-    check(request_test($path,'POST',$json,$key)['status']===401,'Disabled device blocked');
+    check(request_test($path,'POST',$json,$key)['status']===403,'Disabled device blocked');
     $pdo->prepare('UPDATE devices SET is_active=1 WHERE id=?')->execute([$device]);
     $pdo->prepare('UPDATE grease_traps SET is_active=0 WHERE id=?')->execute([$trap]);
     check(request_test($path,'POST',$json,$key)['status']===403,'Inactive trap blocked');
@@ -128,6 +128,7 @@ try {
     echo "$checks checks passed. Synthetic integration fixtures will be removed.\n";
 } finally {
     if($assignment) {
+        $pdo->prepare('DELETE FROM alerts WHERE device_assignment_id=?')->execute([$assignment]);
         $pdo->prepare('DELETE FROM sensor_readings WHERE device_assignment_id=?')->execute([$assignment]);
         $pdo->prepare('DELETE FROM device_assignments WHERE id=?')->execute([$assignment]);
     }

@@ -4,7 +4,7 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository currently focuses on the **Barangay Administrative Website** for Barangay San Antonio officials and environmental staff.
 
-The administrative website now includes the **Phase 2 Administrative Core**: a real-data dashboard plus establishment, grease-trap, and device management. Backend version 0.4.0 retains the development-only ultrasonic compatibility endpoint and owner API. Full production telemetry, automated alerts, surrender processing, and incentives remain later phases.
+The administrative website now includes **Phase 5 Oil Surrender and Hybrid Verification**. Backend version 0.7.0 accepts owner-scoped surrender submissions with protected photo evidence, presents nearby IoT telemetry to Barangay reviewers, and preserves manual approval/rejection history. Rice incentive calculation and distribution remain Phase 6.
 
 ## Current Version
 
@@ -16,7 +16,7 @@ API endpoint, and provisioned device credentials. Local Wi-Fi passwords, device 
 compiler databases, and firmware binaries are excluded from GitHub. The Flutter source
 and APK remain in the separate local `aquasense_mobile` project and are not in this repository.
 
-**Version: 0.4.0**
+**Version: 0.7.0**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -51,7 +51,7 @@ Import the SQL files using the steps below. `.gitattributes` keeps text line end
 
 ## Current Development Phase
 
-**Phase 2 — Administrative Core.** The authenticated workspace now provides database-backed operational summaries, establishment management, grease-trap configuration, device registration, and assignment history. Later-phase navigation opens clear scope placeholders rather than dead links.
+**Phase 5 — Oil Surrender and Hybrid Verification.** Existing telemetry and alert operations remain active while owner submissions, protected evidence, human review, and approval/rejection are now operational.
 
 ### Phase 2 administrative features
 
@@ -62,6 +62,42 @@ Import the SQL files using the steps below. `.gitattributes` keeps text line end
 - Device assignment history is retained, and cross-establishment selections are rejected.
 - Missing sensor measurements say **No data yet**, **Awaiting device**, or **Awaiting telemetry**.
 - Important changes are recorded in `audit_logs` without sensitive form values.
+
+### Phase 3 monitoring features
+
+- `POST api/device/telemetry.php` accepts HC-SR04 distance plus optional future sensor values using a hashed per-device credential.
+- Raw ultrasonic distance is authoritative; PHP calculates fill percentage and level state from each grease trap's empty/full calibration and saved thresholds.
+- Valid readings update `last_seen_at`; configured freshness determines ONLINE/OFFLINE state throughout the website.
+- UUID or sequence identifiers prevent duplicate inserts when an ESP32 retries the same reading.
+- Authenticated Monitoring provides live polling every eight seconds, summary/detail views, bounded history filters, pagination, and actual-data charts.
+- Administrators can generate or rotate a device credential. Plaintext appears once; only its SHA-256 hash is stored.
+- The development-only administrator simulator calls the same HTTP telemetry endpoint and marks its records as simulated.
+- See [ESP32 API contract](docs/ESP32_API.md) for headers, payloads, responses, retry behavior, and interval guidance.
+
+### Phase 4 alert features
+
+- The reusable alert engine evaluates backend-derived level, temperature, turbidity, flow, and device-heartbeat conditions only after telemetry validation.
+- Supported types are HIGH_LEVEL, CRITICAL_LEVEL, OVERFLOW_WARNING, OVERFLOW, HIGH_TEMPERATURE, EMULSION_WARNING, HIGH_TURBIDITY, ABNORMAL_FLOW, and DEVICE_OFFLINE.
+- One ACTIVE or ACKNOWLEDGED record is retained per assignment and alert type; later readings update its value, timestamp, and trigger count instead of inserting duplicates.
+- Recovered sensor conditions are resolved automatically without erasing acknowledgment history. Administrators can acknowledge or resolve alerts with an optional note; environmental staff retain read-only access.
+- Alert Settings manages global temperature, turbidity, flow, overflow, and offline thresholds. Grease-trap level thresholds remain per trap and enforce Low < Medium < High < Critical.
+- `php scripts/check_offline_devices.php` performs the database-based offline check and is suitable for cron.
+- Dashboard, Monitoring, grease-trap details, device details, authenticated admin APIs, and the owner-safe mobile dashboard expose actual alert records.
+- Development simulation still passes through the device telemetry API and exercises the same alert pipeline.
+- Push, email, and SMS remain outside Phase 4. The Phase 4 suite passes 32 alert, authorization, CSRF, and integration checks.
+
+The 2026-09-30 AQS-001 development simulation used the real HTTP telemetry endpoint. A normal 60% reading created no alert; 80% created HIGH_LEVEL; 92% created CRITICAL_LEVEL and OVERFLOW_WARNING; a repeated critical reading updated those records; 42 °C created EMULSION_WARNING. The CLI offline check created DEVICE_OFFLINE after the configured timeout, and resumed normal telemetry resolved it. Readings 404 through 409 and their resolved alert history remain marked as simulated.
+
+### Phase 5 oil surrender features
+
+- Authenticated owners submit positive quantities in `L` or `kg` with a UUID idempotency key, optional notes/trap selection, and mandatory multipart photo evidence.
+- JPEG, PNG, and WEBP files are checked by upload status, byte limit, extension, MIME detection, and decoded image metadata. Random names are saved under the configurable private storage root.
+- Owner history, detail, and photo routes enforce token identity and establishment ownership. Direct access to the upload directory remains denied.
+- The Barangay review queue supports status, establishment, date, reviewer, unit, and text filters. Administrators can move PENDING submissions to UNDER_REVIEW and then manually APPROVE or REJECT them; rejection requires a reason.
+- Hybrid Verification displays owner data, protected photo evidence, and telemetry within a configurable window before and after submission. Missing telemetry is reported honestly and never causes automatic rejection.
+- Conditional versioned updates reject stale conflicting decisions. Audit and compliance records are written transactionally for submission, photo, review start, approval, and rejection.
+- Approved records are identifiable for Phase 6, but Phase 5 creates no rice calculation, balance, distribution, or incentive transaction.
+- See [Owner Mobile API](docs/MOBILE_API.md) and [Hybrid Verification](docs/HYBRID_VERIFICATION.md). The Phase 5 suite passes 39 workflow, upload, ownership, concurrency, and security checks.
 
 ## Technology Stack
 
@@ -76,7 +112,7 @@ No framework, package installation, build pipeline, or additional application se
 
 - Windows 10 or Windows 11
 - XAMPP with PHP 8.1 or newer and MariaDB 10.4 or newer
-- PHP extensions: `pdo_mysql`; `curl` for integration tests
+- PHP extensions: `pdo_mysql`, `fileinfo`; `curl` for integration tests
 - A modern browser
 - Git (optional)
 - Apache `AllowOverride All` (the usual XAMPP htdocs configuration) so the included `.htaccess` protections apply
@@ -99,7 +135,7 @@ These are the standard steps for a healthy XAMPP installation. See **Current mac
 6. Create a database named **aquasense**, using `utf8mb4_unicode_ci`.
 7. Select **aquasense**, choose **Import**, select `database/schema.sql`, and click **Import/Go**. The SQL creates tables in the database selected by the importer, so production hosts may use their assigned database name without editing the schema.
 8. Import `database/sample-data.sql` the same way, after the schema import succeeds.
-9. Apply migrations `001-mobile-tokens.sql`, `002-ultrasonic-test.sql`, and `003-phase2-administrative-core.sql` in numeric order. Migration 003 safely adds nullable establishment notes.
+9. Apply migrations `001-mobile-tokens.sql` through `006-phase5-oil-surrender.sql` in numeric order. Migration 006 extends the existing surrender/photo structures and adds the protected-upload and telemetry-window settings without deleting earlier data.
 10. If your local database credentials differ, copy `config/local.example.php` to `config/local.php` and adjust the settings. Set every development database value in the ignored file; the committed application has no database username, database name, or password defaults.
 11. Open [AQUASENSE+](http://localhost/aquasense-web/) and sign in with a development account below.
 
@@ -109,7 +145,7 @@ Import each SQL file **once into a fresh installation**. Imports intentionally d
 
 Open [credentials.txt](credentials.txt) locally in your editor for the development account emails, login identifiers, passwords, and separate phpMyAdmin credentials. Apache blocks this file from browser access. The website uses email addresses rather than separate usernames; this reference does not create accounts or update passwords.
 
-**DEVELOPMENT ACCOUNT ONLY — do not use these accounts or credentials in production.** All names and business details are fictional; `.test` email addresses do not receive mail.
+**DEVELOPMENT ACCOUNT ONLY â€” do not use these accounts or credentials in production.** All names and business details are fictional; `.test` email addresses do not receive mail.
 
 | Role | Email | Password |
 | --- | --- | --- |
@@ -134,7 +170,7 @@ This also applies the migration, creates the fictional owner only if absent, lin
 
 Bearer tokens are random, stored only as hashes in MariaDB, and default to a 24-hour expiry (`mobile_token_lifetime_seconds` in PHP configuration). Active owner role, password fingerprint and current establishment ownership are enforced on each request. Staff session authentication remains separate. Only the four named endpoint files are exposed; the API root and documentation remain blocked.
 
-The dashboard derives status and freshness from database configuration. It returns only owned active establishments and their traps, marks simulated/stale records, and never fabricates telemetry when no readings exist. Full monitoring history, alert management, surrender and incentives are future work. Local debug HTTP must be replaced with HTTPS for deployment.
+The dashboard derives status and freshness from database configuration. It returns only owned active establishments and their traps, marks simulated/stale records, and never fabricates telemetry when no readings exist. Owner surrender submission/history are available through the documented Phase 5 API; incentive processing remains future work. Local debug HTTP must be replaced with HTTPS for deployment.
 
 Verify the new API with `C:\xampp\php\php.exe tests\mobile-api.php --allow-local-fixtures` (30 checks); existing website tests still pass (54 checks plus session expiry). Temporary test users, establishments, devices, readings and tokens are removed after the tests.
 
@@ -156,18 +192,18 @@ Environment overrides: `AQUASENSE_DB_HOST`, `AQUASENSE_DB_PORT`, `AQUASENSE_DB_N
 | `roles` | One role has many users; administrator, environmental staff, and owner. |
 | `users` | Each user has one role. Referenced by submissions, reviews, distributions, account activity, and record authorship. Deactivate rather than delete users with history. |
 | `establishments` | One establishment has many grease traps and oil surrenders. Optional `owner_user_id` links the owner account; recorded owner details and Phase 2 notes support registration before an account exists. |
-| `grease_traps` | Each trap belongs to an establishment and stores capacity and ordered, configurable thresholds. |
-| `devices` | Unique human-readable device code, optional hashed API credential, firmware, activation state, and last-seen time. Phase 2 never exposes credential hashes. |
+| `grease_traps` | Each trap belongs to an establishment and stores capacity, ordered thresholds, and optional empty/full ultrasonic calibration. |
+| `devices` | Unique human-readable device code, hashed API credential, firmware, activation state, and telemetry-based last-seen time. Plaintext credentials are displayed only when generated. |
 | `device_assignments` | Links devices to traps over time. Unique generated columns allow only one current device per trap and one current trap per device. End an assignment before reassigning; retain historical rows. |
-| `sensor_readings` | Many readings per assignment. The assignment identifies the device, trap, and establishment without duplicating potentially inconsistent identifiers. Stores measurement time, level classification, and a simulation flag. |
+| `sensor_readings` | Structured distance, derived/reported fill, optional future sensors, state, device/server times, simulation flags, and retry identifiers. Assignment history identifies the device, trap, and establishment consistently. |
 | `alerts` | Belongs to an assignment and optionally a reading; includes type, severity, status, and acknowledging/resolving users. Offline alerts need not have a reading. |
-| `oil_surrenders` | Belongs to an establishment and submitting user; optionally references a sensor reading and reviewing user. |
-| `oil_surrender_photos` | Many photos per surrender. Stores randomized resulting paths, associated surrender, uploader, and timestamp. Actual upload code is not implemented. |
+| `oil_surrenders` | Owner-scoped submission with UUID retry protection, optional trap/device and related telemetry, controlled review status, reviewer attribution, decision timestamps, remarks, and concurrency version. |
+| `oil_surrender_photos` | Protected evidence metadata: randomized relative path, safe original name, verified MIME, byte size, uploader, and upload time. Images are streamed only after authorization. |
 | `incentive_rules` | Effective-dated, unit-aware oil-to-rice rules. No conversion rate is seeded or assumed as program policy. |
 | `incentive_transactions` | References a surrender and rule and stores the awarded amount. A unique surrender foreign key prevents a second reward for the same surrender. |
 | `compliance_ledger` | Preserves business events with optional establishment, author, and related record reference. No editing or deletion interface. |
 | `audit_logs` | Separate administrative audit trail. Login, failed login, and logout are recorded now; future modules must add their own events. |
-| `system_settings` | Named configurable defaults, including an initial emulsion temperature of 40°C. The settings editor is a later phase. |
+| `system_settings` | Named configurable defaults, including an initial emulsion temperature of 40Â°C. The settings editor is a later phase. |
 | `password_resets` | Future single-use reset token hashes, expiry, and use time. Token issuance, redemption, and delivery are not implemented. |
 | `mobile_tokens` | Additive migration: hashed mobile bearer sessions, password fingerprint and expiry; each token belongs to a user. |
 | `login_attempts` | Shared server-side sign-in throttling by hashed email or client IP within a configured window. |
@@ -198,6 +234,10 @@ aquasense-web/
     schema.sql                 full website database foundation
     sample-data.sql            fictional development seed
     migrations/003-...sql      additive Phase 2 establishment notes migration
+    migrations/004-...sql      Phase 3 telemetry/calibration migration
+    migrations/005-...sql      Phase 4 alert migration
+    migrations/006-...sql      Phase 5 surrender/review migration
+  docs/ESP32_API.md            ESP32 request, authentication, and retry contract
   public/
     index.php                  public entry redirect
     login.php                  login and validation
@@ -213,12 +253,16 @@ aquasense-web/
     grease-trap-view.php       trap details and basic telemetry history
     devices.php                device registration and assignment management
     device-view.php            device details and assignment history
+    monitoring.php             live summary, history, and telemetry charts
+    telemetry-simulator.php    development-only API-backed simulator
     placeholder.php            protected later-phase scope notices
   includes/
     bootstrap.php              configuration, sessions, security headers, errors
     auth.php                   authentication and authorization helpers
     functions.php              escaping, CSRF, URLs, icons, and audit helpers
     admin-core.php              Phase 2 validation and transactional services
+    telemetry.php               device validation, calibration, ingestion, credentials
+    monitoring.php              latest and bounded historical telemetry readers
     header.php / sidebar.php / footer.php
     auth-header.php / auth-footer.php / error.php
   assets/
@@ -226,13 +270,17 @@ aquasense-web/
     js/app.js                  password visibility, navigation, confirmations
     js/admin-dashboard.js      database-backed summary charts
     js/admin-forms.js          establishment/trap assignment filtering
+    js/monitoring.js           live polling and actual-data history charts
     images/                    reserved local assets
   api/mobile/                  owner login/profile/dashboard/logout JSON endpoints
+  api/device/telemetry.php     authenticated ESP32 ingestion endpoint
+  api/admin/                   authenticated monitoring/history JSON endpoints
   uploads/surrender-photos/    reserved and blocked from direct HTTP access
   logs/                        protected runtime errors, excluded from Git
   tests/
     foundation.php             HTTP and relational integrity checks
     phase2.php                 Phase 2 authorization and data-integrity checks
+    phase3.php                 Phase 3 ingestion and monitoring checks
     session-expiry.php         session inactivity verification
 ```
 
@@ -259,6 +307,8 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 - Administrator management for establishments, grease traps, devices, activation state, and device assignment history.
 - Environmental-staff read access with server-enforced administrator-only writes.
 - Ordered threshold validation, cross-establishment assignment protection, CSRF checks, escaped output, prepared statements, and management audit events.
+- Production-capable device telemetry, hashed credentials, server-side calibration, future-sensor columns, idempotency, rate control, and heartbeat updates.
+- Authenticated monitoring/history APIs, live polling, date filters, bounded tables, actual-data charts, device/trap telemetry integration, and development simulation through the real API.
 - Honest account-recovery interface and reset schema scaffold.
 - Installation, security, versioning, and test documentation.
 
@@ -267,11 +317,10 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 - Browser visual review of desktop, tablet, mobile, and keyboard interaction. Browser automation was unavailable in this session.
 - Recovery of this machine's pre-existing default XAMPP MariaDB instance; an isolated XAMPP MariaDB instance supports the working local site in the meantime.
 
-### Planned — not implemented
+### Planned â€” not implemented
 
-- **Phase 3:** authenticated sensor API, telemetry insertion utility, simulated readings, monitoring history, and charts.
-- **Phase 4:** configurable thresholds, warning generation, acknowledgment/resolution, and offline detection.
-- **Phase 5:** surrender submissions, secure photo uploads and authorized delivery, human evidence comparison, approval/rejection.
+- **Phase 4 (completed):** configurable thresholds, warning generation, acknowledgment/resolution, and offline detection.
+- **Phase 5 (completed):** surrender submissions, secure photo uploads and authorized delivery, human evidence comparison, approval/rejection.
 - **Phase 6:** configurable incentive rules, atomic reward processing, distribution, and compliance ledger interface.
 - **Phase 7:** report filters, daily/weekly/monthly reports, CSV export, modular future PDF export, and broader audit coverage.
 - **Phase 8:** full security, integration, and usability review; account management and secure password recovery delivery.
@@ -279,7 +328,7 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 
 ## Sensor Integration
 
-The original sample-data import creates a fictional device assignment without telemetry. The optional CLI mobile-development helper can now add a simulated reading. The owner dashboard reads these shared records, while development ultrasonic ingestion and separate device credentials are now implemented. Administrative monitoring/history, production ingestion, and alert persistence remain future work. Four owner API routes and one development-only device route are exposed.
+The original sample-data import creates a fictional device assignment without telemetry. Phase 3 provides one production-capable device route, two session-protected administrative monitoring routes, and the existing four owner routes. Ultrasonic distance is stored as the raw source; fill percentage and status are derived by PHP from per-trap calibration and thresholds. Optional future sensors remain nullable. Monitoring, history, and alert persistence are operational; external notification delivery remains outside Phase 4.
 
 ## Security
 
@@ -290,6 +339,8 @@ The original sample-data import creates a fictional device assignment without te
 - Database-backed active-account and role checks for every administrative request.
 - CSRF tokens on login, logout, and every Phase 2 management action; state changes use POST. Invalid tokens return HTTP 403.
 - Administrator-only establishment, trap, and device writes are enforced on the server; environmental staff retain read-only access.
+- Device telemetry uses a separate hashed 64-hex credential, active-device and assignment checks, strict JSON/range validation, duplicate protection, configurable rate control, and production HTTPS.
+- Monitoring JSON requires a current administrator or environmental-staff session. The simulator requires administrator access and returns 404 in production.
 - Server-side validation and HTML output escaping, including account names and submitted email values.
 - Five sign-in attempts per hashed email or direct client IP within a 15-minute default window; successful attempts remove their own attempt entry. Older entries no longer count; scheduled retention cleanup is a future maintenance task.
 - Content Security Policy, no framing, MIME-sniffing protection, and no-store account responses.
@@ -297,7 +348,7 @@ The original sample-data import creates a fictional device assignment without te
 - Generic service errors; detailed diagnostics only in protected `logs/php-error.log`.
 - Login/logout audit records; logout still ends access if database auditing fails, with an explanatory user notice and protected server log.
 
-No upload handler exists yet. The configurable private storage root and direct-access denial are ready for that future handler; full MIME/extension/size validation, randomized filenames, and authenticated photo serving must be implemented together in Phase 5. The code is portable to a TLS-enabled PHP host, but an actual production launch still requires a selected host/domain, least-privilege database account, backups, monitoring, real accounts, and deployment verification.
+Phase 5 stores validated evidence under the configurable private storage root, blocks direct HTTP access, and streams files through owner/staff authorization controllers. The code is portable to a TLS-enabled PHP host, but an actual production launch still requires a selected host/domain, least-privilege database account, persistent private storage, backups, monitoring, real accounts, and deployment verification.
 
 ## Running AQUASENSE+
 
@@ -313,11 +364,12 @@ From PowerShell in the project directory, with Apache and the configured databas
 & C:\xampp\php\php.exe tests\foundation.php --allow-local-fixtures
 & C:\xampp\php\php.exe tests\session-expiry.php
 & C:\xampp\php\php.exe tests\phase2.php --allow-local-fixtures
+& C:\xampp\php\php.exe tests\phase3.php --allow-local-fixtures
 ```
 
 `foundation.php` is **development-only**. It creates temporary accounts and a test rate-limit entry in the configured database, rolls back relational constraint fixtures, and removes its test accounts, their audit entries, and throttling entries in `finally`. Anonymous failed-login audit events may remain as a truthful record of the tests. Do not run against production or while other people are actively testing sign-in from the same IP. A forcibly terminated test may require removal of the explicitly named `foundation-*` fixtures.
 
-The 54 foundation checks cover SQL seed and constraints, real Apache routes, administrator/staff access, owner/inactive rejection, account revocation, invalid login, CSRF, session regeneration, logout/session replay, escaped output, throttling, private directories, recovery disclosures, and static assets. The 28 Phase 2 checks cover schema migration, authenticated module routes, CRUD validation, threshold order, assignment consistency/history, administrator authorization, staff read-only enforcement, CSRF, escaping, status changes, and audit records. The separate expiry check verifies the inactivity boundary without waiting 30 minutes.
+The 54 foundation checks cover the database, Apache routes, authentication, CSRF, sessions, escaping, throttling, private paths, and relational constraints. The 28 Phase 2 checks cover management and authorization. The 31 Phase 3 checks cover device authentication, validation, calibration, storage, optional sensors, last-seen updates, duplicate protection, monitoring/history, real API-backed simulation, production blocking, credential rotation, and role enforcement. The separate expiry check verifies the inactivity boundary.
 
 PHP syntax checks:
 
@@ -325,7 +377,7 @@ PHP syntax checks:
 rg --files -g '*.php' | ForEach-Object { & C:\xampp\php\php.exe -l $_ }
 ```
 
-Before deployment, manually inspect login and every Phase 2 list, detail, and form at desktop, tablet, and mobile widths; test keyboard focus, navigation, validation messages, confirmation prompts, and sign-out in a real browser. HTTP checks do not substitute for rendered visual review.
+Before deployment, manually inspect authentication, management, monitoring, history charts, credential display, and responsive tables at desktop, tablet, and mobile widths. HTTP checks do not substitute for rendered visual review.
 
 ## Troubleshooting
 
@@ -346,7 +398,7 @@ Before deployment, manually inspect login and every Phase 2 list, detail, and fo
 
 ### Current machine database workaround
 
-On 2026-09-14, the already-running MariaDB on port **3306** reported pre-existing InnoDB corruption (“log sequence number … is in the future”). The schema import stalled while creating `roles`. The import client was stopped and its query cancellation requested. No existing database files or unrelated databases were repaired, removed, or replaced. An empty/partial `aquasense` database may remain on that original instance; do not assume it is a successful install.
+On 2026-09-14, the already-running MariaDB on port **3306** reported pre-existing InnoDB corruption (â€œlog sequence number â€¦ is in the futureâ€). The schema import stalled while creating `roles`. The import client was stopped and its query cancellation requested. No existing database files or unrelated databases were repaired, removed, or replaced. An empty/partial `aquasense` database may remain on that original instance; do not assume it is a successful install.
 
 The working website uses **XAMPP's own MariaDB binary** with a separate fresh data directory:
 
@@ -365,7 +417,7 @@ The task starts automatically at Windows sign-in. If it has been stopped, start 
 Start-ScheduledTask -TaskName 'AQUASENSE Local Database'
 ```
 
-If phpMyAdmin reports `HY000/2002` or “target machine actively refused it” while
+If phpMyAdmin reports `HY000/2002` or â€œtarget machine actively refused itâ€ while
 the **AQUASENSE+ (working database - port 3307)** server is selected, Apache is
 running but the isolated database is not listening. The XAMPP MySQL button does
 not start this port-3307 instance. Start the scheduled task above, wait a few
@@ -373,6 +425,12 @@ seconds, then refresh phpMyAdmin. On 2026-09-26 this exact condition was verifie
 the task had been disabled, port 3307 was unreachable, and the original port-3306
 instance continued logging its existing InnoDB corruption. The task was enabled,
 the isolated server was started, and direct access to `aquasense.roles` succeeded.
+
+On 2026-09-30 the same refusal recurred because the scheduled task was enabled but
+its MariaDB process was no longer running. The existing task was started again and
+verified in the `Running` state, listening only on `127.0.0.1:3307`. A direct query
+opened the `aquasense` database and returned all 19 tables, and phpMyAdmin responded
+successfully. No database files were recreated or imported.
 
 Do not reinitialize the data directory or repeat the imports. To shut down **only this isolated database**:
 
@@ -390,7 +448,7 @@ On a healthy XAMPP installation use the standard import workflow above and omit 
 
 ## Development Status
 
-The Phase 2 administrative core and its automated functional checks are complete. Backend v0.4.0 provides the real-data operational dashboard and administrator management for establishments, grease traps, devices, and assignments. Browser visual/usability review remains unverified because this session had no browser-control connection, and the original port-3306 XAMPP database problem remains unresolved; the isolated port-3307 database was backed up before migration 003 and remains the working local instance. The recommended next development task is **Phase 3 — Monitoring and Telemetry** after rendered Phase 2 review.
+Phase 5 oil surrender and Hybrid Verification are complete in backend v0.7.0. The next development task is Phase 6 — Rice Incentive Processing for APPROVED surrender records, including configured rules, duplicate-reward prevention, distribution state, and compliance history.
 
 ## Versioning
 
@@ -409,26 +467,16 @@ Production ignores the local-preview switch and accepts only explicitly configur
 Mobile 0.1.5+6 requires an explicit `API_BASE_URL` for every target. A Flutter Web debug build now identifies likely API URL or CORS/OPTIONS failures without showing server internals; release builds keep a generic connection message.
 
 Verification: `php tests/mobile-cors.php` passed 36 policy and integration checks; the mobile API suite passed 30 checks. Manual preflight from `http://localhost:49840` returned HTTP 204 with the exact required headers, owner login/logout succeeded through the same browser origin, and Flutter Web compiled and launched in headless Chrome on port 49840 with the configured LAN API root. See `api/README.md` for the endpoint contract.
-## Single ultrasonic bench test (0.3.0)
+## Phase 3 ESP32 telemetry (0.5.0)
 
-The separate `../aquasense-esp32/` project contains an Arduino IDE sketch, HC-SR04 reference wiring, formula, and setup instructions. The physical sensor model still needs confirmation. This test implements only distance/fill telemetry; no extra sensors, battery system, actuator, or administrative monitoring UI was added.
+The separate `../aquasense-esp32/` project still contains the Arduino IDE HC-SR04 sketch and private configuration. Firmware sends distance to PHP; it never receives database credentials and never connects directly to MySQL. The complete contract is in [docs/ESP32_API.md](docs/ESP32_API.md).
 
-`POST api/device/telemetry.php` accepts the five documented JSON fields with a separate 64-hex bearer device key. Only a registered active device may write to its active assigned trap. PHP validates ranges and the saved calibration, computes the authoritative percentage/status, records server UTC time, and limits successful writes to at most one per two seconds. The endpoint returns 404 outside development mode.
+`POST api/device/telemetry.php` is available in development and production. Production HTTPS enforcement applies. Send `Content-Type: application/json`, `X-Device-Key`, device code, assigned trap ID, and ultrasonic distance. Existing Bearer-header firmware remains compatible. PHP validates the credential, active assignment, configurable range, optional fields, timestamp window, and rate limit. It calculates fill and state from grease-trap calibration, records UTC device/server timestamps, and updates `devices.last_seen_at` transactionally.
 
-Apply `database/migrations/002-ultrasonic-test.sql` **once**, after migration 001, to the existing database. It makes absent temperature nullable, adds the test flag and WARNING status, and creates `device_ultrasonic_test_config` (19 tables after both migrations). Fresh installations also require both migrations. No separate database or MySQL connection from the ESP32 is used.
+Migration 004 copies existing ultrasonic test calibration to the assigned grease trap and adds diagnostic percentage, UUID/sequence idempotency, payload fingerprint, received time, and indexes. Temperature, turbidity, flow, and gas remain nullable until hardware exists. History requests are bounded to 100 rows per page and at most 31 custom days; no automatic retention deletion is enabled.
 
-On this computer, AQS-001 is assigned to a separate temporary test trap **12** under Demo Kusina. Existing demo readings are preserved. Calibration defaults are empty 30cm, full 5cm, warning 75%, critical 90%; synchronize the firmware and saved server calibration when changing them. Physical samples store `is_test=1`, `is_simulated=0`, and NULL for absent sensors. No physical sensor reading has been claimed; regression fixtures are deleted after tests.
+On this computer, AQS-001 remains assigned to test trap 12 under fictional Demo Kusina with 30 cm empty / 5 cm full calibration. The Phase 3 manual test sent 12.4 cm through the real endpoint with the development simulator marker. The backend stored 70.4% MEDIUM and exposed it across authenticated monitoring surfaces. This confirms the data path without presenting the value as a physical sensor measurement.
 
-The owner API returns distance, percentage, test marker, and nullable temperature. Flutter 0.1.6+7 supports this payload. The shared PHP reader can be used by the website later. Rebuild older mobile APKs before testing these records.
+The administrator simulator is available only in development and requires a device credential. Device keys can be generated or rotated from Device Details, appear once, and are never stored as plaintext. The simulator calls the HTTP endpoint and does not insert into MySQL directly.
 
-For another development installation with the demo owner present, provision once with `php database/ultrasonic-test-setup.php --allow-test-fixture --output=../aquasense-esp32/device.local.json`. It creates the separate device/trap and refuses to overwrite an existing device or credential file. Do not rerun it here. Read the ESP32 README for wiring and upload instructions.
-
-Validation: `php tests/ultrasonic-api.php --allow-local-fixtures`. Test credentials stay in ignored files; the firmware folder denies Apache HTTP access. All temporary firmware files, credentials, and test records must remain until the user explicitly requests cleanup. Production deployment must also apply migration 002 for the updated dashboard reader, but must not provision test fixtures.
-Verification on 2026-09-21:
-- Ultrasonic device integration: 51 checks passed; synthetic fixture readings removed afterward.
-- Existing PHP suites: production configuration 12, mobile API 30, CORS 36, foundation 54, plus session expiry passed.
-- PHP syntax: 39 files passed. Git whitespace check passed.
-- Production-mode CLI probe returned the disabled-test message before any database access.
-- Private firmware configuration/metadata returned HTTP 403 and matched Git exclusion patterns.
-- Flutter analysis passed and all 28 tests passed. Updated debug APK assembled successfully.
-- Physical sensor wiring, calibration, upload, and live end-to-end measurements remain unverified.
+Validation commands include `php tests/phase4.php --allow-local-fixtures` and `php tests/phase5.php --allow-local-fixtures`. Phase 5 adds 39 passing surrender, upload, ownership, concurrency, audit, and Hybrid Verification checks while retaining all earlier suites. Test credentials remain excluded from Git.

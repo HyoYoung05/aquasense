@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require dirname(__DIR__) . '/includes/bootstrap.php';
 require_once dirname(__DIR__) . '/includes/admin-core.php';
+require_once dirname(__DIR__) . '/includes/alert-engine.php';
 $user = require_staff();
 $pageTitle = 'Dashboard';
 $activeNav = 'dashboard';
@@ -42,23 +43,31 @@ foreach($trapRows as &$trap){
     else $trapCounts['offline']++;
 }
 unset($trap);
-$surrenders=$pdo->query("SELECT SUM(status='PENDING') pending,SUM(status='APPROVED') approved,
-    COALESCE(SUM(CASE WHEN status='APPROVED' AND oil_unit='L' THEN oil_quantity ELSE 0 END),0) oil_liters
+$surrenders=$pdo->query("SELECT SUM(status='PENDING') pending,SUM(status='UNDER_REVIEW') under_review,
+    SUM(status='APPROVED') approved,SUM(status='REJECTED') rejected
     FROM oil_surrenders")->fetch();
+$oilTotals=$pdo->query("SELECT oil_unit,SUM(oil_quantity) total FROM oil_surrenders GROUP BY oil_unit ORDER BY oil_unit")->fetchAll(PDO::FETCH_KEY_PAIR);
+$oilTotalLabel=$oilTotals?implode(' · ',array_map(static fn($unit,$total)=>number_format((float)$total,3).' '.$unit,array_keys($oilTotals),array_values($oilTotals))):'0 L';
 $rice=(float)$pdo->query("SELECT COALESCE(SUM(rice_quantity),0) FROM incentive_transactions WHERE status='DISTRIBUTED' AND rice_unit='kg'")->fetchColumn();
-$alerts=$pdo->query("SELECT al.severity,al.message,al.status,al.created_at,e.business_name,g.name trap_name
+$alertCounts=$pdo->query("SELECT COUNT(*) active_count,SUM(severity='CRITICAL') critical_count,SUM(status='ACTIVE') unacknowledged_count FROM alerts WHERE status IN ('ACTIVE','ACKNOWLEDGED')")->fetch();
+$alerts=$pdo->query("SELECT al.id,al.alert_type,al.severity,al.message,al.status,al.last_triggered_at,e.business_name,g.name trap_name
     FROM alerts al JOIN device_assignments a ON a.id=al.device_assignment_id
     JOIN grease_traps g ON g.id=a.grease_trap_id JOIN establishments e ON e.id=g.establishment_id
-    ORDER BY al.created_at DESC,al.id DESC LIMIT 5")->fetchAll();
+    ORDER BY al.last_triggered_at DESC,al.id DESC LIMIT 5")->fetchAll();
+$recentSurrenders=$pdo->query("SELECT os.id,os.transaction_code,os.oil_quantity,os.oil_unit,os.status,os.surrendered_at,e.business_name
+    FROM oil_surrenders os JOIN establishments e ON e.id=os.establishment_id
+    ORDER BY os.surrendered_at DESC,os.id DESC LIMIT 5")->fetchAll();
 $activityQuery=$pdo->prepare("SELECT action,created_at FROM audit_logs WHERE user_id=? AND action IN ('LOGIN','LOGOUT') ORDER BY id DESC LIMIT 5");
 $activityQuery->execute([$user['id']]);$activity=$activityQuery->fetchAll();
 $stats=[
  ['Registered establishments',(int)$establishmentCounts['total'],'store','blue'],['Active establishments',(int)$establishmentCounts['active'],'check','mint'],
  ['Active grease traps',count(array_filter($trapRows,fn($r)=>(bool)$r['is_active'])),'activity','mint'],['Registered devices',count($devices),'device','blue'],
  ['Online devices',$deviceCounts['online'],'check','mint'],['Offline devices',$deviceCounts['offline'],'device','sand'],
+ ['Active alerts',(int)$alertCounts['active_count'],'bell','sand'],['Critical alerts',(int)$alertCounts['critical_count'],'bell','rose'],['Unacknowledged alerts',(int)$alertCounts['unacknowledged_count'],'bell','sand'],
  ['Normal grease traps',$trapCounts['normal'],'check','mint'],['Warning grease traps',$trapCounts['warning'],'bell','sand'],
  ['Critical / overflow',$trapCounts['critical'],'bell','rose'],['Pending oil surrenders',(int)$surrenders['pending'],'oil','sand'],
- ['Approved oil surrenders',(int)$surrenders['approved'],'oil','mint'],['Total oil collected',number_format((float)$surrenders['oil_liters'],1).' L','oil','blue'],
+ ['Under review',(int)$surrenders['under_review'],'oil','blue'],['Approved oil surrenders',(int)$surrenders['approved'],'oil','mint'],
+ ['Rejected oil surrenders',(int)$surrenders['rejected'],'oil','rose'],['Total oil submitted',$oilTotalLabel,'oil','blue'],
  ['Rice incentives distributed',number_format($rice,1).' kg','gift','lavender'],
 ];
 $chartData=json_encode([
@@ -69,7 +78,7 @@ $chartData=json_encode([
 require dirname(__DIR__) . '/includes/header.php';
 ?>
 <div class="page-heading"><div><div class="breadcrumb">Workspace <span>/</span> Overview</div><h1>Administrative dashboard</h1><p>Current registration, assignment, and available monitoring records.</p></div><div class="date-label"><?= icon('clock') ?> <?= e(date('l, F j, Y')) ?></div></div>
-<div class="phase-notice operational-notice"><?= icon('info') ?><p><strong>Phase 2 administrative core.</strong> Counts use current database records. Missing sensor measurements are shown as awaiting telemetry; no values are invented.</p><span class="tag">Phase 2</span></div>
+<div class="phase-notice operational-notice"><?= icon('info') ?><p><strong>Phase 5 Hybrid Verification.</strong> Barangay reviewers compare owner submissions, protected photo evidence, and nearby sensor telemetry before a manual decision.</p><span class="tag">Phase 5</span></div>
 <section class="stat-grid" aria-label="Operational summary">
 <?php foreach($stats as [$label,$value,$symbol,$color]): ?><article class="stat-card"><span class="feature-icon <?= e($color) ?>"><?= icon($symbol) ?></span><div><strong><?= e((string)$value) ?></strong><span><?= e($label) ?></span></div></article><?php endforeach; ?>
 </section>
@@ -82,8 +91,9 @@ require dirname(__DIR__) . '/includes/header.php';
 <section class="chart-grid" data-dashboard-charts='<?= e($chartData) ?>' aria-label="Database overview charts">
 <?php foreach([['establishments-chart','Establishment status'],['traps-chart','Grease trap status'],['devices-chart','Device status']] as [$id,$title]): ?><article class="panel chart-panel"><div class="panel-heading"><div><h2><?= e($title) ?></h2><p>Current database totals</p></div></div><canvas id="<?= e($id) ?>" width="440" height="230" aria-label="<?= e($title) ?> chart"></canvas><div class="chart-legend" data-legend="<?= e($id) ?>"></div></article><?php endforeach; ?>
 </section>
-<section class="panel section-panel" aria-labelledby="alerts-title"><div class="panel-heading"><div><h2 id="alerts-title">Recent alerts</h2><p>Latest existing alert records; automated generation remains a later phase.</p></div></div><div class="table-scroll"><table><thead><tr><th>Establishment</th><th>Grease trap</th><th>Severity</th><th>Message</th><th>Status</th><th>Recorded</th></tr></thead><tbody>
-<?php foreach($alerts as $alert): ?><tr><td><?= e($alert['business_name']) ?></td><td><?= e($alert['trap_name']) ?></td><td><span class="status-badge status-<?= e(strtolower($alert['severity'])) ?>"><?= e($alert['severity']) ?></span></td><td class="wrap-cell"><?= e($alert['message']) ?></td><td><?= e($alert['status']) ?></td><td><?= e(display_date($alert['created_at'])) ?></td></tr><?php endforeach; ?>
-<?php if(!$alerts): ?><tr><td colspan="6" class="empty-state">No alerts have been recorded yet.</td></tr><?php endif; ?></tbody></table></div></section>
+<section class="panel section-panel" aria-labelledby="surrenders-title"><div class="panel-heading"><div><h2 id="surrenders-title">Recent oil surrenders</h2><p>Latest owner submissions and current review status.</p></div><a class="button button-secondary button-small" href="<?= e(url('admin/oil-surrenders.php')) ?>">Open review queue</a></div><div class="table-scroll"><table><thead><tr><th>Transaction</th><th>Establishment</th><th>Quantity</th><th>Status</th><th>Submitted</th><th>Action</th></tr></thead><tbody><?php foreach($recentSurrenders as $surrender): ?><tr><td><?= e($surrender['transaction_code']) ?></td><td><?= e($surrender['business_name']) ?></td><td><?= e(number_format((float)$surrender['oil_quantity'],3).' '.$surrender['oil_unit']) ?></td><td><span class="status-badge status-<?= e(strtolower(str_replace('_','-',$surrender['status']))) ?>"><?= e(str_replace('_',' ',$surrender['status'])) ?></span></td><td><?= e(display_date($surrender['surrendered_at'])) ?></td><td><a class="table-action" href="<?= e(url('admin/oil-surrender-view.php?id='.(int)$surrender['id'])) ?>">Review</a></td></tr><?php endforeach; ?><?php if(!$recentSurrenders): ?><tr><td colspan="6" class="empty-state">No oil surrenders have been submitted.</td></tr><?php endif; ?></tbody></table></div></section>
+<section class="panel section-panel" aria-labelledby="alerts-title"><div class="panel-heading"><div><h2 id="alerts-title">Recent alerts</h2><p>Latest actual alert records from the Phase 4 engine.</p></div><a class="button button-secondary button-small" href="<?= e(url('admin/alerts.php')) ?>">View all alerts</a></div><div class="table-scroll"><table><thead><tr><th>Alert</th><th>Establishment</th><th>Grease trap</th><th>Severity</th><th>Message</th><th>Status</th><th>Last triggered</th></tr></thead><tbody>
+<?php foreach($alerts as $alert): ?><tr><td><a href="<?= e(url('admin/alert-view.php?id='.(int)$alert['id'])) ?>"><?= e(phase4_alert_label($alert['alert_type'])) ?></a></td><td><?= e($alert['business_name']) ?></td><td><?= e($alert['trap_name']) ?></td><td><span class="status-badge status-<?= e(strtolower($alert['severity'])) ?>"><?= e($alert['severity']) ?></span></td><td class="wrap-cell"><?= e($alert['message']) ?></td><td><?= e($alert['status']) ?></td><td><?= e(display_date($alert['last_triggered_at'])) ?></td></tr><?php endforeach; ?>
+<?php if(!$alerts): ?><tr><td colspan="7" class="empty-state">No alerts have been recorded yet.</td></tr><?php endif; ?></tbody></table></div></section>
 <section class="panel section-panel" aria-labelledby="activity-title"><div class="panel-heading"><div><h2 id="activity-title">Your recent activity</h2><p>Sign-ins and sign-outs for your account.</p></div><span class="feature-icon compact mint"><?= icon('clock') ?></span></div><div class="table-scroll"><table><thead><tr><th>Activity</th><th>Date and time (Manila)</th><th>Status</th></tr></thead><tbody><?php foreach($activity as $event): ?><tr><td><span class="table-event"><?= icon($event['action']==='LOGIN'?'shield':'logout') ?> <?= $event['action']==='LOGIN'?'Signed in to workspace':'Signed out of workspace' ?></span></td><td><?= e(display_date($event['created_at'])) ?></td><td><span class="status-badge status-active">Successful</span></td></tr><?php endforeach; ?><?php if(!$activity): ?><tr><td colspan="3" class="empty-state">Your account activity will appear here.</td></tr><?php endif; ?></tbody></table></div></section>
 <?php require dirname(__DIR__) . '/includes/footer.php'; ?>

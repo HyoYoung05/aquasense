@@ -1,2 +1,2 @@
-# Photos will be served through an authenticated PHP controller in Phase 5.
+# Evidence photos are served only through authenticated PHP controllers.
 Require all denied

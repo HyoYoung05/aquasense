@@ -27,8 +27,8 @@ try {
     $q->execute(['AQS-001']);
     if ($q->fetch()) throw new RuntimeException('AQS-001 already exists. Keep its existing credential; provision no duplicates.');
     $pdo->prepare("INSERT INTO grease_traps
-        (establishment_id, trap_code, name, capacity_liters, low_threshold, medium_threshold, high_threshold, critical_threshold)
-        VALUES (?, 'ULTRASONIC-TEST-001', 'Ultrasonic bench test (temporary)', 1, 20, 50, 75, 90)")->execute([$site['id']]);
+        (establishment_id, trap_code, name, capacity_liters, low_threshold, medium_threshold, high_threshold, critical_threshold, empty_distance_cm, full_distance_cm)
+        VALUES (?, 'ULTRASONIC-TEST-001', 'Ultrasonic bench test (temporary)', 1, 20, 50, 75, 90, 30, 5)")->execute([$site['id']]);
     $trapId = (int) $pdo->lastInsertId();
     $pdo->prepare("INSERT INTO devices (device_code, name, device_type, api_key_hash, firmware_version)
         VALUES ('AQS-001', 'Ultrasonic bench test (temporary)', 'ESP32_ULTRASONIC_TEST', ?, '0.1.0')")

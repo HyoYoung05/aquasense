@@ -3,8 +3,8 @@
 ALTER TABLE sensor_readings
     MODIFY temperature_c DECIMAL(6,2) NULL,
     MODIFY level_status ENUM('NORMAL','LOW','MEDIUM','HIGH','CRITICAL','OVERFLOW','WARNING') NOT NULL,
-    ADD COLUMN is_test BOOLEAN NOT NULL DEFAULT FALSE AFTER is_simulated;
-CREATE TABLE device_ultrasonic_test_config (
+    ADD COLUMN IF NOT EXISTS is_test BOOLEAN NOT NULL DEFAULT FALSE AFTER is_simulated;
+CREATE TABLE IF NOT EXISTS device_ultrasonic_test_config (
     device_id BIGINT UNSIGNED PRIMARY KEY,
     empty_distance_cm DECIMAL(10,2) NOT NULL,
     full_distance_cm DECIMAL(10,2) NOT NULL,

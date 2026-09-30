@@ -122,14 +122,14 @@ The server recalculates the percentage and status instead of trusting client fie
 - Dedicated temporary trap ID: **12**, named Ultrasonic bench test (temporary), under the existing Demo Kusina owner.
 - Existing demo trap/device and their historical readings are unchanged.
 - Local URL is in the ignored config.local.h; the sketch does not repeat an IP address.
-- Test-specific server configuration is in device_ultrasonic_test_config.
-- The endpoint is intentionally disabled outside development mode.
+- Authoritative empty/full calibration is stored on the assigned grease trap; the older test-config row is retained for compatibility.
+- The Phase 3 endpoint works in development and on an HTTPS production deployment.
 - Temperature and other absent sensors remain NULL. Hardware samples have is_test=1 and is_simulated=0.
 - Software regression fixtures are deleted after tests. No real physical reading has been claimed or inserted for AQS-001.
 
 The ESP32 must be on a network that can reach the configured Apache address. For this local test, use the API computer's LAN.
 The phone may use the existing Tailscale test connection. Installing Tailscale on the phone does not route an ESP32 on a different network to the API.
-Production will need a reachable HTTPS API and a reviewed production ingestion path; this experimental endpoint stays development-only.
+Production requires a reachable HTTPS API. The administrator simulator remains development-only.
 
 ## Open, configure, and upload
 
@@ -159,6 +159,8 @@ Content-Type: application/json
 Authorization: Bearer <64-hex private device key>
 ```
 
+New firmware may prefer `X-Device-Key: <64-hex private device key>`. The existing Bearer header remains supported.
+
 ```json
 {
   "device_id": "AQS-001",
@@ -171,16 +173,15 @@ Authorization: Bearer <64-hex private device key>
 
 The key is separate from owner login tokens and database passwords. PHP stores only its hash.
 Only the active assigned device can write to the active trap/establishment.
-The body is limited to 2048 bytes and exactly the five documented fields.
-The server rejects nonnumeric/out-of-range values, mismatched calibration/status, and samples less than two seconds apart.
-Timestamps come from the server in UTC.
+The existing five-field sketch remains compatible. Phase 3 requires device_id, grease_trap_id, and raw distance; firmware percentage/status are diagnostic inputs and the server calculates authoritative values from trap calibration. The configured body limit defaults to 4096 bytes. Future temperature, turbidity, flow, gas, timestamp, UUID, and sequence fields are optional. The server rejects invalid ranges, assignments, timestamps, duplicate conflicts, and samples inside the configured minimum interval. Timestamps are stored in UTC.
 
 | HTTP | Meaning |
 | --- | --- |
-| 201 | Reading stored |
+| 200 / 201 | Duplicate retry recognized / new reading stored |
 | 400 / 415 / 422 | JSON/type/range or calibration problem |
 | 401 / 403 | Device key, active status, or trap assignment problem |
-| 404 | Test endpoint disabled outside development |
+| 404 | Unknown device or grease trap |
+| 409 | Missing calibration or idempotency conflict |
 | 405 | POST required |
 | 413 | Body too large |
 | 429 | Device is posting too frequently |

@@ -1,4 +1,4 @@
--- AQUASENSE+ database foundation through Phase 2: select an empty target database, then import this file.
+-- AQUASENSE+ database foundation through Phase 5: select an empty target database, then import this file.
 -- No DROP statements: an existing installation is never silently overwritten.
 SET time_zone = '+00:00';
 
@@ -53,6 +53,8 @@ CREATE TABLE grease_traps (
     medium_threshold DECIMAL(5,2) NOT NULL,
     high_threshold DECIMAL(5,2) NOT NULL,
     critical_threshold DECIMAL(5,2) NOT NULL,
+    empty_distance_cm DECIMAL(10,2) NULL,
+    full_distance_cm DECIMAL(10,2) NULL,
     installation_date DATE NULL,
     last_service_date DATE NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -62,7 +64,9 @@ CREATE TABLE grease_traps (
     CHECK (capacity_liters > 0),
     CHECK (low_threshold >= 0 AND low_threshold < medium_threshold
        AND medium_threshold < high_threshold AND high_threshold < critical_threshold
-       AND critical_threshold <= 100)
+       AND critical_threshold <= 100),
+    CHECK ((empty_distance_cm IS NULL AND full_distance_cm IS NULL)
+       OR (full_distance_cm >= 2 AND empty_distance_cm > full_distance_cm AND empty_distance_cm <= 400))
 ) ENGINE=InnoDB;
 
 CREATE TABLE devices (
@@ -102,38 +106,55 @@ CREATE TABLE sensor_readings (
     device_assignment_id BIGINT UNSIGNED NOT NULL,
     ultrasonic_distance_cm DECIMAL(10,2) NULL,
     waste_level_percent DECIMAL(5,2) NOT NULL,
-    temperature_c DECIMAL(6,2) NOT NULL,
+    device_reported_percent DECIMAL(5,2) NULL,
+    temperature_c DECIMAL(6,2) NULL,
     turbidity_ntu DECIMAL(10,2) NULL,
     flow_rate_lpm DECIMAL(10,3) NULL,
     gas_value DECIMAL(10,2) NULL,
-    level_status ENUM('NORMAL','LOW','MEDIUM','HIGH','CRITICAL','OVERFLOW') NOT NULL,
+    level_status ENUM('NORMAL','LOW','MEDIUM','HIGH','CRITICAL','OVERFLOW','WARNING') NOT NULL,
     is_simulated BOOLEAN NOT NULL DEFAULT FALSE,
+    is_test BOOLEAN NOT NULL DEFAULT FALSE,
+    reading_uuid CHAR(36) NULL,
+    sequence_number BIGINT UNSIGNED NULL,
+    payload_hash CHAR(64) NULL,
     recorded_at DATETIME NOT NULL,
+    received_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (device_assignment_id) REFERENCES device_assignments(id),
     CHECK (waste_level_percent BETWEEN 0 AND 100),
+    CHECK (device_reported_percent IS NULL OR device_reported_percent BETWEEN 0 AND 100),
     CHECK (ultrasonic_distance_cm IS NULL OR ultrasonic_distance_cm >= 0),
     CHECK (turbidity_ntu IS NULL OR turbidity_ntu >= 0),
     CHECK (flow_rate_lpm IS NULL OR flow_rate_lpm >= 0),
     CHECK (gas_value IS NULL OR gas_value >= 0),
     INDEX idx_reading_assignment_time (device_assignment_id, recorded_at),
-    INDEX idx_reading_time (recorded_at)
+    INDEX idx_reading_time (recorded_at),
+    INDEX idx_reading_received (received_at),
+    UNIQUE (device_assignment_id, reading_uuid),
+    UNIQUE (device_assignment_id, sequence_number)
 ) ENGINE=InnoDB;
 
 CREATE TABLE alerts (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     device_assignment_id BIGINT UNSIGNED NOT NULL,
     sensor_reading_id BIGINT UNSIGNED NULL,
-    alert_type ENUM('HIGH_LEVEL','OVERFLOW_WARNING','CRITICAL_LEVEL','HIGH_TEMPERATURE',
+    alert_type ENUM('HIGH_LEVEL','CRITICAL_LEVEL','OVERFLOW_WARNING','OVERFLOW','HIGH_TEMPERATURE',
         'EMULSION_WARNING','HIGH_TURBIDITY','ABNORMAL_FLOW','DEVICE_OFFLINE') NOT NULL,
     severity ENUM('INFO','WARNING','CRITICAL') NOT NULL,
+    sensor_name VARCHAR(40) NULL,
     sensor_value DECIMAL(12,3) NULL,
+    threshold_value DECIMAL(12,3) NULL,
     message VARCHAR(500) NOT NULL,
-    status ENUM('OPEN','ACKNOWLEDGED','RESOLVED') NOT NULL DEFAULT 'OPEN',
+    status ENUM('ACTIVE','ACKNOWLEDGED','RESOLVED') NOT NULL DEFAULT 'ACTIVE',
+    first_triggered_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_triggered_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    trigger_count INT UNSIGNED NOT NULL DEFAULT 1,
     acknowledged_by BIGINT UNSIGNED NULL,
     acknowledged_at DATETIME NULL,
     resolved_by BIGINT UNSIGNED NULL,
     resolved_at DATETIME NULL,
+    resolution_note VARCHAR(1000) NULL,
+    active_alert_key VARCHAR(180) AS (IF(status IN ('ACTIVE','ACKNOWLEDGED'), CONCAT(device_assignment_id,':',alert_type), NULL)) STORED,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (device_assignment_id) REFERENCES device_assignments(id),
@@ -141,42 +162,62 @@ CREATE TABLE alerts (
     FOREIGN KEY (acknowledged_by) REFERENCES users(id),
     FOREIGN KEY (resolved_by) REFERENCES users(id),
     INDEX idx_alert_status_time (status, created_at),
-    INDEX idx_alert_type_time (alert_type, created_at)
+    INDEX idx_alert_type_time (alert_type, created_at),
+    INDEX idx_alert_assignment_history (device_assignment_id, last_triggered_at),
+    INDEX idx_alert_severity_status (severity, status),
+    UNIQUE (active_alert_key)
 ) ENGINE=InnoDB;
 
 CREATE TABLE oil_surrenders (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     transaction_code VARCHAR(40) NOT NULL UNIQUE,
+    submission_uuid CHAR(36) NULL UNIQUE,
     establishment_id BIGINT UNSIGNED NOT NULL,
+    grease_trap_id BIGINT UNSIGNED NULL,
+    device_id BIGINT UNSIGNED NULL,
     submitted_by BIGINT UNSIGNED NOT NULL,
     surrendered_at DATETIME NOT NULL,
     oil_quantity DECIMAL(10,3) NOT NULL,
     oil_unit ENUM('L','kg') NOT NULL DEFAULT 'L',
+    notes TEXT NULL,
     related_sensor_reading_id BIGINT UNSIGNED NULL,
     status ENUM('PENDING','UNDER_REVIEW','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING',
     verification_status ENUM('UNVERIFIED','VERIFIED','DISCREPANCY') NOT NULL DEFAULT 'UNVERIFIED',
+    review_started_at DATETIME NULL,
     reviewed_by BIGINT UNSIGNED NULL,
     reviewed_at DATETIME NULL,
+    approved_at DATETIME NULL,
+    rejected_at DATETIME NULL,
     remarks TEXT NULL,
+    review_version INT UNSIGNED NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (establishment_id) REFERENCES establishments(id),
+    FOREIGN KEY (grease_trap_id) REFERENCES grease_traps(id),
+    FOREIGN KEY (device_id) REFERENCES devices(id),
     FOREIGN KEY (submitted_by) REFERENCES users(id),
     FOREIGN KEY (related_sensor_reading_id) REFERENCES sensor_readings(id),
     FOREIGN KEY (reviewed_by) REFERENCES users(id),
     CHECK (oil_quantity > 0),
     INDEX idx_surrender_establishment_date (establishment_id, surrendered_at),
-    INDEX idx_surrender_status (status)
+    INDEX idx_surrender_status (status),
+    INDEX idx_surrender_review_queue (status, surrendered_at),
+    INDEX idx_surrender_trap_date (grease_trap_id, surrendered_at)
 ) ENGINE=InnoDB;
 
 CREATE TABLE oil_surrender_photos (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     oil_surrender_id BIGINT UNSIGNED NOT NULL,
     file_path VARCHAR(255) NOT NULL UNIQUE,
+    original_filename VARCHAR(255) NULL,
+    mime_type VARCHAR(50) NULL,
+    file_size BIGINT UNSIGNED NULL,
     uploaded_by BIGINT UNSIGNED NOT NULL,
+    uploaded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (oil_surrender_id) REFERENCES oil_surrenders(id),
-    FOREIGN KEY (uploaded_by) REFERENCES users(id)
+    FOREIGN KEY (uploaded_by) REFERENCES users(id),
+    INDEX idx_surrender_photo_parent (oil_surrender_id, created_at)
 ) ENGINE=InnoDB;
 
 CREATE TABLE incentive_rules (

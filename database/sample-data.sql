@@ -28,7 +28,7 @@ INSERT INTO device_assignments (id, device_id, grease_trap_id, started_at)
 VALUES (1, 1, 1, '2026-09-14 00:00:00');
 
 INSERT INTO system_settings (setting_key, setting_value, description) VALUES
-    ('application_name', 'AQUASENSE+', 'Application display name; settings editor planned for Phase 4.'),
+    ('application_name', 'AQUASENSE+', 'Application display name.'),
     ('emulsion_temperature_threshold', '40', 'Initial emulsion warning temperature in degrees Celsius.'),
     ('high_temperature_threshold', '45', 'Initial high temperature warning in degrees Celsius; requires field validation.'),
     ('default_low_threshold', '20', 'Initial low waste level threshold (%).'),
@@ -42,6 +42,8 @@ INSERT INTO system_settings (setting_key, setting_value, description) VALUES
     ('flow_rate_max', '10', 'Initial maximum flow in liters per minute; requires field validation.'),
     ('notifications_enabled', '1', 'Enable in-app notifications when the alerts module is implemented.'),
     ('default_oil_unit', 'L', 'Default oil quantity unit.'),
+    ('oil_surrender_max_upload_bytes', '5242880', 'Maximum oil-surrender evidence upload size in bytes.'),
+    ('oil_surrender_telemetry_window_hours', '6', 'Hours before and after surrender used for Hybrid Verification telemetry evidence.'),
     ('default_rice_unit', 'kg', 'Default rice quantity unit.');
 
 INSERT INTO compliance_ledger (event_type, establishment_id, related_record_type, related_record_id, description, created_by)

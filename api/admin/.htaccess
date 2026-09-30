@@ -1,0 +1,4 @@
+Require all denied
+<FilesMatch "^(monitoring|history|alerts|alert-action)\.php$">
+    Require all granted
+</FilesMatch>

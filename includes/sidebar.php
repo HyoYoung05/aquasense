@@ -14,8 +14,11 @@ $navLink = static function(string $key,string $symbol,string $label,string $path
 <?= $navLink('establishments','store','Establishments','admin/establishments.php') ?>
 <?= $navLink('grease-traps','activity','Grease Traps','admin/grease-traps.php') ?>
 <?= $navLink('devices','device','Devices','admin/devices.php') ?>
-<p class="nav-label">UPCOMING OPERATIONS</p>
-<?php foreach([['monitoring','activity','Monitoring'],['alerts','bell','Alerts'],['oil-surrenders','oil','Oil Surrenders'],['incentives','gift','Incentives'],['compliance-ledger','ledger','Compliance Ledger'],['reports','chart','Reports']] as [$key,$symbol,$label]): ?><?= $navLink($key,$symbol,$label,'admin/placeholder.php?module='.$key) ?><?php endforeach; ?>
-<?php if($user['role_slug']==='administrator'): ?><p class="nav-label">ADMINISTRATION</p><?= $navLink('users','users','Users','admin/placeholder.php?module=users') ?><?= $navLink('settings','settings','Settings','admin/placeholder.php?module=settings') ?><?php endif; ?>
-</nav><div class="sidebar-bottom"><div class="program-note"><?= icon('leaf') ?><strong>Administrative core</strong><p>Registration and assignment records for cleaner waterways.</p></div><div class="sidebar-version"><span class="status-dot"></span> Phase 2 <span>v<?= e(APP_VERSION) ?></span></div></div>
+<p class="nav-label">OPERATIONS</p>
+<?= $navLink('monitoring','activity','Monitoring','admin/monitoring.php') ?>
+<?= $navLink('alerts','bell','Alerts','admin/alerts.php') ?>
+<?= $navLink('oil-surrenders','oil','Oil Surrenders','admin/oil-surrenders.php') ?>
+<?php foreach([['incentives','gift','Incentives'],['compliance-ledger','ledger','Compliance Ledger'],['reports','chart','Reports']] as [$key,$symbol,$label]): ?><?= $navLink($key,$symbol,$label,'admin/placeholder.php?module='.$key) ?><?php endforeach; ?>
+<?php if($user['role_slug']==='administrator'): ?><p class="nav-label">ADMINISTRATION</p><?= $navLink('users','users','Users','admin/placeholder.php?module=users') ?><?= $navLink('settings','settings','Alert Settings','admin/settings.php') ?><?php endif; ?>
+</nav><div class="sidebar-bottom"><div class="program-note"><?= icon('leaf') ?><strong>Hybrid Verification</strong><p>Owner evidence and supporting sensor telemetry.</p></div><div class="sidebar-version"><span class="status-dot"></span> Phase 5 <span>v<?= e(APP_VERSION) ?></span></div></div>
 </aside><button type="button" class="sidebar-backdrop" data-menu-close aria-label="Close navigation" tabindex="-1"></button>

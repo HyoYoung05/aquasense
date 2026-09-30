@@ -20,6 +20,12 @@ function phase2_optional(array $input, string $key): ?string
     return $value === '' ? null : $value;
 }
 
+function phase2_optional_number(array $input, string $key): float|false|null
+{
+    $value=phase2_text($input,$key);
+    return $value===''?null:filter_var($value,FILTER_VALIDATE_FLOAT);
+}
+
 function phase2_date(?string $value, string $label, array &$errors): ?string
 {
     if ($value === null || $value === '') return null;
@@ -126,6 +132,8 @@ function phase2_validate_trap(array $input): array
         'medium_threshold' => filter_var($input['medium_threshold'] ?? null, FILTER_VALIDATE_FLOAT),
         'high_threshold' => filter_var($input['high_threshold'] ?? null, FILTER_VALIDATE_FLOAT),
         'critical_threshold' => filter_var($input['critical_threshold'] ?? null, FILTER_VALIDATE_FLOAT),
+        'empty_distance_cm' => phase2_optional_number($input,'empty_distance_cm'),
+        'full_distance_cm' => phase2_optional_number($input,'full_distance_cm'),
         'installation_date' => phase2_optional($input, 'installation_date'),
         'last_service_date' => phase2_optional($input, 'last_service_date'),
     ];
@@ -139,6 +147,8 @@ function phase2_validate_trap(array $input): array
     if (in_array(false, $thresholds, true) || !($thresholds[0] >= 0 && $thresholds[0] < $thresholds[1] && $thresholds[1] < $thresholds[2] && $thresholds[2] < $thresholds[3] && $thresholds[3] <= 100)) {
         $errors[] = 'Thresholds must follow low < medium < high < critical, between 0 and 100.';
     }
+    if(($data['empty_distance_cm']===null)!==($data['full_distance_cm']===null))$errors[]='Enter both empty and full ultrasonic calibration distances, or leave both blank.';
+    elseif($data['empty_distance_cm']!==null&&($data['empty_distance_cm']===false||$data['full_distance_cm']===false||$data['full_distance_cm']<2||$data['empty_distance_cm']<=$data['full_distance_cm']||$data['empty_distance_cm']>400))$errors[]='Calibration requires an empty distance greater than the full distance, between 2 cm and 400 cm.';
     phase2_date($data['installation_date'], 'Installation date', $errors);
     phase2_date($data['last_service_date'], 'Last service date', $errors);
     if ($data['installation_date'] && $data['last_service_date'] && $data['last_service_date'] < $data['installation_date']) $errors[] = 'Last service date cannot be before installation date.';
@@ -154,8 +164,8 @@ function phase2_create_trap(array $input, int $actorId): int
 {
     $d = phase2_validate_trap($input);
     try {
-        $q=db()->prepare('INSERT INTO grease_traps (establishment_id,trap_code,name,capacity_liters,low_threshold,medium_threshold,high_threshold,critical_threshold,installation_date,last_service_date) VALUES (?,?,?,?,?,?,?,?,?,?)');
-        $q->execute([$d['establishment_id'],$d['trap_code'],$d['name'],$d['capacity_liters'],$d['low_threshold'],$d['medium_threshold'],$d['high_threshold'],$d['critical_threshold'],$d['installation_date'],$d['last_service_date']]);
+        $q=db()->prepare('INSERT INTO grease_traps (establishment_id,trap_code,name,capacity_liters,low_threshold,medium_threshold,high_threshold,critical_threshold,empty_distance_cm,full_distance_cm,installation_date,last_service_date) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
+        $q->execute([$d['establishment_id'],$d['trap_code'],$d['name'],$d['capacity_liters'],$d['low_threshold'],$d['medium_threshold'],$d['high_threshold'],$d['critical_threshold'],$d['empty_distance_cm'],$d['full_distance_cm'],$d['installation_date'],$d['last_service_date']]);
     } catch (PDOException $error) {
         if ($error->getCode()==='23000') throw new Phase2ValidationException(['Trap code is already in use.']);
         throw $error;
@@ -167,7 +177,7 @@ function phase2_update_trap(int $id, array $input, int $actorId): void
 {
     $d=phase2_validate_trap($input);
     $pdo=db();
-    $current=$pdo->prepare('SELECT establishment_id,
+    $current=$pdo->prepare('SELECT establishment_id,empty_distance_cm,full_distance_cm,low_threshold,medium_threshold,high_threshold,critical_threshold,
         (SELECT COUNT(*) FROM device_assignments WHERE grease_trap_id=grease_traps.id) AS assignment_count
         FROM grease_traps WHERE id=?');
     $current->execute([$id]);
@@ -177,13 +187,20 @@ function phase2_update_trap(int $id, array $input, int $actorId): void
         throw new Phase2ValidationException(['A grease trap with device assignment history cannot be moved to another establishment.']);
     }
     try {
-        $q=$pdo->prepare('UPDATE grease_traps SET establishment_id=?,trap_code=?,name=?,capacity_liters=?,low_threshold=?,medium_threshold=?,high_threshold=?,critical_threshold=?,installation_date=?,last_service_date=? WHERE id=?');
-        $q->execute([$d['establishment_id'],$d['trap_code'],$d['name'],$d['capacity_liters'],$d['low_threshold'],$d['medium_threshold'],$d['high_threshold'],$d['critical_threshold'],$d['installation_date'],$d['last_service_date'],$id]);
+        $q=$pdo->prepare('UPDATE grease_traps SET establishment_id=?,trap_code=?,name=?,capacity_liters=?,low_threshold=?,medium_threshold=?,high_threshold=?,critical_threshold=?,empty_distance_cm=?,full_distance_cm=?,installation_date=?,last_service_date=? WHERE id=?');
+        $q->execute([$d['establishment_id'],$d['trap_code'],$d['name'],$d['capacity_liters'],$d['low_threshold'],$d['medium_threshold'],$d['high_threshold'],$d['critical_threshold'],$d['empty_distance_cm'],$d['full_distance_cm'],$d['installation_date'],$d['last_service_date'],$id]);
     } catch (PDOException $error) {
         if ($error->getCode()==='23000') throw new Phase2ValidationException(['Trap code is already in use.']);
         throw $error;
     }
     audit('GREASE_TRAP_UPDATED',$actorId,'grease_traps',$id);
+    $calibrationChanged=($existing['empty_distance_cm']===null)!==($d['empty_distance_cm']===null)
+        ||($existing['full_distance_cm']===null)!==($d['full_distance_cm']===null)
+        ||($existing['empty_distance_cm']!==null&&(float)$existing['empty_distance_cm']!==(float)$d['empty_distance_cm'])
+        ||($existing['full_distance_cm']!==null&&(float)$existing['full_distance_cm']!==(float)$d['full_distance_cm']);
+    if($calibrationChanged)audit('GREASE_TRAP_CALIBRATION_UPDATED',$actorId,'grease_traps',$id);
+    $thresholdChanged=false;foreach(['low_threshold','medium_threshold','high_threshold','critical_threshold'] as $key)if((float)$existing[$key]!== (float)$d[$key])$thresholdChanged=true;
+    if($thresholdChanged)audit('GREASE_TRAP_THRESHOLDS_UPDATED',$actorId,'grease_traps',$id);
 }
 
 function phase2_set_trap_active(int $id, bool $active, int $actorId): void

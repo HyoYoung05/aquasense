@@ -12,7 +12,7 @@ function p2_token(array $response):string{preg_match('/name="csrf_token" value="
 function p2_login(CurlHandle $c,string $email,string $password):void{$form=p2_request($c,'/public/login.php');$reply=p2_request($c,'/public/login.php',['csrf_token'=>p2_token($form),'email'=>$email,'password'=>$password]);p2_check($reply['status']===303,'Authenticated administrator login for Phase 2 tests');}
 function p2_expect_validation(callable $call,string $message,string $label):void{try{$call();p2_check(false,$label);}catch(Phase2ValidationException $e){p2_check(in_array($message,$e->errors,true),$label);}}
 try{
- $pdo=db();p2_check(APP_VERSION==='0.4.0','Application version is 0.4.0');
+ $pdo=db();p2_check(version_compare(APP_VERSION,'0.4.0','>='),'Application retains Phase 2 or newer version');
  $columns=$pdo->query('SHOW COLUMNS FROM establishments')->fetchAll(PDO::FETCH_COLUMN);p2_check(in_array('notes',$columns,true),'Phase 2 notes migration is applied');
  $roles=$pdo->query('SELECT slug,id FROM roles')->fetchAll(PDO::FETCH_KEY_PAIR);
  foreach(['administrator','environmental_staff'] as $role){$email='phase2-'.$role.'-'.bin2hex(random_bytes(4)).'@example.test';$emails[]=$email;$q=$pdo->prepare('INSERT INTO users(role_id,full_name,email,password_hash)VALUES(?,?,?,?)');$q->execute([$roles[$role],$role==='administrator'?'<script>alert(2)</script> Admin':'Read Only Staff',$email,password_hash($password,PASSWORD_DEFAULT)]);$userIds[$role]=(int)$pdo->lastInsertId();}

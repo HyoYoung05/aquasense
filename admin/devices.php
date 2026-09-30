@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-require dirname(__DIR__).'/includes/bootstrap.php';require_once dirname(__DIR__).'/includes/admin-core.php';
+require dirname(__DIR__).'/includes/bootstrap.php';require_once dirname(__DIR__).'/includes/admin-core.php';require_once dirname(__DIR__).'/includes/telemetry.php';
 $user=require_staff();$canManage=$user['role_slug']==='administrator';$pageTitle='Devices';$activeNav='devices';$pageScript='assets/js/admin-forms.js';$errors=[];$action=$_GET['action']??'list';$editId=query_id();
 if($_SERVER['REQUEST_METHOD']==='POST'){
  if(!$canManage){http_response_code(403);$errors[]='Only Barangay Administrators can change device records.';}
@@ -9,6 +9,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   if($post==='create'){$id=phase2_create_device($_POST,(int)$user['id']);flash('success','Device registered.');redirect('admin/device-view.php?id='.$id);}
   if($post==='update'&&$id){phase2_update_device($id,$_POST,(int)$user['id']);flash('success','Device and assignment updated.');redirect('admin/device-view.php?id='.$id);}
   if($post==='status'&&$id){phase2_set_device_active($id,post_string('active')==='1',(int)$user['id']);flash('success','Device status updated.');redirect('admin/device-view.php?id='.$id);}
+  if($post==='credential'&&$id){$key=phase3_rotate_device_key($id,(int)$user['id']);$_SESSION['device_credential_once']=['device_id'=>$id,'key'=>$key];flash('success','Device credential generated. Copy it now; it will not be shown again.');redirect('admin/device-view.php?id='.$id);}
   throw new Phase2ValidationException(['Invalid device action.']);
  }catch(Phase2ValidationException $error){$errors=$error->errors;$action=post_string('action')==='create'?'add':(post_string('action')==='update'?'edit':'list');$editId=post_id('id');}
 }

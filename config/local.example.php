@@ -12,6 +12,11 @@ return [
     'storage_path' => dirname(__DIR__) . '/uploads',
     'log_path' => dirname(__DIR__) . '/logs/php-error.log',
     'test_base_url' => 'http://YOUR_DEVELOPMENT_WEB_HOST/YOUR_LOCAL_PROJECT_PATH',
+    // Optional telemetry controls. The defaults accept normal 5-30 second device intervals.
+    'telemetry_min_interval_seconds' => 2,
+    'telemetry_poll_seconds' => 8,
+    'telemetry_distance_min_cm' => 2,
+    'telemetry_distance_max_cm' => 400,
     // Development browser preview only. Set false for deployment.
     'mobile_allow_local_web_preview' => true,
 ];
