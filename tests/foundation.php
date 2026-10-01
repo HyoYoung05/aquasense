@@ -192,8 +192,8 @@ try {
     $pdo->prepare("INSERT INTO oil_surrenders (transaction_code, establishment_id, submitted_by, surrendered_at, oil_quantity, status) VALUES (?, 1, ?, UTC_TIMESTAMP(), 1, 'APPROVED')")
         ->execute(['TEST-' . bin2hex(random_bytes(6)), $fixtureIds['administrator']]);
     $surrenderId = (int) $pdo->lastInsertId();
-    $sql = 'INSERT INTO incentive_transactions (oil_surrender_id, rule_id, rice_quantity, calculated_by) VALUES (?, ?, 1, ?)';
-    $values = [$surrenderId, $ruleId, $fixtureIds['administrator']];
+    $sql = "INSERT INTO incentive_transactions (transaction_code,oil_surrender_id,establishment_id,owner_user_id,rule_id,oil_quantity,oil_unit,rule_name_snapshot,oil_threshold_snapshot,rule_reward_snapshot,calculation_type_snapshot,qualifying_blocks,rice_quantity,rice_unit,status,calculated_by,processed_at) VALUES (?, ?, 1, ?, ?, 1, 'L', 'Automated test only', 1, 1, 'FIXED_PER_THRESHOLD', 1, 1, 'kg', 'CALCULATED', ?, UTC_TIMESTAMP())";
+    $values = ['INC-TEST-'.bin2hex(random_bytes(5)), $surrenderId, $fixtureIds['administrator'], $ruleId, $fixtureIds['administrator']];
     $pdo->prepare($sql)->execute($values);
     expect_constraint($sql, $values, 'Same surrender cannot receive two incentives');
     $pdo->rollBack();

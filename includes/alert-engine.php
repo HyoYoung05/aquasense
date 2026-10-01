@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/compliance.php';
 
 function phase4_alert_definitions(): array
 {
@@ -33,8 +34,14 @@ function phase4_numeric_settings(PDO $pdo): array
 function phase4_upsert_alert(PDO $pdo,int $assignmentId,?int $readingId,string $type,?float $value,?float $threshold,string $at): void
 {
     $definition=phase4_alert_definitions()[$type]??null;if(!$definition)throw new InvalidArgumentException('Unsupported alert type.');
-    $q=$pdo->prepare("INSERT INTO alerts (device_assignment_id,sensor_reading_id,alert_type,severity,sensor_name,sensor_value,threshold_value,message,status,first_triggered_at,last_triggered_at,trigger_count) VALUES (?,?,?,?,?,?,?,?, 'ACTIVE',?,?,1) ON DUPLICATE KEY UPDATE sensor_reading_id=VALUES(sensor_reading_id),severity=VALUES(severity),sensor_name=VALUES(sensor_name),sensor_value=VALUES(sensor_value),threshold_value=VALUES(threshold_value),message=VALUES(message),last_triggered_at=VALUES(last_triggered_at),trigger_count=trigger_count+1");
+    $q=$pdo->prepare("INSERT INTO alerts (device_assignment_id,sensor_reading_id,alert_type,severity,sensor_name,sensor_value,threshold_value,message,status,first_triggered_at,last_triggered_at,trigger_count) VALUES (?,?,?,?,?,?,?,?, 'ACTIVE',?,?,1) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id),sensor_reading_id=VALUES(sensor_reading_id),severity=VALUES(severity),sensor_name=VALUES(sensor_name),sensor_value=VALUES(sensor_value),threshold_value=VALUES(threshold_value),message=VALUES(message),last_triggered_at=VALUES(last_triggered_at),trigger_count=trigger_count+1");
     $q->execute([$assignmentId,$readingId,$type,$definition['severity'],$definition['sensor'],$value,$threshold,$definition['message'],$at,$at]);
+    $alertId=(int)$pdo->lastInsertId();if($q->rowCount()===1){$context=phase4_alert_context($pdo,$alertId);if($context)compliance_append($pdo,'ALERT_TRIGGERED',(int)$context['establishment_id'],'alerts',$alertId,$definition['message'],null,(int)$context['grease_trap_id'],(int)$context['device_id'],'ALERT_TRIGGERED:'.$alertId);}
+}
+
+function phase4_alert_context(PDO $pdo,int $id):?array
+{
+    $q=$pdo->prepare('SELECT al.id,a.device_id,a.grease_trap_id,g.establishment_id FROM alerts al JOIN device_assignments a ON a.id=al.device_assignment_id JOIN grease_traps g ON g.id=a.grease_trap_id WHERE al.id=?');$q->execute([$id]);return$q->fetch()?:null;
 }
 
 function phase4_resolve_recovered(PDO $pdo,int $assignmentId,array $types,string $at,string $note='Condition recovered automatically.'): int
@@ -75,13 +82,13 @@ function phase4_check_offline_devices(PDO $pdo): array
 
 function phase4_acknowledge_alert(int $id,int $userId): void
 {
-    $q=db()->prepare("UPDATE alerts SET status='ACKNOWLEDGED',acknowledged_by=?,acknowledged_at=UTC_TIMESTAMP() WHERE id=? AND status='ACTIVE'");$q->execute([$userId,$id]);if(!$q->rowCount())throw new InvalidArgumentException('Only an active alert can be acknowledged.');audit('ALERT_ACKNOWLEDGED',$userId,'alerts',$id);
+    $pdo=db();$pdo->beginTransaction();try{$q=$pdo->prepare("UPDATE alerts SET status='ACKNOWLEDGED',acknowledged_by=?,acknowledged_at=UTC_TIMESTAMP() WHERE id=? AND status='ACTIVE'");$q->execute([$userId,$id]);if(!$q->rowCount())throw new InvalidArgumentException('Only an active alert can be acknowledged.');audit('ALERT_ACKNOWLEDGED',$userId,'alerts',$id);$context=phase4_alert_context($pdo,$id);if($context)compliance_append($pdo,'ALERT_ACKNOWLEDGED',(int)$context['establishment_id'],'alerts',$id,'Environmental alert acknowledged by Barangay personnel.',$userId,(int)$context['grease_trap_id'],(int)$context['device_id'],'ALERT_ACKNOWLEDGED:'.$id);$pdo->commit();}catch(Throwable$e){if($pdo->inTransaction())$pdo->rollBack();throw$e;}
 }
 
 function phase4_resolve_alert(int $id,int $userId,string $note): void
 {
     $note=trim($note);if(strlen($note)>1000)throw new InvalidArgumentException('Resolution note must be 1000 characters or fewer.');
-    $q=db()->prepare("UPDATE alerts SET status='RESOLVED',resolved_by=?,resolved_at=UTC_TIMESTAMP(),resolution_note=? WHERE id=? AND status IN ('ACTIVE','ACKNOWLEDGED')");$q->execute([$userId,$note===''?null:$note,$id]);if(!$q->rowCount())throw new InvalidArgumentException('This alert is already resolved or was not found.');audit('ALERT_RESOLVED',$userId,'alerts',$id);
+    $pdo=db();$pdo->beginTransaction();try{$q=$pdo->prepare("UPDATE alerts SET status='RESOLVED',resolved_by=?,resolved_at=UTC_TIMESTAMP(),resolution_note=? WHERE id=? AND status IN ('ACTIVE','ACKNOWLEDGED')");$q->execute([$userId,$note===''?null:$note,$id]);if(!$q->rowCount())throw new InvalidArgumentException('This alert is already resolved or was not found.');audit('ALERT_RESOLVED',$userId,'alerts',$id);$context=phase4_alert_context($pdo,$id);if($context)compliance_append($pdo,'ALERT_RESOLVED',(int)$context['establishment_id'],'alerts',$id,'Environmental alert resolved by Barangay personnel.',$userId,(int)$context['grease_trap_id'],(int)$context['device_id'],'ALERT_RESOLVED:'.$id);$pdo->commit();}catch(Throwable$e){if($pdo->inTransaction())$pdo->rollBack();throw$e;}
 }
 
 function phase4_validate_settings(array $input): array

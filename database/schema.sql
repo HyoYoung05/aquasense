@@ -1,4 +1,4 @@
--- AQUASENSE+ database foundation through Phase 5: select an empty target database, then import this file.
+-- AQUASENSE+ database foundation through Phase 6: select an empty target database, then import this file.
 -- No DROP statements: an existing installation is never silently overwritten.
 SET time_zone = '+00:00';
 
@@ -226,51 +226,83 @@ CREATE TABLE incentive_rules (
     minimum_oil_quantity DECIMAL(10,3) NOT NULL,
     oil_unit ENUM('L','kg') NOT NULL,
     rice_reward_quantity DECIMAL(10,3) NOT NULL,
-    rice_unit ENUM('kg') NOT NULL DEFAULT 'kg',
+    rice_unit ENUM('kg','g') NOT NULL DEFAULT 'kg',
+    calculation_type ENUM('FIXED_PER_THRESHOLD','FIXED_TRANSACTION') NOT NULL DEFAULT 'FIXED_PER_THRESHOLD',
     effective_date DATE NOT NULL,
     end_date DATE NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    is_test BOOLEAN NOT NULL DEFAULT FALSE,
     created_by BIGINT UNSIGNED NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (created_by) REFERENCES users(id),
     CHECK (minimum_oil_quantity > 0 AND rice_reward_quantity > 0),
-    CHECK (end_date IS NULL OR end_date >= effective_date),
-    INDEX idx_rule_effective (is_active, effective_date, end_date)
+    CHECK (end_date IS NULL OR end_date > effective_date),
+    INDEX idx_rule_effective (is_active, effective_date, end_date),
+    INDEX idx_rule_unit_active_dates (oil_unit,is_active,effective_date,end_date)
 ) ENGINE=InnoDB;
 
 CREATE TABLE incentive_transactions (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    transaction_code VARCHAR(40) NOT NULL UNIQUE,
     oil_surrender_id BIGINT UNSIGNED NOT NULL UNIQUE,
+    establishment_id BIGINT UNSIGNED NOT NULL,
+    owner_user_id BIGINT UNSIGNED NOT NULL,
     rule_id BIGINT UNSIGNED NOT NULL,
+    oil_quantity DECIMAL(10,3) NOT NULL,
+    oil_unit ENUM('L','kg') NOT NULL,
+    rule_name_snapshot VARCHAR(150) NOT NULL,
+    oil_threshold_snapshot DECIMAL(10,3) NOT NULL,
+    rule_reward_snapshot DECIMAL(10,3) NOT NULL,
+    calculation_type_snapshot ENUM('FIXED_PER_THRESHOLD','FIXED_TRANSACTION') NOT NULL,
+    qualifying_blocks INT UNSIGNED NOT NULL DEFAULT 1,
     rice_quantity DECIMAL(10,3) NOT NULL,
-    rice_unit ENUM('kg') NOT NULL DEFAULT 'kg',
-    status ENUM('PENDING','DISTRIBUTED') NOT NULL DEFAULT 'PENDING',
+    rice_unit ENUM('kg','g') NOT NULL DEFAULT 'kg',
+    status ENUM('CALCULATED','APPROVED_FOR_DISTRIBUTION','DISTRIBUTED','CANCELLED') NOT NULL DEFAULT 'CALCULATED',
     calculated_by BIGINT UNSIGNED NOT NULL,
+    processed_at DATETIME NOT NULL,
     distributed_by BIGINT UNSIGNED NULL,
     distributed_at DATETIME NULL,
+    distribution_notes VARCHAR(2000) NULL,
+    status_version INT UNSIGNED NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (oil_surrender_id) REFERENCES oil_surrenders(id),
+    FOREIGN KEY (establishment_id) REFERENCES establishments(id),
+    FOREIGN KEY (owner_user_id) REFERENCES users(id),
     FOREIGN KEY (rule_id) REFERENCES incentive_rules(id),
     FOREIGN KEY (calculated_by) REFERENCES users(id),
     FOREIGN KEY (distributed_by) REFERENCES users(id),
-    CHECK (rice_quantity >= 0)
+    CHECK (rice_quantity > 0),
+    INDEX idx_incentive_establishment_status (establishment_id,status),
+    INDEX idx_incentive_status_processed (status,processed_at),
+    INDEX idx_incentive_processed_at (processed_at),
+    INDEX idx_incentive_distributed_at (distributed_at)
 ) ENGINE=InnoDB;
 
 CREATE TABLE compliance_ledger (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    event_code VARCHAR(40) NOT NULL UNIQUE,
     event_type VARCHAR(60) NOT NULL,
     establishment_id BIGINT UNSIGNED NULL,
+    grease_trap_id BIGINT UNSIGNED NULL,
+    device_id BIGINT UNSIGNED NULL,
     related_record_type VARCHAR(60) NULL,
     related_record_id BIGINT UNSIGNED NULL,
     description TEXT NOT NULL,
+    event_timestamp DATETIME NOT NULL,
+    dedupe_key VARCHAR(190) NULL UNIQUE,
     created_by BIGINT UNSIGNED NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (establishment_id) REFERENCES establishments(id),
+    FOREIGN KEY (grease_trap_id) REFERENCES grease_traps(id),
+    FOREIGN KEY (device_id) REFERENCES devices(id),
     FOREIGN KEY (created_by) REFERENCES users(id),
-    INDEX idx_ledger_establishment_time (establishment_id, created_at),
-    INDEX idx_ledger_event_time (event_type, created_at)
+    INDEX idx_ledger_establishment_time (establishment_id, event_timestamp),
+    INDEX idx_ledger_event_time (event_type, event_timestamp),
+    INDEX idx_ledger_related_record (related_record_type,related_record_id),
+    INDEX idx_ledger_device_time (device_id,event_timestamp),
+    INDEX idx_ledger_trap_time (grease_trap_id,event_timestamp)
 ) ENGINE=InnoDB;
 
 CREATE TABLE audit_logs (

@@ -1,6 +1,6 @@
 # AQUASENSE+ Owner Mobile API
 
-Backend version: **0.7.0**
+Backend version: **0.8.0**
 
 The API root is deployment-configured. Production clients must use HTTPS. Every
 oil-surrender route requires the existing owner Bearer token:
@@ -85,7 +85,43 @@ filenames are never used as public URLs.
 - `APPROVED`: manually approved and eligible for future Phase 6 processing.
 - `REJECTED`: manually rejected; the owner-safe response includes review remarks.
 
-Phase 5 does not calculate or distribute rice incentives.
+## Incentive summary and history
+
+`GET /api/mobile/incentives.php`
+
+Requires the owner Bearer token and accepts no owner or establishment selector.
+The backend derives ownership and calculates totals from stored transactions.
+
+```json
+{
+  "success": true,
+  "data": {
+    "summary": [
+      {"unit": "kg", "earned": 4, "distributed": 0, "pending": 4}
+    ],
+    "transactions": [
+      {
+        "transaction_code": "INC-20261001-A1B2C3D4",
+        "surrender_code": "OS-20261001-E5F6A7B8",
+        "business_name": "Sample Karinderya",
+        "oil_quantity": 10,
+        "oil_unit": "L",
+        "rice_quantity": 4,
+        "rice_unit": "kg",
+        "status": "CALCULATED",
+        "processed_at": "2026-10-01T08:00:00Z",
+        "distributed_at": null
+      }
+    ]
+  }
+}
+```
+
+Summary entries are grouped by reward unit; `kg` and `g` are never combined.
+Transaction statuses are `CALCULATED`, `APPROVED_FOR_DISTRIBUTION`,
+`DISTRIBUTED`, or `CANCELLED`. Administrative distribution notes and other
+owners' records are never returned. This route is read-only; POST and other
+state-changing methods return 405.
 
 ## Errors
 

@@ -2,7 +2,64 @@
 
 ## Current Version
 
-0.7.0
+0.8.0
+
+## 0.8.0
+
+Date: 2026-10-01
+
+Development Phase: Phase 6 — Sana Oil Incentives and Digital Compliance Ledger
+
+### Added
+
+- Added administrator-managed, effective-dated incentive rules with explicit test
+  labels, overlap validation, `FIXED_PER_THRESHOLD` and `FIXED_TRANSACTION` modes.
+- Added atomic APPROVED-surrender processing with stored rule snapshots, visible
+  incentive codes, application/database duplicate protection, and row locking.
+- Added explicit rice distribution confirmation with distributor, UTC timestamp,
+  notes, optimistic concurrency protection, audit history, and no reversal UI.
+- Added owner-only `GET /api/mobile/incentives.php` summaries and transaction history,
+  with unlike rice units retained as separate totals.
+- Added staff incentive queue/list/detail pages, rule management, establishment
+  incentive history, dashboard metrics, and append-only Compliance Ledger views.
+- Extended registration and alert workflows to append major environmental events
+  to the same immutable ledger without duplicating technical audit logs.
+- Added migration 007, `docs/INCENTIVES.md`, `docs/COMPLIANCE_LEDGER.md`, updated
+  mobile API documentation, and the Phase 6 regression suite.
+
+### Changed
+
+- Dashboard now reports approved oil awaiting processing, rewards pending
+  distribution, and actual distributed rice grouped by unit.
+- Establishment details now show eligible approved oil, reward state totals, and
+  transaction history.
+- Application and displayed version advanced from 0.7.0 to 0.8.0.
+
+### Security and integrity
+
+- Browser mutations retain staff authorization, administrator-only management,
+  CSRF checks, server validation, prepared statements, and explicit confirmation.
+- Incentive creation and distribution each commit the business record, audit event,
+  and deduplicated compliance event in one database transaction.
+- Owner responses derive identity from the Bearer token and omit internal notes.
+
+### Database and validation
+
+- Backed up the working development database before migration 007 to
+  `C:\xampp\tmp\aquasense-config-backups\pre-phase6-20261001-161135.sql`.
+- Migration 007 extends the existing incentive and ledger tables without dropping
+  Phase 1-5 records and applies safely more than once.
+- No official or sample conversion rule is inserted automatically.
+- The Phase 6 suite passes 41 calculation, authorization, owner isolation,
+  concurrency, rollback, audit, ledger, API, and staff-page checks; all retained
+  foundation, Phase 2-5, mobile, CORS, session, production, and ESP32 suites pass.
+
+### Known Issues
+
+- The actual production Sana Oil conversion rule requires official Barangay policy
+  and administrator configuration.
+- Full reporting, CSV export, and PDF reporting remain Phase 7.
+- The separate Flutter UI may still need updates to display all owner incentive data.
 
 ## 0.7.0
 

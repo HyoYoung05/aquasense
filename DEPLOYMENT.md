@@ -139,3 +139,13 @@ Confirm PHP `upload_max_filesize` and `post_max_size` are at least the configure
 application limit, while the application retains the final server-side byte check.
 Exercise owner isolation, protected evidence streaming, idempotent retry, and stale
 review conflict handling on staging. Phase 5 does not create incentive transactions.
+
+BACKEND 0.8.0 / PHASE 6 SCHEMA UPDATE
+-------------------------------------
+Back up the database and private evidence storage, then apply migration 007 after
+migration 006. Confirm the unique surrender/reward and ledger dedupe constraints,
+configure the official effective-dated incentive policy through an administrator,
+and exercise calculation, concurrent retry, distribution confirmation, owner
+isolation, and transaction rollback on staging. No sample conversion rule is seeded.
+The owner release must call the deployed HTTPS `GET /api/mobile/incentives.php`
+endpoint. Phase 7 reporting/export remains outside this release.

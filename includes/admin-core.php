@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/compliance.php';
 
 final class Phase2ValidationException extends RuntimeException
 {
@@ -87,6 +88,8 @@ function phase2_create_establishment(array $input, int $actorId): int
             $data['contact_number'],$data['email'],$data['notes'],$data['registration_date'],$actorId]);
         $id = (int) $pdo->lastInsertId();
         audit('ESTABLISHMENT_CREATED', $actorId, 'establishments', $id);
+        compliance_append($pdo,'ESTABLISHMENT_REGISTERED',$id,'establishments',$id,
+            'Establishment registered in the AQUASENSE+ environmental program.',$actorId,null,null,'ESTABLISHMENT_REGISTERED:'.$id);
         $pdo->commit();
         return $id;
     } catch (PDOException $error) {
@@ -162,15 +165,19 @@ function phase2_validate_trap(array $input): array
 
 function phase2_create_trap(array $input, int $actorId): int
 {
-    $d = phase2_validate_trap($input);
+    $d = phase2_validate_trap($input);$pdo=db();$pdo->beginTransaction();
     try {
-        $q=db()->prepare('INSERT INTO grease_traps (establishment_id,trap_code,name,capacity_liters,low_threshold,medium_threshold,high_threshold,critical_threshold,empty_distance_cm,full_distance_cm,installation_date,last_service_date) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
+        $q=$pdo->prepare('INSERT INTO grease_traps (establishment_id,trap_code,name,capacity_liters,low_threshold,medium_threshold,high_threshold,critical_threshold,empty_distance_cm,full_distance_cm,installation_date,last_service_date) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
         $q->execute([$d['establishment_id'],$d['trap_code'],$d['name'],$d['capacity_liters'],$d['low_threshold'],$d['medium_threshold'],$d['high_threshold'],$d['critical_threshold'],$d['empty_distance_cm'],$d['full_distance_cm'],$d['installation_date'],$d['last_service_date']]);
+        $id=(int)$pdo->lastInsertId();audit('GREASE_TRAP_CREATED',$actorId,'grease_traps',$id);
+        compliance_append($pdo,'GREASE_TRAP_REGISTERED',(int)$d['establishment_id'],'grease_traps',$id,
+            'Grease trap registered for environmental monitoring.',$actorId,$id,null,'GREASE_TRAP_REGISTERED:'.$id);
+        $pdo->commit();return$id;
     } catch (PDOException $error) {
+        if($pdo->inTransaction())$pdo->rollBack();
         if ($error->getCode()==='23000') throw new Phase2ValidationException(['Trap code is already in use.']);
         throw $error;
-    }
-    $id=(int)db()->lastInsertId(); audit('GREASE_TRAP_CREATED',$actorId,'grease_traps',$id); return $id;
+    } catch(Throwable$error){if($pdo->inTransaction())$pdo->rollBack();throw$error;}
 }
 
 function phase2_update_trap(int $id, array $input, int $actorId): void
@@ -262,7 +269,10 @@ function phase2_create_device(array $input,int $actorId): int
         $q->execute([$d['device_code'],$d['name'],$d['device_type'],$d['firmware_version'],$d['installation_date']]);
         $id=(int)$pdo->lastInsertId();
         if($d['grease_trap_id']) phase2_change_assignment($pdo,$id,$d['grease_trap_id'],$actorId);
-        audit('DEVICE_REGISTERED',$actorId,'devices',$id); $pdo->commit(); return $id;
+        audit('DEVICE_REGISTERED',$actorId,'devices',$id);
+        compliance_append($pdo,'DEVICE_REGISTERED',$d['establishment_id']?(int)$d['establishment_id']:null,'devices',$id,
+            'Monitoring device registered in AQUASENSE+.',$actorId,$d['grease_trap_id']?(int)$d['grease_trap_id']:null,$id,'DEVICE_REGISTERED:'.$id);
+        $pdo->commit(); return $id;
     } catch(PDOException $error) {
         if($pdo->inTransaction())$pdo->rollBack();
         if($error->getCode()==='23000')throw new Phase2ValidationException(['Device code is already in use.']); throw $error;

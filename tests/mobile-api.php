@@ -107,6 +107,7 @@ try {
     check(call_api('login.php', ['email'=>$emails[1], 'password'=>$password])['status'] === 429, 'API sign-in throttling enforced');
     echo "$checks checks passed.\n";
 } finally {
+    foreach ($sites as $id) $pdo->prepare('DELETE FROM compliance_ledger WHERE establishment_id = ?')->execute([$id]);
     foreach ($assignments as $id) $pdo->prepare('DELETE FROM alerts WHERE device_assignment_id = ?')->execute([$id]);
     foreach ($assignments as $id) $pdo->prepare('DELETE FROM sensor_readings WHERE device_assignment_id = ?')->execute([$id]);
     foreach ($assignments as $id) $pdo->prepare('DELETE FROM device_assignments WHERE id = ?')->execute([$id]);

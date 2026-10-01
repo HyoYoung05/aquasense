@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/compliance.php';
 
 final class Phase5ValidationException extends RuntimeException
 {
@@ -198,10 +199,8 @@ function phase5_transaction_code(): string
 function phase5_ledger(PDO $pdo, string $event, int $establishmentId, int $surrenderId,
     string $description, int $userId): void
 {
-    $query = $pdo->prepare('INSERT INTO compliance_ledger
-        (event_type,establishment_id,related_record_type,related_record_id,description,created_by)
-        VALUES (?,?,?,?,?,?)');
-    $query->execute([$event, $establishmentId, 'oil_surrenders', $surrenderId, $description, $userId]);
+    compliance_append($pdo, $event, $establishmentId, 'oil_surrenders', $surrenderId,
+        $description, $userId, null, null, $event . ':oil_surrenders:' . $surrenderId);
 }
 
 function phase5_audit(PDO $pdo, string $action, int $userId, int $surrenderId): void

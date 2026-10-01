@@ -1,6 +1,6 @@
-# Shared API (backend 0.7.0)
+# Shared API (backend 0.8.0)
 
-Owner endpoints, device telemetry, staff monitoring, Phase 4 alerts, and Phase 5 oil surrender endpoints are implemented. Existing PDO/configuration, users,
+Owner endpoints, device telemetry, staff monitoring, Phase 4 alerts, Phase 5 oil surrender endpoints, and the Phase 6 owner incentive endpoint are implemented. Existing PDO/configuration, users,
 roles, establishments, readings, audit and rate-limit records are reused.
 Root API access stays denied. `api/mobile` exposes the owner account, monitoring, and surrender routes; `api/device` exposes only telemetry; and `api/admin` exposes monitoring, history, alert history, and administrator-only alert actions.
 
@@ -118,3 +118,11 @@ requires an administrator session, JSON, and the current CSRF token for acknowle
 or resolve actions. Owners receive only active alerts joined to their own
 establishments through the existing mobile dashboard response and receive no alert
 management controls. Alert state is always calculated by PHP from sensor values.
+
+## Phase 6 owner incentive API
+
+`GET mobile/incentives.php` returns only the authenticated owner's incentive
+summary and transaction history. Totals are calculated by PHP and grouped by rice
+unit. The endpoint accepts no client reward, rule, status, owner, or establishment
+selector and exposes no distribution mutation. See `../docs/MOBILE_API.md` and
+`../docs/INCENTIVES.md`.

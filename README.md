@@ -4,7 +4,7 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository currently focuses on the **Barangay Administrative Website** for Barangay San Antonio officials and environmental staff.
 
-The administrative website now includes **Phase 5 Oil Surrender and Hybrid Verification**. Backend version 0.7.0 accepts owner-scoped surrender submissions with protected photo evidence, presents nearby IoT telemetry to Barangay reviewers, and preserves manual approval/rejection history. Rice incentive calculation and distribution remain Phase 6.
+The administrative website now includes **Phase 6 Sana Oil Incentives and the Digital Compliance Ledger**. Backend version 0.8.0 processes only approved oil surrenders under administrator-configured rules, preserves historical calculation snapshots, tracks physical rice distribution, and exposes owner-scoped reward history.
 
 ## Current Version
 
@@ -16,7 +16,7 @@ API endpoint, and provisioned device credentials. Local Wi-Fi passwords, device 
 compiler databases, and firmware binaries are excluded from GitHub. The Flutter source
 and APK remain in the separate local `aquasense_mobile` project and are not in this repository.
 
-**Version: 0.7.0**
+**Version: 0.8.0**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -51,7 +51,7 @@ Import the SQL files using the steps below. `.gitattributes` keeps text line end
 
 ## Current Development Phase
 
-**Phase 5 — Oil Surrender and Hybrid Verification.** Existing telemetry and alert operations remain active while owner submissions, protected evidence, human review, and approval/rejection are now operational.
+**Phase 6 — Sana Oil Incentives and Digital Compliance Ledger.** Existing monitoring, alerts, secure owner submissions, and Hybrid Verification remain active. Approved surrenders can now enter an atomic, duplicate-protected reward and distribution workflow.
 
 ### Phase 2 administrative features
 
@@ -84,7 +84,7 @@ Import the SQL files using the steps below. `.gitattributes` keeps text line end
 - `php scripts/check_offline_devices.php` performs the database-based offline check and is suitable for cron.
 - Dashboard, Monitoring, grease-trap details, device details, authenticated admin APIs, and the owner-safe mobile dashboard expose actual alert records.
 - Development simulation still passes through the device telemetry API and exercises the same alert pipeline.
-- Push, email, and SMS remain outside Phase 4. The Phase 4 suite passes 32 alert, authorization, CSRF, and integration checks.
+- Push, email, and SMS remain outside Phase 4. The retained Phase 4 suite now passes 35 alert, authorization, CSRF, Compliance Ledger, and integration checks.
 
 The 2026-09-30 AQS-001 development simulation used the real HTTP telemetry endpoint. A normal 60% reading created no alert; 80% created HIGH_LEVEL; 92% created CRITICAL_LEVEL and OVERFLOW_WARNING; a repeated critical reading updated those records; 42 °C created EMULSION_WARNING. The CLI offline check created DEVICE_OFFLINE after the configured timeout, and resumed normal telemetry resolved it. Readings 404 through 409 and their resolved alert history remain marked as simulated.
 
@@ -96,8 +96,21 @@ The 2026-09-30 AQS-001 development simulation used the real HTTP telemetry endpo
 - The Barangay review queue supports status, establishment, date, reviewer, unit, and text filters. Administrators can move PENDING submissions to UNDER_REVIEW and then manually APPROVE or REJECT them; rejection requires a reason.
 - Hybrid Verification displays owner data, protected photo evidence, and telemetry within a configurable window before and after submission. Missing telemetry is reported honestly and never causes automatic rejection.
 - Conditional versioned updates reject stale conflicting decisions. Audit and compliance records are written transactionally for submission, photo, review start, approval, and rejection.
-- Approved records are identifiable for Phase 6, but Phase 5 creates no rice calculation, balance, distribution, or incentive transaction.
+- Approved records become eligible for deliberate Phase 6 incentive processing; approval alone does not award rice.
 - See [Owner Mobile API](docs/MOBILE_API.md) and [Hybrid Verification](docs/HYBRID_VERIFICATION.md). The Phase 5 suite passes 39 workflow, upload, ownership, concurrency, and security checks.
+
+### Phase 6 incentive and compliance features
+
+- Administrators configure effective-dated `L` or `kg` oil rules with `kg` or `g` rice rewards. No official Sana Oil conversion rate is seeded or assumed.
+- `FIXED_PER_THRESHOLD` uses complete threshold blocks and never rounds upward. `FIXED_TRANSACTION` grants one configured reward after the minimum is met.
+- Only `APPROVED` oil surrenders are processed. Row locking, an application check, and a unique database constraint prevent duplicate rewards during retries or concurrent actions.
+- Each incentive stores its rule and result snapshot, so later rule edits never rewrite historical rewards.
+- Distribution requires explicit administrator confirmation and records the distributor, timestamp, optional notes, audit event, and Compliance Ledger event. Phase 6 provides no casual reversal.
+- Owner Bearer clients can read unit-grouped earned, distributed, and pending totals plus their own transaction history through `GET /api/mobile/incentives.php`.
+- The append-only staff Compliance Ledger records registration, alert, surrender, and incentive lifecycle events and supports event, date, establishment, device, grease-trap, and transaction searches without edit or delete controls.
+- Dashboard and establishment details use actual incentive records and preserve unlike units separately.
+- See [Incentive processing](docs/INCENTIVES.md), [Compliance Ledger](docs/COMPLIANCE_LEDGER.md), and [Owner Mobile API](docs/MOBILE_API.md).
+- The Phase 6 suite passes 41 rule, workflow, authorization, concurrency, rollback, ledger, API, and page integration checks.
 
 ## Technology Stack
 
@@ -145,7 +158,7 @@ Import each SQL file **once into a fresh installation**. Imports intentionally d
 
 Open [credentials.txt](credentials.txt) locally in your editor for the development account emails, login identifiers, passwords, and separate phpMyAdmin credentials. Apache blocks this file from browser access. The website uses email addresses rather than separate usernames; this reference does not create accounts or update passwords.
 
-**DEVELOPMENT ACCOUNT ONLY â€” do not use these accounts or credentials in production.** All names and business details are fictional; `.test` email addresses do not receive mail.
+**DEVELOPMENT ACCOUNT ONLY — do not use these accounts or credentials in production.** All names and business details are fictional; `.test` email addresses do not receive mail.
 
 | Role | Email | Password |
 | --- | --- | --- |
@@ -170,7 +183,7 @@ This also applies the migration, creates the fictional owner only if absent, lin
 
 Bearer tokens are random, stored only as hashes in MariaDB, and default to a 24-hour expiry (`mobile_token_lifetime_seconds` in PHP configuration). Active owner role, password fingerprint and current establishment ownership are enforced on each request. Staff session authentication remains separate. Only the four named endpoint files are exposed; the API root and documentation remain blocked.
 
-The dashboard derives status and freshness from database configuration. It returns only owned active establishments and their traps, marks simulated/stale records, and never fabricates telemetry when no readings exist. Owner surrender submission/history are available through the documented Phase 5 API; incentive processing remains future work. Local debug HTTP must be replaced with HTTPS for deployment.
+The dashboard derives status and freshness from database configuration. It returns only owned active establishments and their traps, marks simulated/stale records, and never fabricates telemetry when no readings exist. Owner surrender and incentive history are available through documented owner-scoped APIs. Local debug HTTP must be replaced with HTTPS for deployment.
 
 Verify the new API with `C:\xampp\php\php.exe tests\mobile-api.php --allow-local-fixtures` (30 checks); existing website tests still pass (54 checks plus session expiry). Temporary test users, establishments, devices, readings and tokens are removed after the tests.
 
@@ -203,7 +216,7 @@ Environment overrides: `AQUASENSE_DB_HOST`, `AQUASENSE_DB_PORT`, `AQUASENSE_DB_N
 | `incentive_transactions` | References a surrender and rule and stores the awarded amount. A unique surrender foreign key prevents a second reward for the same surrender. |
 | `compliance_ledger` | Preserves business events with optional establishment, author, and related record reference. No editing or deletion interface. |
 | `audit_logs` | Separate administrative audit trail. Login, failed login, and logout are recorded now; future modules must add their own events. |
-| `system_settings` | Named configurable defaults, including an initial emulsion temperature of 40Â°C. The settings editor is a later phase. |
+| `system_settings` | Named configurable defaults, including an initial emulsion temperature of 40°C. The settings editor is operational. |
 | `password_resets` | Future single-use reset token hashes, expiry, and use time. Token issuance, redemption, and delivery are not implemented. |
 | `mobile_tokens` | Additive migration: hashed mobile bearer sessions, password fingerprint and expiry; each token belongs to a user. |
 | `login_attempts` | Shared server-side sign-in throttling by hashed email or client IP within a configured window. |
@@ -237,6 +250,7 @@ aquasense-web/
     migrations/004-...sql      Phase 3 telemetry/calibration migration
     migrations/005-...sql      Phase 4 alert migration
     migrations/006-...sql      Phase 5 surrender/review migration
+    migrations/007-...sql      Phase 6 incentives/ledger migration
   docs/ESP32_API.md            ESP32 request, authentication, and retry contract
   public/
     index.php                  public entry redirect
@@ -317,14 +331,20 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 - Browser visual review of desktop, tablet, mobile, and keyboard interaction. Browser automation was unavailable in this session.
 - Recovery of this machine's pre-existing default XAMPP MariaDB instance; an isolated XAMPP MariaDB instance supports the working local site in the meantime.
 
-### Planned â€” not implemented
+### Planned — not implemented
 
 - **Phase 4 (completed):** configurable thresholds, warning generation, acknowledgment/resolution, and offline detection.
 - **Phase 5 (completed):** surrender submissions, secure photo uploads and authorized delivery, human evidence comparison, approval/rejection.
-- **Phase 6:** configurable incentive rules, atomic reward processing, distribution, and compliance ledger interface.
-- **Phase 7:** report filters, daily/weekly/monthly reports, CSV export, modular future PDF export, and broader audit coverage.
+- **Phase 6 (completed):** configurable incentive rules, atomic reward processing, distribution, owner summaries, and Compliance Ledger interface.
+- **Phase 7:** report filters, daily/weekly/monthly reporting and CSV/PDF exports over indexed Phase 6 transaction and ledger data.
 - **Phase 8:** full security, integration, and usability review; account management and secure password recovery delivery.
 - The sibling Flutter app now implements Mobile Phase 1. The sibling ESP32 sketch now supports one ultrasonic bench test; physical sensor validation and calibration remain incomplete.
+
+### Current limitations
+
+- The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
+- Phase 7 reporting, CSV export, and finalized PDF reports are not implemented.
+- The separate Flutter UI may still need screens for the new Phase 6 owner endpoint.
 
 ## Sensor Integration
 
@@ -348,7 +368,7 @@ The original sample-data import creates a fictional device assignment without te
 - Generic service errors; detailed diagnostics only in protected `logs/php-error.log`.
 - Login/logout audit records; logout still ends access if database auditing fails, with an explanatory user notice and protected server log.
 
-Phase 5 stores validated evidence under the configurable private storage root, blocks direct HTTP access, and streams files through owner/staff authorization controllers. The code is portable to a TLS-enabled PHP host, but an actual production launch still requires a selected host/domain, least-privilege database account, persistent private storage, backups, monitoring, real accounts, and deployment verification.
+Phase 6 retains protected evidence storage and adds transactional incentive, audit, and compliance writes. The code is portable to a TLS-enabled PHP host, but an actual production launch still requires a selected host/domain, least-privilege database account, persistent private storage, backups, monitoring, official incentive policy, real accounts, and deployment verification.
 
 ## Running AQUASENSE+
 
@@ -398,7 +418,7 @@ Before deployment, manually inspect authentication, management, monitoring, hist
 
 ### Current machine database workaround
 
-On 2026-09-14, the already-running MariaDB on port **3306** reported pre-existing InnoDB corruption (â€œlog sequence number â€¦ is in the futureâ€). The schema import stalled while creating `roles`. The import client was stopped and its query cancellation requested. No existing database files or unrelated databases were repaired, removed, or replaced. An empty/partial `aquasense` database may remain on that original instance; do not assume it is a successful install.
+On 2026-09-14, the already-running MariaDB on port **3306** reported pre-existing InnoDB corruption ("log sequence number … is in the future"). The schema import stalled while creating `roles`. The import client was stopped and its query cancellation requested. No existing database files or unrelated databases were repaired, removed, or replaced. An empty/partial `aquasense` database may remain on that original instance; do not assume it is a successful install.
 
 The working website uses **XAMPP's own MariaDB binary** with a separate fresh data directory:
 
@@ -417,7 +437,7 @@ The task starts automatically at Windows sign-in. If it has been stopped, start 
 Start-ScheduledTask -TaskName 'AQUASENSE Local Database'
 ```
 
-If phpMyAdmin reports `HY000/2002` or â€œtarget machine actively refused itâ€ while
+If phpMyAdmin reports `HY000/2002` or "target machine actively refused it" while
 the **AQUASENSE+ (working database - port 3307)** server is selected, Apache is
 running but the isolated database is not listening. The XAMPP MySQL button does
 not start this port-3307 instance. Start the scheduled task above, wait a few
@@ -448,7 +468,7 @@ On a healthy XAMPP installation use the standard import workflow above and omit 
 
 ## Development Status
 
-Phase 5 oil surrender and Hybrid Verification are complete in backend v0.7.0. The next development task is Phase 6 — Rice Incentive Processing for APPROVED surrender records, including configured rules, duplicate-reward prevention, distribution state, and compliance history.
+Phase 6 Sana Oil Incentives and the Digital Compliance Ledger are complete in backend v0.8.0. The exact next task is Phase 7: build authorized date/status/establishment reporting and CSV/PDF exports over the indexed incentive and compliance records without changing historical transactions.
 
 ## Versioning
 
@@ -479,4 +499,4 @@ On this computer, AQS-001 remains assigned to test trap 12 under fictional Demo 
 
 The administrator simulator is available only in development and requires a device credential. Device keys can be generated or rotated from Device Details, appear once, and are never stored as plaintext. The simulator calls the HTTP endpoint and does not insert into MySQL directly.
 
-Validation commands include `php tests/phase4.php --allow-local-fixtures` and `php tests/phase5.php --allow-local-fixtures`. Phase 5 adds 39 passing surrender, upload, ownership, concurrency, audit, and Hybrid Verification checks while retaining all earlier suites. Test credentials remain excluded from Git.
+Validation commands include `php tests/phase5.php --allow-local-fixtures` and `php tests/phase6.php --allow-local-fixtures`. Phase 6 adds rule, calculation, unit separation, duplicate/concurrency, rollback, distribution, owner isolation, audit, and compliance checks while retaining all earlier suites. Test credentials remain excluded from Git.

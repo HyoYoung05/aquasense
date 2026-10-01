@@ -336,6 +336,19 @@ Validate with:
 Mobile contract: docs\MOBILE_API.md
 Review model: docs\HYBRID_VERIFICATION.md
 
+BACKEND 0.8.0 / PHASE 6 SCHEMA UPDATE
+-------------------------------------
+Back up the database, then import database\migrations\007-phase6-incentives.sql
+after migration 006. The migration extends the existing incentive and compliance
+tables without dropping Phase 1-5 data. It does not create an official conversion
+rule. Sign in as an administrator and configure the approved Barangay policy under
+Incentives > Manage rules before processing an APPROVED surrender.
+
+Validate with:
+  C:\xampp\php\php.exe tests\phase6.php --allow-local-fixtures
+
+Contracts: docs\INCENTIVES.md, docs\COMPLIANCE_LEDGER.md, docs\MOBILE_API.md
+
 After migration, sign in as the development administrator and verify Dashboard,
 Establishments, Grease Traps, and Devices. The existing AQS-001 test device is
 shown from the database; stale telemetry is reported as OFFLINE rather than being

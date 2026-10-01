@@ -46,8 +46,8 @@ INSERT INTO system_settings (setting_key, setting_value, description) VALUES
     ('oil_surrender_telemetry_window_hours', '6', 'Hours before and after surrender used for Hybrid Verification telemetry evidence.'),
     ('default_rice_unit', 'kg', 'Default rice quantity unit.');
 
-INSERT INTO compliance_ledger (event_type, establishment_id, related_record_type, related_record_id, description, created_by)
-VALUES ('DEVELOPMENT_SETUP', 1, 'establishments', 1, 'Fictional establishment, grease trap, and device added for local development. No actual monitoring or surrender activity.', 1);
+INSERT INTO compliance_ledger (event_code, event_type, establishment_id, related_record_type, related_record_id, description, event_timestamp, dedupe_key, created_by)
+VALUES ('LED-DEVELOPMENT-SETUP', 'DEVELOPMENT_SETUP', 1, 'establishments', 1, 'Fictional establishment, grease trap, and device added for local development. No actual monitoring, surrender, or incentive activity.', UTC_TIMESTAMP(), 'DEVELOPMENT_SETUP:1', 1);
 
 INSERT INTO audit_logs (user_id, action, record_type, record_id)
 VALUES (1, 'DEVELOPMENT_SETUP', 'users', 1);

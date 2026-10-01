@@ -127,6 +127,7 @@ try {
     check(request_test('/api/device/')['status']===403,'API directory stays private');
     echo "$checks checks passed. Synthetic integration fixtures will be removed.\n";
 } finally {
+    if($site) $pdo->prepare('DELETE FROM compliance_ledger WHERE establishment_id=?')->execute([$site]);
     if($assignment) {
         $pdo->prepare('DELETE FROM alerts WHERE device_assignment_id=?')->execute([$assignment]);
         $pdo->prepare('DELETE FROM sensor_readings WHERE device_assignment_id=?')->execute([$assignment]);
