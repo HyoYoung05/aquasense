@@ -315,7 +315,8 @@ CREATE TABLE audit_logs (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id),
     INDEX idx_audit_user_time (user_id, created_at),
-    INDEX idx_audit_action_time (action, created_at)
+    INDEX idx_audit_action_time (action, created_at),
+    INDEX idx_audit_created_at (created_at)
 ) ENGINE=InnoDB;
 
 CREATE TABLE system_settings (

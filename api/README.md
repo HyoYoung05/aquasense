@@ -1,4 +1,4 @@
-# Shared API (backend 0.8.0)
+# Shared API (backend 0.9.0)
 
 Owner endpoints, device telemetry, staff monitoring, Phase 4 alerts, Phase 5 oil surrender endpoints, and the Phase 6 owner incentive endpoint are implemented. Existing PDO/configuration, users,
 roles, establishments, readings, audit and rate-limit records are reused.

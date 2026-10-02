@@ -2,7 +2,61 @@
 
 ## Current Version
 
-0.8.0
+0.9.0
+
+## 0.9.0
+
+Date: 2026-10-02
+
+Development Phase: Phase 7 — Reporting, Export, and Audit Review
+
+### Added
+
+- Added the central Reports interface with compliance overview, establishment,
+  grease-trap, telemetry, alert, surrender, incentive, rice distribution, rule,
+  device, Compliance Ledger, and Audit Log reports.
+- Added Today, Last 7 Days, Monday–Sunday week, Last 30 Days, This Month, and
+  validated custom date periods using the configured application timezone.
+- Added common filters, whitelisted sorting, 25/50/100 row pagination, unit-aware
+  summaries, telemetry aggregates, honest missing-data states, and filter persistence.
+- Added streamed CSV export with spreadsheet formula neutralization and streamed PDF
+  export through pinned Dompdf 3.1.6 with remote resources and embedded PHP disabled.
+- Added formal compliance and print layouts, export auditing, migration 008, reporting
+  documentation, and a 34-check Phase 7 regression suite.
+
+### Changed
+
+- Dashboard and navigation now link directly to reporting and the monthly compliance
+  view. Application and displayed version advanced from 0.8.0 to 0.9.0.
+- Production deployment now installs Composer dependencies for PDF generation.
+
+### Security and integrity
+
+- Reports and direct export routes independently require administrator or
+  environmental-staff authentication. Owner and anonymous access remains denied.
+- Report type, identifiers, dates, page sizes, and ordering are validated or
+  whitelisted. SQL values use prepared statements.
+- CSV/PDF files are generated in memory and streamed; no report contents or secrets
+  are persisted. Audit and Compliance Ledger data remain separate and read-only.
+
+### Database and validation
+
+- Backed up the development database before migration 008 to
+  `C:\xampp\tmp\aquasense-config-backups\pre-phase7-20261002-131029.sql`.
+- Migration 008 adds the justified date-only `audit_logs(created_at)` index. Existing
+  telemetry, alert, surrender, incentive, and ledger reporting indexes were retained
+  because equivalent indexes already exist.
+- Phase 7 passes 34 dedicated checks. The retained Phase 1–6, mobile, CORS, session,
+  production configuration, and ESP32 tests are rerun for the release.
+
+### Known Issues
+
+- PDF detail is intentionally limited to 500 rows and CSV to 10,000 rows; narrow the
+  period or filters for a complete large raw dataset.
+- Final security hardening, end-to-end/load testing, accessibility and UI review,
+  deployment checks, documentation cleanup, and capstone release preparation remain
+  Phase 8.
+- Physical sensor coverage and final production hosting may still be incomplete.
 
 ## 0.8.0
 

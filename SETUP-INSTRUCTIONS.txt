@@ -1,7 +1,7 @@
 AQUASENSE+ - SETUP INSTRUCTIONS
 ==============================
 
-This guide sets up the Phase 4 administrative, sensor-monitoring, and alert-management website on a Windows computer.
+This guide sets up the Phase 7 administrative, monitoring, workflow, incentive, and reporting website on a Windows computer.
 The website runs with XAMPP, PHP, and MySQL/MariaDB.
 For the current version and development status, see VERSION.md and README.md.
 
@@ -12,10 +12,11 @@ For the current version and development status, see VERSION.md and README.md.
 - PHP PDO MySQL extension enabled (pdo_mysql).
 - A modern web browser.
 - Git, if you want to clone and update the repository using commands.
+- Composer 2, used to install the server-side PDF export library.
 - Access to the private GitHub repository:
   https://github.com/HyoYoung05/aquasense
 
-No Node.js server, Composer installation, or frontend build step is required.
+No Node.js server or frontend build step is required.
 
 2. GET THE PROJECT FILES
 -----------------------
@@ -82,6 +83,8 @@ On a fresh installation:
   m. Import database\migrations\004-phase3-telemetry.sql.
   n. Import database\migrations\005-phase4-alerts.sql.
   o. Import database\migrations\006-phase5-oil-surrender.sql.
+  p. Import database\migrations\007-phase6-incentives.sql.
+  q. Import database\migrations\008-phase7-reporting.sql.
 
 Import schema.sql BEFORE sample-data.sql, then apply migrations in numeric order.
 All files must use the same server. After the complete import, the database should
@@ -90,6 +93,13 @@ contain 19 tables, the nullable establishment notes column, and two staff users.
 Import these files only once into a fresh database. They are not update scripts.
 If tables already exist, inspect the database before doing anything further.
 Back up useful records before making database changes.
+
+After cloning or downloading the source, open PowerShell in the project folder and run:
+
+  composer install
+
+This installs Dompdf from the committed composer.lock file. The vendor folder is
+machine-generated and is intentionally excluded from Git.
 
 5. CHECK THE WEBSITE'S DATABASE SETTINGS
 ---------------------------------------
@@ -348,6 +358,19 @@ Validate with:
   C:\xampp\php\php.exe tests\phase6.php --allow-local-fixtures
 
 Contracts: docs\INCENTIVES.md, docs\COMPLIANCE_LEDGER.md, docs\MOBILE_API.md
+
+BACKEND 0.9.0 / PHASE 7 SCHEMA UPDATE
+-------------------------------------
+Back up the database, then import database\migrations\008-phase7-reporting.sql
+after migration 007. Run `composer install` in the project directory to install
+Dompdf from composer.lock. The migration adds the audit date index and does not
+change operational records.
+
+Validate with:
+  C:\xampp\php\php.exe tests\phase7.php --allow-local-fixtures
+
+Open Reports and verify the compliance overview, Audit Log, filtered CSV, PDF,
+and print view. Contracts: docs\REPORTING.md
 
 After migration, sign in as the development administrator and verify Dashboard,
 Establishments, Grease Traps, and Devices. The existing AQS-001 test device is

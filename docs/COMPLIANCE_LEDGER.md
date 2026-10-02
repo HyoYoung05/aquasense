@@ -23,5 +23,6 @@ prevent retries from duplicating an event. Incentive and distribution ledger
 writes share the same database transaction as the business record and audit log,
 so a failed operation leaves no false compliance event.
 
-Phase 7 may query and export this data. Phase 6 does not implement the reporting,
-CSV, or PDF suite.
+Phase 7 queries and exports this data through authenticated HTML, CSV, and PDF
+reports. Reporting remains read-only and does not merge ledger events with the
+separate technical Audit Log.

@@ -4,7 +4,7 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository currently focuses on the **Barangay Administrative Website** for Barangay San Antonio officials and environmental staff.
 
-The administrative website now includes **Phase 6 Sana Oil Incentives and the Digital Compliance Ledger**. Backend version 0.8.0 processes only approved oil surrenders under administrator-configured rules, preserves historical calculation snapshots, tracks physical rice distribution, and exposes owner-scoped reward history.
+The administrative website now includes **Phase 7 Reporting, Export, and Audit Review**. Backend version 0.9.0 adds filtered daily, weekly, monthly, and custom reports; establishment, telemetry, alert, surrender, incentive, device, ledger, and audit views; CSV/PDF exports; and formal print support while preserving Phase 1–6 workflow and authorization rules.
 
 ## Current Version
 
@@ -16,7 +16,7 @@ API endpoint, and provisioned device credentials. Local Wi-Fi passwords, device 
 compiler databases, and firmware binaries are excluded from GitHub. The Flutter source
 and APK remain in the separate local `aquasense_mobile` project and are not in this repository.
 
-**Version: 0.8.0**
+**Version: 0.9.0**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -51,7 +51,7 @@ Import the SQL files using the steps below. `.gitattributes` keeps text line end
 
 ## Current Development Phase
 
-**Phase 6 — Sana Oil Incentives and Digital Compliance Ledger.** Existing monitoring, alerts, secure owner submissions, and Hybrid Verification remain active. Approved surrenders can now enter an atomic, duplicate-protected reward and distribution workflow.
+**Phase 7 — Reporting, Export, and Audit Review.** Existing monitoring, alerts, secure owner submissions, Hybrid Verification, incentives, and the Compliance Ledger remain active and now feed authorized operational and formal reports.
 
 ### Phase 2 administrative features
 
@@ -112,20 +112,33 @@ The 2026-09-30 AQS-001 development simulation used the real HTTP telemetry endpo
 - See [Incentive processing](docs/INCENTIVES.md), [Compliance Ledger](docs/COMPLIANCE_LEDGER.md), and [Owner Mobile API](docs/MOBILE_API.md).
 - The Phase 6 suite passes 41 rule, workflow, authorization, concurrency, rollback, ledger, API, and page integration checks.
 
+### Phase 7 reporting and export features
+
+- The central Reports workspace provides compliance overview, establishment detail, grease-trap monitoring, telemetry, alerts, oil surrender and evidence, incentive, rice distribution, rule history, device, Compliance Ledger, and technical Audit Log reports.
+- Report periods use the configured application timezone and support Today, Last 7 Days, Monday–Sunday week, Last 30 Days, This Month, and validated custom ranges.
+- Common establishment, trap, device, user, status/event, search, page-size, and whitelisted sort filters persist through pagination and export links.
+- CSV exports use standards-based escaping and neutralize spreadsheet formulas. PDF exports use pinned Dompdf 3.1.6 with remote resources and embedded PHP disabled.
+- Large HTML results paginate at 25, 50, or 100 rows. CSV is capped at 10,000 rows and PDF detail at 500 rows, with clear truncation notices.
+- Oil and rice quantities remain grouped by unit; missing sensor data is shown honestly; downloaded files are point-in-time snapshots and are streamed without permanent storage.
+- `admin/compliance-report.php` provides a formal print view, while `admin/audit-logs.php` remains separate from the environmental Compliance Ledger.
+- Administrators and environmental staff may read reports. Owners cannot access global reporting or direct export routes. Successful exports are audited.
+- See [Reporting and exports](docs/REPORTING.md). The Phase 7 suite passes 34 reporting, validation, authorization, filter, pagination, export, unit, and audit checks.
+
 ## Technology Stack
 
 - XAMPP and Apache
 - PHP with PDO and native PHP sessions
 - MySQL/MariaDB and phpMyAdmin
-- HTML5, CSS3, and vanilla JavaScript
+- HTML5, CSS3, vanilla JavaScript, and Composer-managed Dompdf 3.1.6
 
-No framework, package installation, build pipeline, or additional application server is required. All assets are local; there are no third-party fonts, analytics, or CDN dependencies.
+No framework, frontend build pipeline, or additional application server is required. Run `composer install` for the server-side PDF dependency. All browser assets are local; there are no third-party fonts, analytics, or CDN dependencies.
 
 ## Requirements
 
 - Windows 10 or Windows 11
 - XAMPP with PHP 8.1 or newer and MariaDB 10.4 or newer
 - PHP extensions: `pdo_mysql`, `fileinfo`; `curl` for integration tests
+- Composer 2 for installing the locked Dompdf PDF dependency
 - A modern browser
 - Git (optional)
 - Apache `AllowOverride All` (the usual XAMPP htdocs configuration) so the included `.htaccess` protections apply
@@ -148,9 +161,10 @@ These are the standard steps for a healthy XAMPP installation. See **Current mac
 6. Create a database named **aquasense**, using `utf8mb4_unicode_ci`.
 7. Select **aquasense**, choose **Import**, select `database/schema.sql`, and click **Import/Go**. The SQL creates tables in the database selected by the importer, so production hosts may use their assigned database name without editing the schema.
 8. Import `database/sample-data.sql` the same way, after the schema import succeeds.
-9. Apply migrations `001-mobile-tokens.sql` through `006-phase5-oil-surrender.sql` in numeric order. Migration 006 extends the existing surrender/photo structures and adds the protected-upload and telemetry-window settings without deleting earlier data.
-10. If your local database credentials differ, copy `config/local.example.php` to `config/local.php` and adjust the settings. Set every development database value in the ignored file; the committed application has no database username, database name, or password defaults.
-11. Open [AQUASENSE+](http://localhost/aquasense-web/) and sign in with a development account below.
+9. Apply migrations `001-mobile-tokens.sql` through `008-phase7-reporting.sql` in numeric order.
+10. Run `composer install` in the project directory to install the locked PDF dependency.
+11. If your local database credentials differ, copy `config/local.example.php` to `config/local.php` and adjust the settings. Set every development database value in the ignored file; the committed application has no database username, database name, or password defaults.
+12. Open [AQUASENSE+](http://localhost/aquasense-web/) and sign in with a development account below.
 
 Import each SQL file **once into a fresh installation**. Imports intentionally do not drop tables or overwrite existing accounts. Back up existing data before migrations; rerunning `schema.sql` against an installed schema will report that tables already exist. The sample import uses a transaction to prevent partially seeded data.
 
@@ -251,6 +265,7 @@ aquasense-web/
     migrations/005-...sql      Phase 4 alert migration
     migrations/006-...sql      Phase 5 surrender/review migration
     migrations/007-...sql      Phase 6 incentives/ledger migration
+    migrations/008-...sql      Phase 7 reporting index migration
   docs/ESP32_API.md            ESP32 request, authentication, and retry contract
   public/
     index.php                  public entry redirect
@@ -336,14 +351,14 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 - **Phase 4 (completed):** configurable thresholds, warning generation, acknowledgment/resolution, and offline detection.
 - **Phase 5 (completed):** surrender submissions, secure photo uploads and authorized delivery, human evidence comparison, approval/rejection.
 - **Phase 6 (completed):** configurable incentive rules, atomic reward processing, distribution, owner summaries, and Compliance Ledger interface.
-- **Phase 7:** report filters, daily/weekly/monthly reporting and CSV/PDF exports over indexed Phase 6 transaction and ledger data.
+- **Phase 7 (completed):** report filters, daily/weekly/monthly/custom reporting, audit review, and CSV/PDF/print exports over indexed operational records.
 - **Phase 8:** full security, integration, and usability review; account management and secure password recovery delivery.
 - The sibling Flutter app now implements Mobile Phase 1. The sibling ESP32 sketch now supports one ultrasonic bench test; physical sensor validation and calibration remain incomplete.
 
 ### Current limitations
 
 - The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
-- Phase 7 reporting, CSV export, and finalized PDF reports are not implemented.
+- PDF detail is limited to 500 rows and CSV detail to 10,000 rows; narrower filters are required for complete exports beyond those limits.
 - The separate Flutter UI may still need screens for the new Phase 6 owner endpoint.
 
 ## Sensor Integration
@@ -368,7 +383,7 @@ The original sample-data import creates a fictional device assignment without te
 - Generic service errors; detailed diagnostics only in protected `logs/php-error.log`.
 - Login/logout audit records; logout still ends access if database auditing fails, with an explanatory user notice and protected server log.
 
-Phase 6 retains protected evidence storage and adds transactional incentive, audit, and compliance writes. The code is portable to a TLS-enabled PHP host, but an actual production launch still requires a selected host/domain, least-privilege database account, persistent private storage, backups, monitoring, official incentive policy, real accounts, and deployment verification.
+Phase 7 retains protected evidence storage and transactional incentive, audit, and compliance writes while adding streamed reports. The code is portable to a TLS-enabled PHP host, but an actual production launch still requires a selected host/domain, least-privilege database account, persistent private storage, backups, monitoring, official incentive policy, real accounts, Composer installation, and deployment verification.
 
 ## Running AQUASENSE+
 
@@ -468,7 +483,7 @@ On a healthy XAMPP installation use the standard import workflow above and omit 
 
 ## Development Status
 
-Phase 6 Sana Oil Incentives and the Digital Compliance Ledger are complete in backend v0.8.0. The exact next task is Phase 7: build authorized date/status/establishment reporting and CSV/PDF exports over the indexed incentive and compliance records without changing historical transactions.
+Phase 7 Reporting, Export, and Audit Review is complete in backend v0.9.0. The exact next task is Phase 8: perform final security hardening, end-to-end and performance validation, usability and accessibility review, production deployment checks, documentation cleanup, and final capstone release preparation.
 
 ## Versioning
 
@@ -499,4 +514,4 @@ On this computer, AQS-001 remains assigned to test trap 12 under fictional Demo 
 
 The administrator simulator is available only in development and requires a device credential. Device keys can be generated or rotated from Device Details, appear once, and are never stored as plaintext. The simulator calls the HTTP endpoint and does not insert into MySQL directly.
 
-Validation commands include `php tests/phase5.php --allow-local-fixtures` and `php tests/phase6.php --allow-local-fixtures`. Phase 6 adds rule, calculation, unit separation, duplicate/concurrency, rollback, distribution, owner isolation, audit, and compliance checks while retaining all earlier suites. Test credentials remain excluded from Git.
+Validation commands include `php tests/phase6.php --allow-local-fixtures` and `php tests/phase7.php --allow-local-fixtures`. Phase 7 adds 34 report, filter, date, pagination, CSV/PDF, formula-injection, authorization, unit, and export-audit checks while retaining every earlier suite. The complete release run passes 394 checks. Test credentials remain excluded from Git.

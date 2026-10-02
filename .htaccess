@@ -1,5 +1,9 @@
 Options -Indexes
 DirectoryIndex index.php
-<FilesMatch "(?i)^(\..*|.*\.(md|txt|sql|log|ini|bak))$">
+<FilesMatch "(?i)^(\..*|composer\.(json|lock)|.*\.(md|txt|sql|log|ini|bak))$">
     Require all denied
 </FilesMatch>
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^vendor(?:/|$) - [F,L,NC]
+</IfModule>

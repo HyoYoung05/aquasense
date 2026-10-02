@@ -12,7 +12,8 @@ connection or local database stops.
 
 ## Server requirements
 
-- PHP 8.1+ with PDO MySQL and JSON; MariaDB 10.4+ or compatible MySQL.
+- PHP 8.1+ with PDO MySQL, JSON, DOM, and mbstring; MariaDB 10.4+ or compatible MySQL.
+- Composer 2 during deployment to install the locked Dompdf PDF dependency.
 - Apache with .htaccess enabled, or equivalent Nginx access rules.
 - A public domain, valid TLS certificate and HTTPS-only traffic.
 - A dedicated least-privilege database account with a strong password.
@@ -72,6 +73,10 @@ Deploy the repository contents without `config/local.php`, runtime logs, uploade
 files, development APKs or database dumps. Preserve the included denial rules for
 configuration, database, includes, tests, logs and uploads. For Nginx, reproduce
 those denials explicitly because Nginx does not read .htaccess.
+
+Run `composer install --no-dev --classmap-authoritative` in the deployed application
+directory. Do not expose `composer.json`, `composer.lock`, or `vendor` as browsable
+directory listings. Report files are streamed and need no writable export directory.
 
 Schedule `php scripts/check_offline_devices.php` at an interval shorter than the
 configured offline timeout. The CLI-only script uses the same environment-based
@@ -149,3 +154,13 @@ and exercise calculation, concurrent retry, distribution confirmation, owner
 isolation, and transaction rollback on staging. No sample conversion rule is seeded.
 The owner release must call the deployed HTTPS `GET /api/mobile/incentives.php`
 endpoint. Phase 7 reporting/export remains outside this release.
+
+BACKEND 0.9.0 / PHASE 7 SCHEMA UPDATE
+-------------------------------------
+Back up the database and apply migration 008 after migration 007. It adds the
+date-only audit-log index used by cross-user reporting and does not alter stored
+business records. Install Composer dependencies from `composer.lock`, then verify
+authenticated HTML, CSV, PDF, print, Audit Log, and Compliance Ledger reports on
+staging. CSV is capped at 10,000 rows and PDF detail at 500 rows. Export generation
+uses no permanent server storage. Phase 8 final hardening and release validation
+remain outside this release.
