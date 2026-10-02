@@ -39,7 +39,7 @@ require dirname(__DIR__) . '/includes/auth-header.php';
 <span class="eyebrow">BARANGAY OPERATIONS</span>
 <h2>Welcome back.</h2>
 <p class="auth-description">Sign in to your AQUASENSE+ workspace.</p>
-<div class="development-note"><span class="status-dot"></span><div><strong>Phase 1 · Website foundation</strong><p>This local prototype is not connected to monitoring devices.</p></div></div>
+<div class="development-note"><span class="status-dot"></span><div><strong>AQUASENSE+ 1.0</strong><p>Monitoring, alerts, compliance, and reporting use the configured backend.</p></div></div>
 </div>
 <div class="login-fields">
 <?php if ($notice): ?><div class="notice" role="status"><?= e($notice) ?></div><?php endif; ?>

@@ -8,7 +8,7 @@ require_once __DIR__ . '/mobile-cors.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
-header('X-Content-Type-Options: nosniff');
+send_security_headers();
 set_exception_handler(function (Throwable $error): void {
     error_log('Mobile API: ' . $error->getMessage());
     api_fail('The service is temporarily unavailable. Please try again.', 503);

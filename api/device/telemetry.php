@@ -6,7 +6,7 @@ require_once dirname(__DIR__,2).'/config/database.php';
 require_once dirname(__DIR__,2).'/includes/telemetry.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
-header('X-Content-Type-Options: nosniff');
+send_security_headers();
 
 function telemetry_reply(int $status,array $body):never
 {

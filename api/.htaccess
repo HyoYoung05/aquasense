@@ -1,1 +1,4 @@
 Require all denied
+<Files "health.php">
+    Require all granted
+</Files>

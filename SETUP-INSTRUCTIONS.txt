@@ -401,3 +401,11 @@ Device endpoint:
 See docs/ESP32_API.md for the payload, status codes, retry behavior, and interval
 guidance. Run tests/phase3.php only against a development database; its temporary
 records are removed afterward. Phase 4 is the next task and will add alert automation.
+
+PHASE 8 / PRODUCTION RELEASE
+----------------------------
+For a local development install: import schema.sql, migrations 001 through 008, then sample-data.sql.
+For production: import schema.sql, migrations 001 through 008, then reference-data.sql. Never import sample-data.sql.
+Production also requires an HTTPS AQUASENSE_APP_URL, environment-managed database credentials, private upload/log paths, Composer dependencies, cron for scripts/check_offline_devices.php, backups, monitoring, and the first-administrator CLI.
+Read docs/DEPLOYMENT.md and complete docs/PRODUCTION_CHECKLIST.md before go-live.
+The application reads process environment variables; a .env file is not required or automatically parsed.

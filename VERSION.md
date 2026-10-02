@@ -1,8 +1,43 @@
 # AQUASENSE+ Version History
 
-## Current Version
+$11.0.0
 
-0.9.0
+
+## 1.0.0
+
+Date: 2026-10-02
+
+Development Phase: Phase 8 — Final System Hardening and Production Preparation
+
+### Added
+
+- Added development, test, and production environment validation with configurable canonical app URL, timezone, log level, storage, CORS, telemetry bounds, and export/upload rate ceilings.
+- Added canonical HTTPS redirects for website traffic, API-safe HTTPS rejection, Permissions-Policy and related security headers, and a database-aware health endpoint with non-sensitive responses.
+- Added per-user report export throttling, per-owner surrender upload throttling, a one-time first-administrator CLI, a protected read-only account directory, and production-safe role reference data without sample accounts.
+- Added keyboard focus coverage, reduced-motion and coarse-pointer support, fresh-install testing, query-plan/performance checks, and final deployment, security, architecture, backup/restore, release, checklist, demo, and test documentation.
+
+### Changed
+
+- Production now requires an explicit HTTPS `AQUASENSE_APP_URL` and private storage configuration. Browser HTTP requests use a 308 canonical redirect; credential-bearing APIs fail closed with 426.
+- Navigation and footer identify the production release. The unfinished Users placeholder is replaced by an administrator-only account directory.
+- README installation separates development sample data from production reference data. Root deployment guidance now matches the final production runbook.
+
+### Security and integrity
+
+- Revalidated password/session/CSRF controls, administrator and staff permissions, owner data isolation, mobile token revocation, ESP32 device-key handling, evidence validation/storage, incentive deduplication, append-only compliance history, audit logging, and safe CSV/PDF export.
+- Reviewed all foreign keys, uniqueness constraints, and query indexes. Phase 8 needs no schema migration; migration 008 remains the latest and is safe to reapply.
+- Development simulation and fixture helpers remain unavailable in test/production. Sample accounts are never imported by the production installation sequence.
+
+### Validation and release status
+
+- Added the Phase 8 regression/integration suite and disposable fresh-install database test. The complete retained suite, PHP lint, Composer validation/audit, HTTP smoke tests, and Git hygiene checks are recorded in `docs/TEST_REPORT.md`.
+- The source package is ready for production/capstone release. Public hosting, domain/TLS, production secrets, official thresholds/incentive policy, signed Flutter release, physical ESP32 field verification, backup scheduling, monitoring, and final checklist approval require authorized human execution.
+
+### Known limitations
+
+- Email, SMS, push notification delivery, and password-reset delivery are not implemented.
+- CSV exports remain capped at 10,000 detail rows and PDF exports at 500; telemetry retention requires a Barangay-approved policy before sustained growth.
+- Production infrastructure and real-device/mobile acceptance cannot be completed without the selected host, domain, credentials, signing material, and physical hardware/network.
 
 ## 0.9.0
 

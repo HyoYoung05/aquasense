@@ -3,7 +3,10 @@
 // local.php is ignored by Git. Replace every placeholder on the server.
 return [
     'environment' => 'production',
+    'app_url' => 'https://aquasense.example.gov.ph',
     'base_path' => '',
+    'timezone' => 'Asia/Manila',
+    'log_level' => 'warning',
     'db_host' => 'YOUR_PRODUCTION_DB_HOST',
     'db_port' => '3306',
     'db_name' => 'YOUR_PRODUCTION_DB_NAME',
@@ -17,4 +20,6 @@ return [
     // Native Flutter apps do not need CORS. Add exact HTTPS origins only for Flutter web.
     'mobile_web_origins' => [],
     'mobile_allow_local_web_preview' => false,
+    'report_export_max_per_minute' => 10,
+    'upload_max_submissions_per_hour' => 20,
 ];

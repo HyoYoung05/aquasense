@@ -13,7 +13,7 @@
 <header class="auth-page-header">
     <a class="brand brand-light" href="<?= e(url()) ?>"><span class="brand-symbol"><?= icon('drop') ?></span><span>AQUASENSE<span class="brand-plus">+</span></span></a>
     <span class="tag">Administrative website</span>
-    <span class="auth-environment">Local development</span>
+    <span class="auth-environment"><?= e(ucfirst((string) $config['environment'])) ?> environment</span>
 </header>
 <div class="auth-shell">
     <div class="water-art" aria-hidden="true">

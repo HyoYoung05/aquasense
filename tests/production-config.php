@@ -7,6 +7,7 @@ if (PHP_SAPI !== 'cli') {
 $privateRoot = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'aquasense-production-check';
 putenv('AQUASENSE_IGNORE_LOCAL_CONFIG=1');
 putenv('AQUASENSE_APP_ENV=production');
+putenv('AQUASENSE_APP_URL=https://aquasense.example.test');
 putenv('AQUASENSE_BASE_PATH=');
 putenv('AQUASENSE_DB_HOST=db.internal.example');
 putenv('AQUASENSE_DB_PORT=3306');
@@ -29,6 +30,7 @@ function check_production(bool $result, string $label): void {
 }
 check_production($config['environment'] === 'production', 'Production environment selected');
 check_production($config['require_https'] === true, 'HTTPS is mandatory');
+check_production($config['app_url'] === 'https://aquasense.example.test', 'Canonical HTTPS application URL comes from environment');
 check_production($config['mobile_allow_local_web_preview'] === false, 'Local browser preview forced off');
 check_production($config['db_host'] === 'db.internal.example', 'Database host comes from environment');
 check_production($config['db_password'] === 'test-placeholder-not-used', 'Database secret comes from environment');

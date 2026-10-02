@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-function e(?string $value): string
+function e(mixed $value): string
 {
-    return htmlspecialchars($value ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    return htmlspecialchars((string) ($value ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
 function url(string $path = ''): string
@@ -24,6 +24,56 @@ function request_is_https(): bool
     }
     $forwarded = strtolower(trim(explode(',', $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')[0]));
     return $forwarded === 'https';
+}
+
+function canonical_request_url(): ?string
+{
+    global $config;
+    if (empty($config['app_url'])) {
+        return null;
+    }
+    $requestPath = (string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+    $relativePath = $requestPath;
+    $basePath = rtrim((string) $config['base_path'], '/');
+    if ($basePath !== '' && ($requestPath === $basePath || str_starts_with($requestPath, $basePath . '/'))) {
+        $relativePath = substr($requestPath, strlen($basePath));
+    }
+    $query = (string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_QUERY);
+    return rtrim((string) $config['app_url'], '/') . '/' . ltrim($relativePath, '/')
+        . ($query === '' ? '' : '?' . $query);
+}
+
+function app_log(string $level, string $message): void
+{
+    global $config;
+    $weights = ['error' => 0, 'warning' => 1, 'info' => 2];
+    $configured = $weights[$config['log_level'] ?? 'warning'] ?? 1;
+    $requested = $weights[$level] ?? 0;
+    if ($requested <= $configured) {
+        error_log(strtoupper($level) . ' ' . $message);
+    }
+}
+
+function send_security_headers(): void
+{
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: DENY');
+    header('Referrer-Policy: same-origin');
+    header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+    header('Cross-Origin-Opener-Policy: same-origin');
+    header('X-Permitted-Cross-Domain-Policies: none');
+}
+
+function audit_rate_limit_reached(PDO $pdo, int $userId, array $actions, int $seconds, int $maximum): bool
+{
+    if ($actions === [] || $seconds < 1 || $maximum < 1) {
+        throw new InvalidArgumentException('Invalid audit rate-limit configuration.');
+    }
+    $marks = implode(',', array_fill(0, count($actions), '?'));
+    $cutoff = gmdate('Y-m-d H:i:s', time() - $seconds);
+    $query = $pdo->prepare("SELECT COUNT(*) FROM audit_logs WHERE user_id=? AND action IN ($marks) AND created_at>=?");
+    $query->execute(array_merge([$userId], $actions, [$cutoff]));
+    return (int) $query->fetchColumn() >= $maximum;
 }
 
 function storage_path(string $relative = ''): string

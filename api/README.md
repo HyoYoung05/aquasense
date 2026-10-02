@@ -126,3 +126,9 @@ summary and transaction history. Totals are calculated by PHP and grouped by ric
 unit. The endpoint accepts no client reward, rule, status, owner, or establishment
 selector and exposes no distribution mutation. See `../docs/MOBILE_API.md` and
 `../docs/INCENTIVES.md`.
+
+## Release health endpoint
+
+`GET` or `HEAD` on `api/health.php` checks PHP routing and database connectivity. It returns only `{"status":"ok"}` (200) or `{"status":"unavailable"}` (503); unsupported methods return 405. Production requires HTTPS. Do not use it as an authentication bypass or expose database/version details.
+
+Report generation is limited per staff user and oil-surrender submissions are limited per owner using server-side audit history. A limit response is HTTP 429 with `Retry-After`. Device telemetry retains its minimum-interval rate control. All production client URLs must use the one configured public HTTPS API root.

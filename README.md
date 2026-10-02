@@ -4,7 +4,7 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository currently focuses on the **Barangay Administrative Website** for Barangay San Antonio officials and environmental staff.
 
-The administrative website now includes **Phase 7 Reporting, Export, and Audit Review**. Backend version 0.9.0 adds filtered daily, weekly, monthly, and custom reports; establishment, telemetry, alert, surrender, incentive, device, ledger, and audit views; CSV/PDF exports; and formal print support while preserving Phase 1–6 workflow and authorization rules.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.0.0 combines the Phase 1–7 workflows with environment-based deployment, HTTPS and header hardening, health monitoring, rate controls, production-safe first-admin provisioning, accessibility cleanup, fresh-install validation, and final operations documentation.
 
 ## Current Version
 
@@ -16,7 +16,7 @@ API endpoint, and provisioned device credentials. Local Wi-Fi passwords, device 
 compiler databases, and firmware binaries are excluded from GitHub. The Flutter source
 and APK remain in the separate local `aquasense_mobile` project and are not in this repository.
 
-**Version: 0.9.0**
+**Version: 1.0.0**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -31,7 +31,7 @@ ESP32 devices -> HTTPS -> PHP API -> MySQL/MariaDB
                                 `-- Carinderia Flutter application
 ```
 
-Server secrets come from `AQUASENSE_*` environment variables or ignored `config/local.php`; environment variables take precedence. Production mode requires explicit database/storage settings, rejects HTTP, uses secure session cookies, and accepts proxy HTTPS headers only from configured proxy IPs. Upload and log locations are configurable, and the Flutter release receives one HTTPS API root through `API_BASE_URL`. See [DEPLOYMENT.md](DEPLOYMENT.md) for the server, database, Flutter, and future ESP32 release procedure.
+Server secrets come from `AQUASENSE_*` environment variables or ignored `config/local.php`; environment variables take precedence. Production mode requires an explicit canonical HTTPS URL, database and private storage settings. Browser requests redirect to HTTPS; credential-bearing APIs fail closed on HTTP. Upload/log locations and rate ceilings are configurable, and Flutter receives one HTTPS API root through `API_BASE_URL`. See [Deployment](docs/DEPLOYMENT.md) and the [Production Checklist](docs/PRODUCTION_CHECKLIST.md).
 
 A Tailscale network or temporary tunnel remains useful for development testing, but it is not production hosting because availability would still depend on the development computer.
 
@@ -51,7 +51,7 @@ Import the SQL files using the steps below. `.gitattributes` keeps text line end
 
 ## Current Development Phase
 
-**Phase 7 — Reporting, Export, and Audit Review.** Existing monitoring, alerts, secure owner submissions, Hybrid Verification, incentives, and the Compliance Ledger remain active and now feed authorized operational and formal reports.
+**Phase 8 — Final System Hardening and Production Preparation.** The repository is the 1.0.0 production/capstone release package. A real launch still requires an authorized host, domain, TLS certificate, secrets, official thresholds/policy, client builds, physical-device verification, backups, and checklist approval.
 
 ### Phase 2 administrative features
 
@@ -123,6 +123,13 @@ The 2026-09-30 AQS-001 development simulation used the real HTTP telemetry endpo
 - `admin/compliance-report.php` provides a formal print view, while `admin/audit-logs.php` remains separate from the environmental Compliance Ledger.
 - Administrators and environmental staff may read reports. Owners cannot access global reporting or direct export routes. Successful exports are audited.
 - See [Reporting and exports](docs/REPORTING.md). The Phase 7 suite passes 34 reporting, validation, authorization, filter, pagination, export, unit, and audit checks.
+### Phase 8 release hardening
+
+- Added `development`, `test`, and `production` environments; canonical app URL, timezone, log level, storage, CORS, telemetry, export, and upload controls are configurable without hardcoded production hosts.
+- Production uses HTTPS-only browser/API behavior, Secure sessions, HSTS, CSP, Permissions-Policy, proxy allow-listing, exact Flutter Web origins, generic errors, and protected logs.
+- Added a minimal database health endpoint, guarded first-administrator CLI, protected account directory, report/upload throttles, and production-safe role reference data with no sample users.
+- Reviewed role boundaries, owner isolation, device authentication, uploads, alert/incentive/ledger integrity, query indexes, responsive layout, keyboard focus, reduced motion, empty states, and development-tool gating.
+- Added [Architecture](docs/ARCHITECTURE.md), [Security](docs/SECURITY.md), [Deployment](docs/DEPLOYMENT.md), [Backup/Restore](docs/BACKUP_RESTORE.md), [Production Checklist](docs/PRODUCTION_CHECKLIST.md), [Release Notes](docs/RELEASE_NOTES_1.0.0.md), and [Capstone Demo](docs/CAPSTONE_DEMO.md).
 
 ## Technology Stack
 
@@ -160,11 +167,11 @@ These are the standard steps for a healthy XAMPP installation. See **Current mac
 5. Open [phpMyAdmin](http://localhost/phpmyadmin/).
 6. Create a database named **aquasense**, using `utf8mb4_unicode_ci`.
 7. Select **aquasense**, choose **Import**, select `database/schema.sql`, and click **Import/Go**. The SQL creates tables in the database selected by the importer, so production hosts may use their assigned database name without editing the schema.
-8. Import `database/sample-data.sql` the same way, after the schema import succeeds.
-9. Apply migrations `001-mobile-tokens.sql` through `008-phase7-reporting.sql` in numeric order.
+8. Apply migrations `001-mobile-tokens.sql` through `008-phase7-reporting.sql` in numeric order.
+9. For local development, import `database/sample-data.sql`. For a production-style empty database, import `database/reference-data.sql` instead; it creates roles but no users or passwords.
 10. Run `composer install` in the project directory to install the locked PDF dependency.
 11. If your local database credentials differ, copy `config/local.example.php` to `config/local.php` and adjust the settings. Set every development database value in the ignored file; the committed application has no database username, database name, or password defaults.
-12. Open [AQUASENSE+](http://localhost/aquasense-web/) and sign in with a development account below.
+12. Open [AQUASENSE+](http://localhost/aquasense-web/) and sign in with a development account below. For production, follow the first-administrator procedure in [Deployment](docs/DEPLOYMENT.md).
 
 Import each SQL file **once into a fresh installation**. Imports intentionally do not drop tables or overwrite existing accounts. Back up existing data before migrations; rerunning `schema.sql` against an installed schema will report that tables already exist. The sample import uses a transaction to prevent partially seeded data.
 
@@ -352,7 +359,7 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 - **Phase 5 (completed):** surrender submissions, secure photo uploads and authorized delivery, human evidence comparison, approval/rejection.
 - **Phase 6 (completed):** configurable incentive rules, atomic reward processing, distribution, owner summaries, and Compliance Ledger interface.
 - **Phase 7 (completed):** report filters, daily/weekly/monthly/custom reporting, audit review, and CSV/PDF/print exports over indexed operational records.
-- **Phase 8:** full security, integration, and usability review; account management and secure password recovery delivery.
+- **Phase 8 (completed):** security, integration, deployment, performance, accessibility, backup/restore, documentation, and capstone release validation.
 - The sibling Flutter app now implements Mobile Phase 1. The sibling ESP32 sketch now supports one ultrasonic bench test; physical sensor validation and calibration remain incomplete.
 
 ### Current limitations
@@ -383,7 +390,7 @@ The original sample-data import creates a fictional device assignment without te
 - Generic service errors; detailed diagnostics only in protected `logs/php-error.log`.
 - Login/logout audit records; logout still ends access if database auditing fails, with an explanatory user notice and protected server log.
 
-Phase 7 retains protected evidence storage and transactional incentive, audit, and compliance writes while adding streamed reports. The code is portable to a TLS-enabled PHP host, but an actual production launch still requires a selected host/domain, least-privilege database account, persistent private storage, backups, monitoring, official incentive policy, real accounts, Composer installation, and deployment verification.
+Version 1.0.0 retains protected evidence storage and transactional incentive, audit, and compliance writes while hardening configuration, HTTPS, headers, rate limits, health monitoring, account bootstrap, and deployment procedures. The code is portable to a TLS-enabled PHP host. Actual go-live requires the human production steps in the checklist.
 
 ## Running AQUASENSE+
 
@@ -400,6 +407,17 @@ From PowerShell in the project directory, with Apache and the configured databas
 & C:\xampp\php\php.exe tests\session-expiry.php
 & C:\xampp\php\php.exe tests\phase2.php --allow-local-fixtures
 & C:\xampp\php\php.exe tests\phase3.php --allow-local-fixtures
+& C:\xampp\php\php.exe tests\phase4.php --allow-local-fixtures
+& C:\xampp\php\php.exe tests\phase5.php --allow-local-fixtures
+& C:\xampp\php\php.exe tests\phase6.php --allow-local-fixtures
+& C:\xampp\php\php.exe tests\phase7.php --allow-local-fixtures
+& C:\xampp\php\php.exe tests\mobile-api.php --allow-local-fixtures
+& C:\xampp\php\php.exe tests\mobile-cors.php
+& C:\xampp\php\php.exe tests\production-config.php
+& C:\xampp\php\php.exe tests\ultrasonic-api.php --allow-local-fixtures
+& C:\xampp\php\php.exe tests\phase8.php --allow-local-fixtures
+& C:\xampp\php\php.exe tests\fresh-install.php --allow-temporary-database
+& C:\xampp\php\php.exe tests\performance.php --allow-local-fixtures
 ```
 
 `foundation.php` is **development-only**. It creates temporary accounts and a test rate-limit entry in the configured database, rolls back relational constraint fixtures, and removes its test accounts, their audit entries, and throttling entries in `finally`. Anonymous failed-login audit events may remain as a truthful record of the tests. Do not run against production or while other people are actively testing sign-in from the same IP. A forcibly terminated test may require removal of the explicitly named `foundation-*` fixtures.
@@ -429,7 +447,7 @@ Before deployment, manually inspect authentication, management, monitoring, hist
 | Form expired | Reload the login/dashboard page and retry. A stale tab or another sign-out may have invalidated its CSRF token. |
 | SQL import reports existing tables | The schema has already been imported or a previous import was partial. Do not overwrite a database containing useful records. Inspect and back up before choosing a fresh database. |
 | Private SQL/configuration files accessible through HTTP | Apache is not honoring `.htaccess`. Enable the relevant htdocs override and deny access before exposing the website. |
-| No data in monitoring / inactive menu items | Expected in Phase 1. These modules are scheduled for later development. |
+| No data in monitoring | Verify device assignment, calibration, API URL/key, HTTPS, telemetry response, and the offline checker. Missing data is never fabricated. |
 
 ### Current machine database workaround
 
@@ -483,7 +501,7 @@ On a healthy XAMPP installation use the standard import workflow above and omit 
 
 ## Development Status
 
-Phase 7 Reporting, Export, and Audit Review is complete in backend v0.9.0. The exact next task is Phase 8: perform final security hardening, end-to-end and performance validation, usability and accessibility review, production deployment checks, documentation cleanup, and final capstone release preparation.
+Phase 8 Final System Hardening and Production Preparation is complete in backend v1.0.0. No Phase 9 is defined in this repository.
 
 ## Versioning
 
@@ -514,4 +532,4 @@ On this computer, AQS-001 remains assigned to test trap 12 under fictional Demo 
 
 The administrator simulator is available only in development and requires a device credential. Device keys can be generated or rotated from Device Details, appear once, and are never stored as plaintext. The simulator calls the HTTP endpoint and does not insert into MySQL directly.
 
-Validation commands include `php tests/phase6.php --allow-local-fixtures` and `php tests/phase7.php --allow-local-fixtures`. Phase 7 adds 34 report, filter, date, pagination, CSV/PDF, formula-injection, authorization, unit, and export-audit checks while retaining every earlier suite. The complete release run passes 394 checks. Test credentials remain excluded from Git.
+Validation includes the retained Phase 1–7, mobile, CORS, session, production configuration, and ultrasonic suites plus `php tests/phase8.php --allow-local-fixtures` and `php tests/fresh-install.php --allow-temporary-database`. See [TEST_REPORT.md](docs/TEST_REPORT.md) for the exact release run. Test credentials remain excluded from Git.

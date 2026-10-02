@@ -3,6 +3,7 @@
 // local.php is excluded from Git and blocked from HTTP access.
 return [
     'environment' => 'development',
+    'app_url' => 'http://YOUR_DEVELOPMENT_WEB_HOST/YOUR_LOCAL_PROJECT_PATH',
     'db_host' => 'YOUR_DEVELOPMENT_DB_HOST',
     'db_port' => '3306',
     'db_name' => 'aquasense',
@@ -12,6 +13,8 @@ return [
     'storage_path' => dirname(__DIR__) . '/uploads',
     'log_path' => dirname(__DIR__) . '/logs/php-error.log',
     'test_base_url' => 'http://YOUR_DEVELOPMENT_WEB_HOST/YOUR_LOCAL_PROJECT_PATH',
+    'timezone' => 'Asia/Manila',
+    'log_level' => 'warning',
     // Optional telemetry controls. The defaults accept normal 5-30 second device intervals.
     'telemetry_min_interval_seconds' => 2,
     'telemetry_poll_seconds' => 8,

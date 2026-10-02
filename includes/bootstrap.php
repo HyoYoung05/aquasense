@@ -20,14 +20,17 @@ set_exception_handler(function (Throwable $exception): void {
 
 if (PHP_SAPI !== 'cli') {
     if ($config['require_https'] && !request_is_https()) {
+        $canonical = canonical_request_url();
+        if ($canonical !== null) {
+            header('Location: ' . $canonical, true, 308);
+            exit;
+        }
         http_response_code(426);
         header('Upgrade: TLS/1.2');
         header('Content-Type: text/plain; charset=utf-8');
         exit('AQUASENSE+ requires HTTPS.');
     }
-    header('X-Content-Type-Options: nosniff');
-    header('X-Frame-Options: DENY');
-    header('Referrer-Policy: same-origin');
+    send_security_headers();
     header("Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'");
     header('Cache-Control: no-store, private');
     ini_set('session.use_strict_mode', '1');
@@ -43,7 +46,7 @@ if (PHP_SAPI !== 'cli') {
     ]);
     session_start();
     if ($config['environment'] === 'production') {
-        header('Strict-Transport-Security: max-age=31536000');
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
     }
 }
 

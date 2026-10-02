@@ -21,6 +21,6 @@ $navLink = static function(string $key,string $symbol,string $label,string $path
 <?= $navLink('incentives','gift','Incentives','admin/incentives.php') ?>
 <?= $navLink('compliance-ledger','ledger','Compliance Ledger','admin/compliance-ledger.php') ?>
 <?= $navLink('reports','chart','Reports','admin/reports.php') ?>
-<?php if($user['role_slug']==='administrator'): ?><p class="nav-label">ADMINISTRATION</p><?= $navLink('users','users','Users','admin/placeholder.php?module=users') ?><?= $navLink('settings','settings','Alert Settings','admin/settings.php') ?><?php endif; ?>
-</nav><div class="sidebar-bottom"><div class="program-note"><?= icon('chart') ?><strong>Reports and audit</strong><p>Filtered operational records, formal reports, and traceable exports.</p></div><div class="sidebar-version"><span class="status-dot"></span> Phase 7 <span>v<?= e(APP_VERSION) ?></span></div></div>
+<?php if($user['role_slug']==='administrator'): ?><p class="nav-label">ADMINISTRATION</p><?= $navLink('users','users','User Accounts','admin/users.php') ?><?= $navLink('settings','settings','Alert Settings','admin/settings.php') ?><?php endif; ?>
+</nav><div class="sidebar-bottom"><div class="program-note"><?= icon('shield') ?><strong>Release monitoring</strong><p>Operational records, alerts, compliance, and traceable exports.</p></div><div class="sidebar-version"><span class="status-dot"></span> Production release <span>v<?= e(APP_VERSION) ?></span></div></div>
 </aside><button type="button" class="sidebar-backdrop" data-menu-close aria-label="Close navigation" tabindex="-1"></button>

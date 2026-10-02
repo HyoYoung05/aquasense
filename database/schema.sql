@@ -1,4 +1,4 @@
--- AQUASENSE+ database foundation through Phase 6: select an empty target database, then import this file.
+-- AQUASENSE+ 1.0.0 database foundation: select an empty target database, then import this file.
 -- No DROP statements: an existing installation is never silently overwritten.
 SET time_zone = '+00:00';
 

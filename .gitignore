@@ -11,6 +11,14 @@ Thumbs.db
 /.env
 /.env.*
 /vendor/
+/backups/
+*.sql.gz
+*.dump
+*.pem
+*.key
+*.p12
+*.pfx
+config/*.local.php
 /esp32/**/*.local.h
 /esp32/**/*.local.json
 /esp32/build/

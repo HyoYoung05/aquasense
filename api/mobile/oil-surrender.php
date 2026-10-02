@@ -33,4 +33,7 @@ try {
     api_fail($error->errors[0] ?? 'Check the surrender details and try again.', 422);
 } catch (Phase5ConflictException $error) {
     api_fail($error->getMessage(), 409);
+} catch (Phase5RateLimitException $error) {
+    header('Retry-After: 3600');
+    api_fail($error->getMessage(), 429);
 }

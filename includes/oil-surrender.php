@@ -11,6 +11,7 @@ final class Phase5ValidationException extends RuntimeException
 }
 
 final class Phase5ConflictException extends RuntimeException {}
+final class Phase5RateLimitException extends RuntimeException {}
 
 function phase5_settings(PDO $pdo): array
 {
@@ -254,6 +255,7 @@ function phase5_owner_payload(array $row): array
 
 function phase5_submit(PDO $pdo, int $ownerId, array $input, array $file): array
 {
+    global $config;
     $data = phase5_validate_submission($input);
     $existing = $pdo->prepare('SELECT id,submitted_by FROM oil_surrenders WHERE submission_uuid=?');
     $existing->execute([$data['submission_uuid']]);
@@ -264,6 +266,13 @@ function phase5_submit(PDO $pdo, int $ownerId, array $input, array $file): array
         }
         return ['created' => false, 'record' => phase5_owner_record($pdo, $ownerId, (int) $duplicate['id'])];
     }
+    if (audit_rate_limit_reached($pdo, $ownerId, ['OIL_SURRENDER_UPLOAD_ATTEMPTED'], 3600,
+        (int) $config['upload_max_submissions_per_hour'])) {
+        throw new Phase5RateLimitException('Too many oil surrender submissions. Please wait before trying again.');
+    }
+    $attempt = $pdo->prepare("INSERT INTO audit_logs (user_id,action,record_type,record_id,ip_address)
+        VALUES (?,'OIL_SURRENDER_UPLOAD_ATTEMPTED','oil_surrenders',NULL,?)");
+    $attempt->execute([$ownerId, client_ip()]);
     $settings = phase5_settings($pdo);
     $photo = phase5_validate_photo($file, (int) $settings['oil_surrender_max_upload_bytes']);
     $context = phase5_owner_context($pdo, $ownerId, $data['grease_trap_id']);
