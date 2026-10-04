@@ -69,14 +69,52 @@ try {
     $query->execute([$users[0]]);
     check($query->fetchColumn() === hash('sha256', $token), 'Database stores only token hash');
     check(call_api('profile.php', null, $token)['json']['data']['user']['id'] === $users[0], 'Token restores owner profile');
+    check(call_api('monitoring.php')['status'] === 401, 'Anonymous mobile monitoring rejected');
+    $monitoring = call_api('monitoring.php?user_id=' . $users[1], null, $token)['json']['data'];
+    check(count($monitoring['traps']) === 1 && $monitoring['traps'][0]['grease_trap_id'] === $traps[0], 'Mobile monitoring is scoped to the bearer-token owner');
+    check($monitoring['traps'][0]['sensor_state'] === 'AWAITING SENSOR DATA', 'Monitoring distinguishes a missing reading from zero');
+    check(call_api('telemetry-history.php', null, $token)['status'] === 422, 'Mobile history requires a valid grease trap');
+    check(call_api('telemetry-history.php?grease_trap_id=' . $traps[1], null, $token)['status'] === 404, 'Owner cannot read another owner history');
+    $emptyHistory = call_api('telemetry-history.php?grease_trap_id=' . $traps[0] . '&range=1h', null, $token)['json']['data'];
+    check($emptyHistory['total'] === 0 && $emptyHistory['readings'] === [], 'Empty owner telemetry history is honest');
     $data = call_api('dashboard.php?establishment_id=' . $sites[1] . '&user_id=' . $users[1], null, $token)['json']['data'];
     check(count($data['establishments']) === 1 && $data['establishments'][0]['id'] === $sites[0], 'Other owner IDs cannot change account scope');
     check($data['establishments'][0]['traps'][0]['status'] === 'NO DATA', 'Missing telemetry shown as no data');
-    $pdo->prepare("INSERT INTO sensor_readings (device_assignment_id, waste_level_percent, temperature_c, level_status, is_simulated, recorded_at) VALUES (?, 92, 30.4, 'NORMAL', 1, UTC_TIMESTAMP())")
+    $pdo->prepare('UPDATE devices SET last_seen_at=UTC_TIMESTAMP() WHERE id=?')->execute([$devices[0]]);
+    $pdo->prepare("INSERT INTO sensor_readings (device_assignment_id, ultrasonic_distance_cm, waste_level_percent, temperature_c, turbidity_ntu, flow_rate_lpm, gas_value, level_status, is_simulated, recorded_at) VALUES (?, 7, 92, 30.4, 410, 1.8, 725, 'NORMAL', 1, UTC_TIMESTAMP())")
         ->execute([$assignments[0]]);
+    $readingId = (int) $pdo->lastInsertId();
+    $pdo->prepare("INSERT INTO alerts (device_assignment_id,sensor_reading_id,alert_type,severity,sensor_name,sensor_value,threshold_value,message,status,first_triggered_at,last_triggered_at) VALUES (?,?, 'CRITICAL_LEVEL','CRITICAL','waste_level_percent',92,90,'Fixture critical alert','ACTIVE',UTC_TIMESTAMP(),UTC_TIMESTAMP())")
+        ->execute([$assignments[0], $readingId]);
+    $ownedAlertId = (int) $pdo->lastInsertId();
+    $pdo->prepare("INSERT INTO alerts (device_assignment_id,sensor_reading_id,alert_type,severity,sensor_name,sensor_value,threshold_value,message,status,first_triggered_at,last_triggered_at,resolved_at) VALUES (?,?, 'HIGH_LEVEL','WARNING','waste_level_percent',80,75,'Fixture resolved alert','RESOLVED',UTC_TIMESTAMP(),UTC_TIMESTAMP(),UTC_TIMESTAMP())")
+        ->execute([$assignments[0], $readingId]);
+    $resolvedAlertId = (int) $pdo->lastInsertId();
+    $pdo->prepare("INSERT INTO alerts (device_assignment_id,alert_type,severity,message,status,first_triggered_at,last_triggered_at) VALUES (?, 'DEVICE_OFFLINE','WARNING','Other owner offline alert','ACTIVE',UTC_TIMESTAMP(),UTC_TIMESTAMP())")
+        ->execute([$assignments[1]]);
+    $otherAlertId = (int) $pdo->lastInsertId();
+    check(call_api('alerts.php')['status'] === 401, 'Anonymous owner alerts rejected');
+    $alerts = call_api('alerts.php?status=ALL&severity=ALL&range=30d', null, $token)['json']['data'];
+    check(count($alerts['alerts']) === 2 && $alerts['total'] === 2, 'Owner alert list returns owned active and history only');
+    check($alerts['summary']['unresolved_count'] === 1 && $alerts['summary']['resolved_count'] === 1, 'Alert summary uses server-side complete counts');
+    check($alerts['page_size'] === 25 && $alerts['pages'] === 1, 'Alert history is bounded and paginated');
+    check(call_api('alerts.php?grease_trap_id=' . $traps[1], null, $token)['status'] === 404, 'Owner cannot filter alerts by another owner trap');
+    $detail = call_api('alert.php?id=' . $ownedAlertId, null, $token);
+    check($detail['status'] === 200 && $detail['json']['data']['alert']['device_code'] !== '', 'Owned alert detail returns owner-safe device context');
+    check(!array_key_exists('resolution_note', $detail['json']['data']['alert']), 'Owner alert detail omits administrative resolution notes');
+    check(call_api('alert.php?id=' . $otherAlertId, null, $token)['status'] === 404, 'Owner cannot read another owner alert detail');
+    check(call_api('alert.php?id=' . $ownedAlertId, [], $token)['status'] === 405, 'Owner alert detail is read-only');
+    $resolved = call_api('alerts.php?status=RESOLVED&severity=WARNING&range=30d', null, $token)['json']['data'];
+    check(count($resolved['alerts']) === 1 && $resolved['alerts'][0]['id'] === $resolvedAlertId, 'Resolved warning filter returns owned alert history');
     $data = call_api('dashboard.php', null, $token)['json']['data'];
     check($data['establishments'][0]['traps'][0]['status'] === 'CRITICAL', 'Backend applies configured trap thresholds');
     check($data['establishments'][0]['traps'][0]['reading']['is_simulated'] === true, 'Simulation is explicitly disclosed');
+    $monitoring = call_api('monitoring.php', null, $token)['json']['data']['traps'][0];
+    check($monitoring['device_status'] === 'ONLINE' && $monitoring['sensor_state'] === 'CRITICAL', 'Mobile monitoring returns backend-derived device and condition state');
+    check((float)$monitoring['reading']['ultrasonic_distance_cm'] === 7.0 && (float)$monitoring['reading']['turbidity_ntu'] === 410.0 && (float)$monitoring['reading']['flow_rate_lpm'] === 1.8 && (float)$monitoring['reading']['gas_value'] === 725.0, 'Mobile monitoring returns actual supported sensor fields');
+    check($monitoring['active_alert']['id'] === $ownedAlertId, 'Monitoring returns the highest active owned alert link');
+    $history = call_api('telemetry-history.php?grease_trap_id=' . $traps[0] . '&range=1h&page=1', null, $token)['json']['data'];
+    check($history['total'] === 1 && count($history['readings']) === 1 && $history['page'] === 1, 'Owner history returns bounded owned telemetry');
     $pdo->prepare('UPDATE sensor_readings SET recorded_at = DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 DAY) WHERE device_assignment_id = ?')->execute([$assignments[0]]);
     $data = call_api('dashboard.php', null, $token)['json']['data'];
     check($data['establishments'][0]['traps'][0]['is_stale'] === true && $data['establishments'][0]['traps'][0]['status'] === 'OFFLINE', 'Old readings cannot appear current');

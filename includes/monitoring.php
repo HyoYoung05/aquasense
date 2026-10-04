@@ -29,6 +29,7 @@ function phase3_monitoring_latest():array
 function phase3_history_bounds(string $range,?string $from,?string $to):array
 {
     $now=new DateTimeImmutable('now',new DateTimeZone('UTC'));
+    if($range==='1h')return[$now->modify('-1 hour'),$now->modify('+1 second')];
     if($range==='24h')return[$now->modify('-24 hours'),$now->modify('+1 second')];
     if($range==='7d')return[$now->modify('-7 days'),$now->modify('+1 second')];
     if($range==='30d')return[$now->modify('-30 days'),$now->modify('+1 second')];
@@ -44,7 +45,7 @@ function phase3_history_bounds(string $range,?string $from,?string $to):array
 
 function phase3_monitoring_history(int $trapId,string $range='today',?string $from=null,?string $to=null,int $page=1,int $limit=50):array
 {
-    if(!in_array($range,['today','24h','7d','30d','custom'],true))$range='today';
+    if(!in_array($range,['1h','today','24h','7d','30d','custom'],true))$range='today';
     [$start,$end]=phase3_history_bounds($range,$from,$to);$page=max(1,$page);$limit=max(1,min(100,$limit));$pdo=db();
     $trapQuery=$pdo->prepare('SELECT g.id,g.name,g.trap_code,g.empty_distance_cm,g.full_distance_cm,g.low_threshold,g.medium_threshold,g.high_threshold,g.critical_threshold,e.business_name FROM grease_traps g JOIN establishments e ON e.id=g.establishment_id WHERE g.id=?');$trapQuery->execute([$trapId]);$trap=$trapQuery->fetch();if(!$trap)throw new InvalidArgumentException('Grease trap was not found.');
     $params=[$trapId,$start->format('Y-m-d H:i:s'),$end->format('Y-m-d H:i:s')];

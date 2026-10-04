@@ -1,6 +1,77 @@
 # AQUASENSE+ Version History
 
-$11.0.0
+1.0.2
+
+## 1.0.2
+
+Date: 2026-10-04
+
+Development Phase: Mobile Phase 4 owner alerts support
+
+### Added
+
+- Added read-only `api/mobile/alerts.php` with backend counts, status/severity,
+  bounded date, authorized trap filters, and 25-record pagination.
+- Added owner-authorized `api/mobile/alert.php` detail with owner-safe alert and
+  lifecycle fields.
+- Added the highest unresolved alert preview to each current Monitoring trap.
+- Extended mobile integration coverage to 50 passing checks.
+
+### Changed
+
+- Advanced the backend companion version from 1.0.1 to 1.0.2.
+- Documented the finalized Mobile Phase 4 API contract.
+
+### Fixed and secured
+
+- Alert IDs and grease-trap filters now verify the bearer owner's live database
+  relationship and return 404 for other owners' records.
+- Mobile detail omits administrative resolution notes, staff identities, and
+  every acknowledge/resolve/reopen/delete mutation.
+
+### Known limitations
+
+- Push delivery is not implemented; this release supplies in-app retrieval.
+- Installed-phone and physical AQS-001 alert acceptance need available hardware.
+
+## 1.0.1
+
+Date: 2026-10-04
+
+Development Phase: Mobile Phase 3 owner monitoring support
+
+### Added
+
+- Added bearer-authenticated `api/mobile/monitoring.php` for current
+  owner-scoped grease-trap, device, and supported sensor values.
+- Added `api/mobile/telemetry-history.php` with owner authorization, Last Hour,
+  Today, 24-hour, 7-day, 30-day, and custom ranges, plus 50-record pagination.
+- Added mobile monitoring/history integration coverage for authentication,
+  cross-owner denial, honest empty states, optional sensors, and bounded data.
+
+### Changed
+
+- Added Last Hour to the shared Phase 3 history bounds without changing the
+  existing administrative history contract.
+- Whitelisted only the two explicit new mobile controller filenames through
+  the deny-by-default API directory policy.
+- Updated the owner mobile API documentation for Flutter Mobile Phase 3.
+
+### Security and validation
+
+- Trap history authorization derives the owner from the bearer token and
+  verifies the requested trap relationship before reading telemetry.
+- Mobile responses omit calibration thresholds, device secrets, internal
+  assignment identifiers, and other-owner records.
+- PHP syntax validation passed, and the mobile integration suite passed all 39
+  checks against disposable fixtures.
+
+### Known limitations
+
+- This release exposes monitoring data only; owner alert history and alert
+  details remain Mobile Phase 4 work.
+- Physical ESP32 and installed-phone acceptance still require available
+  hardware.
 
 
 ## 1.0.0

@@ -1,6 +1,6 @@
 # AQUASENSE+ Owner Mobile API
 
-Backend version: **0.9.0**
+Backend version: **1.0.2**
 
 The API root is deployment-configured. Production clients must use HTTPS. Every
 oil-surrender route requires the existing owner Bearer token:
@@ -12,6 +12,62 @@ Accept: application/json
 
 Tokens identify the owner. The server derives allowed establishments from the
 database and never trusts a client-supplied owner or establishment ID.
+
+## Current monitoring
+
+`GET /api/mobile/monitoring.php`
+
+Returns every active grease trap under the bearer-token owner's active
+establishments. Each entry contains the establishment/trap labels, assigned
+device metadata, backend-derived device and sensor state, stale flag, last seen,
+and the latest reading when one exists.
+
+Latest readings may contain `waste_level_percent`,
+`ultrasonic_distance_cm`, `temperature_c`, `turbidity_ntu`,
+`flow_rate_lpm`, and `gas_value`. Optional uninstalled sensors remain `null`.
+Gas values are raw sensor values unless a later calibrated backend contract
+states otherwise. Status and percentage rules remain server-side.
+
+## Telemetry history
+
+`GET /api/mobile/telemetry-history.php`
+
+Required query: `grease_trap_id=<positive integer>`. The requested trap must
+belong to the authenticated owner; inaccessible traps return 404.
+
+Supported ranges are `1h`, `today`, `24h`, `7d`, `30d`, and `custom`. Custom
+ranges require `from=YYYY-MM-DD` and `to=YYYY-MM-DD`, use Asia/Manila calendar
+boundaries, and may span no more than 31 days. `page` defaults to 1. Responses
+contain at most 50 newest records plus `page`, `pages`, and `total` metadata.
+No lifetime/unbounded query is available.
+
+History timestamps use ISO 8601 UTC. Clients parse UTC and format local display
+time; they must not add a fixed offset manually. Missing sensor points remain
+null and must not be plotted as zero.
+
+## Owner alerts
+
+`GET /api/mobile/alerts.php`
+
+Returns only alerts joined to the bearer owner's active establishments and
+grease traps. Filters are `status=UNRESOLVED|ALL|ACTIVE|ACKNOWLEDGED|RESOLVED`,
+`severity=ALL|INFO|WARNING|CRITICAL`, `range=today|7d|30d|custom`, optional owned
+`grease_trap_id`, and `page`. Custom dates use `from`/`to` in `YYYY-MM-DD` and
+may span at most 31 days. Each page contains at most 25 records, server summary
+counts, pagination metadata, and the owner's selectable traps.
+
+`GET /api/mobile/alert.php?id=<positive-alert-id>`
+
+Returns one owner-authorized alert with its backend type, label, severity,
+status, message, establishment, grease trap, device code, sensor/value,
+owner-safe threshold, trigger count, and lifecycle timestamps. Inaccessible
+IDs return 404. Both alert routes are GET-only and expose no acknowledge,
+resolve, reopen, delete, severity, threshold, device-secret, staff-identity, or
+internal resolution-note fields.
+
+Current monitoring entries may include a single `active_alert` preview chosen
+by backend severity and recency. Flutter uses its ID to open the detail route;
+it does not derive alert state from sensor values.
 
 ## Submit an oil surrender
 

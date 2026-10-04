@@ -4,7 +4,7 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository currently focuses on the **Barangay Administrative Website** for Barangay San Antonio officials and environmental staff.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.0.0 combines the Phase 1–7 workflows with environment-based deployment, HTTPS and header hardening, health monitoring, rate controls, production-safe first-admin provisioning, accessibility cleanup, fresh-install validation, and final operations documentation.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.0.2 retains the Phase 1–8 production foundation and adds owner-authorized Mobile Phase 4 read-only alerts, bounded history, detail, and Monitoring alert links.
 
 ## Current Version
 
@@ -16,7 +16,7 @@ API endpoint, and provisioned device credentials. Local Wi-Fi passwords, device 
 compiler databases, and firmware binaries are excluded from GitHub. The Flutter source
 and APK remain in the separate local `aquasense_mobile` project and are not in this repository.
 
-**Version: 1.0.0**
+**Version: 1.0.2**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -70,6 +70,10 @@ Import the SQL files using the steps below. `.gitattributes` keeps text line end
 - Valid readings update `last_seen_at`; configured freshness determines ONLINE/OFFLINE state throughout the website.
 - UUID or sequence identifiers prevent duplicate inserts when an ESP32 retries the same reading.
 - Authenticated Monitoring provides live polling every eight seconds, summary/detail views, bounded history filters, pagination, and actual-data charts.
+- The Flutter owner API exposes bearer-scoped current monitoring and telemetry
+  history without exposing other establishments, calibration settings, or
+  device secrets. Owner history is limited to 50 readings per page and supports
+  Last Hour through 30 Days plus a 31-day custom range.
 - Administrators can generate or rotate a device credential. Plaintext appears once; only its SHA-256 hash is stored.
 - The development-only administrator simulator calls the same HTTP telemetry endpoint and marks its records as simulated.
 - See [ESP32 API contract](docs/ESP32_API.md) for headers, payloads, responses, retry behavior, and interval guidance.
@@ -83,6 +87,9 @@ Import the SQL files using the steps below. `.gitattributes` keeps text line end
 - Alert Settings manages global temperature, turbidity, flow, overflow, and offline thresholds. Grease-trap level thresholds remain per trap and enforce Low < Medium < High < Critical.
 - `php scripts/check_offline_devices.php` performs the database-based offline check and is suitable for cron.
 - Dashboard, Monitoring, grease-trap details, device details, authenticated admin APIs, and the owner-safe mobile dashboard expose actual alert records.
+- The owner mobile API exposes read-only, bearer-scoped alert summaries,
+  25-record history pages, owned detail records, and one active Monitoring
+  preview without administrative actions or notes.
 - Development simulation still passes through the device telemetry API and exercises the same alert pipeline.
 - Push, email, and SMS remain outside Phase 4. The retained Phase 4 suite now passes 35 alert, authorization, CSRF, Compliance Ledger, and integration checks.
 

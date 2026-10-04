@@ -1,4 +1,4 @@
-# Shared API (backend 0.9.0)
+# Shared API (backend 1.0.2)
 
 Owner endpoints, device telemetry, staff monitoring, Phase 4 alerts, Phase 5 oil surrender endpoints, and the Phase 6 owner incentive endpoint are implemented. Existing PDO/configuration, users,
 roles, establishments, readings, audit and rate-limit records are reused.
@@ -13,6 +13,10 @@ source. Native Android requests do not need browser CORS.
 | POST | login.php | JSON email/password | token, expires_at (UTC), user |
 | GET | profile.php | Bearer authorization | user |
 | GET | dashboard.php | Bearer authorization | user, establishments, generated_at, freshness_seconds |
+| GET | monitoring.php | Bearer authorization | owned traps, current device/sensor state |
+| GET | telemetry-history.php?grease_trap_id= | Bearer; range/page query | owned bounded telemetry history |
+| GET | alerts.php | Bearer; status/severity/range/trap/page query | owned counts and bounded alert list |
+| GET | alert.php?id= | Bearer | owned read-only alert detail |
 | POST | logout.php | Bearer authorization | message |
 | POST | oil-surrender.php | Bearer + multipart submission/photo | surrender, idempotent_replay |
 | GET | oil-surrenders.php | Bearer; optional status query | owned surrender history |
@@ -29,7 +33,7 @@ recorded_at (ISO 8601 UTC). Multiple owned active establishments/traps are retur
 
 All owner and establishment identity comes from bearer authentication and database
 relationships; arbitrary user_id/establishment_id query fields are ignored.
-Surrender submission and history are owner-scoped. No rewards endpoint is exposed. Administrative monitoring/history require the existing staff session.
+Surrender, incentive, monitoring, and history responses are owner-scoped. Administrative monitoring/history require the existing staff session.
 
 Authentication: 32 random bytes encoded as hex; only SHA-256 token hashes stored.
 A SHA-256 fingerprint of the password hash invalidates tokens on password changes.
@@ -41,7 +45,7 @@ Every protected request checks account activation, owner role and token expiry.
 Statuses are derived in PHP from trap thresholds plus system settings. High/critical
 levels take priority over emulsion warnings. Offline/no-data status never implies a
 safe reading. The configured freshness_seconds is returned so Flutter can withdraw
-freshness while a screen stays open without polling. No status/threshold formulas
+freshness consistently. No status/threshold formulas
 are duplicated in Flutter. Snapshot state is not a substitute for live alarms.
 
 HTTP status codes: 200 success, 400 malformed JSON, 401 invalid authentication,
@@ -103,9 +107,14 @@ calculates percentage/status from trap calibration, stores structured telemetry,
 last_seen_at, and prevents duplicate retries. See `../docs/ESP32_API.md`.
 
 GET `admin/monitoring.php` returns the latest record for registered traps. GET
-`admin/history.php` requires grease_trap_id and supports today, 24h, 7d, 30d, or a
+`admin/history.php` requires grease_trap_id and supports 1h, today, 24h, 7d, 30d, or a
 custom range of at most 31 days with bounded pagination. Both require a current
 administrator or environmental-staff session and return 401 when unauthenticated.
+
+Mobile Phase 3 uses `mobile/monitoring.php` and
+`mobile/telemetry-history.php`. These routes use the bearer-token owner,
+validate any grease-trap selector against that owner's active establishments,
+omit calibration/admin fields, and limit history to 50 records per page.
 
 Migration 004 is required after migrations 001-003. The development simulator is a
 website page, requires an administrator, returns 404 in production, and sends through
