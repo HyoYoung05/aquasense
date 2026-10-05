@@ -1,0 +1,21 @@
+name: aquasense_mobile
+description: AQUASENSE+ Carinderia Owner application, Phase 5.
+publish_to: 'none'
+version: 0.6.0+12
+environment:
+  sdk: '>=3.11.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.6.0
+  flutter_secure_storage: ^10.0.0
+  fl_chart: ^1.2.0
+  image_picker: ^1.2.3
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/water-drop-splash.png

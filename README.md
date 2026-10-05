@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository currently focuses on the **Barangay Administrative Website** for Barangay San Antonio officials and environmental staff.
+AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 test firmware.
 
 The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.0.2 retains the Phase 1–8 production foundation and adds owner-authorized Mobile Phase 4 read-only alerts, bounded history, detail, and Monitoring alert links.
 
@@ -13,8 +13,9 @@ firmware **0.1.1**, configured for HC-SR04 TRIG GPIO5 and ECHO GPIO18 through a 
 divider. Open `esp32/UltrasonicTest/UltrasonicTest.ino` in Arduino IDE. Copy
 `config.example.h` to an ignored `config.local.h` and supply your own network,
 API endpoint, and provisioned device credentials. Local Wi-Fi passwords, device keys,
-compiler databases, and firmware binaries are excluded from GitHub. The Flutter source
-and APK remain in the separate local `aquasense_mobile` project and are not in this repository.
+compiler databases, and firmware binaries are excluded from GitHub. The Flutter source is
+tracked under [`mobile/`](mobile/README.md) at version **0.6.0+12**. Generated APKs,
+local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 
 **Version: 1.0.2**
 
@@ -195,9 +196,13 @@ Open [credentials.txt](credentials.txt) locally in your editor for the developme
 
 `sample-data.sql` contains only PHP `password_hash()` output, not plaintext passwords in user records. Login uses `password_verify()` and rehashes passwords when the configured PHP default changes. The optional mobile development helper creates `owner@aquasense.test` with password `AquaSense!2026` and links fictional Demo Kusina. Owners cannot access the administrative website.
 
-## Owner mobile API (backend 0.2.3)
+## Owner mobile API and Flutter app
 
-The existing backend now provides `api/mobile/login.php`, `profile.php`, `dashboard.php`, and `logout.php`. See [API contract](api/README.md). The Flutter project remains in the sibling `aquasense_mobile` folder; it is not inside this Git repository.
+The backend provides owner authentication, dashboard, monitoring, telemetry
+history, alerts, protected oil-surrender evidence, and incentive APIs under
+`api/mobile/`. See the [mobile API contract](docs/MOBILE_API.md). The tracked
+[Flutter Owner app](mobile/README.md) implements Mobile Phases 1 through 5,
+including authenticated oil surrender submission and review-state history.
 
 For an existing or fresh installation, select the `aquasense` database and import migrations 001, 002, and 003 in order. Do not rerun the full schema on an existing database.
 

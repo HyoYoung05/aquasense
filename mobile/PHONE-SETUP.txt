@@ -1,0 +1,43 @@
+AQUASENSE+ OWNER APP - LOCAL PHONE TESTING (0.1.6+7)
+================================================
+
+1. Install app-debug.apk on the Android phone.
+   It is in build/app/outputs/flutter-apk after the local build completes.
+   Transfer the APK to the phone, open it and approve the Android installation.
+   This is a development debug APK, not a production release.
+
+2. Connect the phone to the same local network as the development computer.
+   Use that computer's current private network address in API_BASE_URL.
+   Mobile data alone cannot reach this local XAMPP server.
+
+3. On the computer, keep Apache running in XAMPP. Start the configured database:
+   Start-ScheduledTask -TaskName 'AQUASENSE Local Database'
+   The existing isolated database uses port 3307. Do not change the original
+   MySQL data directory. Flutter communicates with Apache on port 80 only.
+
+4. Check this URL in the PHONE browser:
+   http://YOUR-DEVELOPMENT-PC-IP/YOUR-PROJECT-PATH/api/mobile/profile.php
+   Expected: a JSON message asking you to sign in (HTTP 401).
+   That response confirms the phone can reach PHP. A timeout means a network,
+   firewall or Apache issue. Do not disable the firewall; Apache should be
+   allowed on your trusted private network. Avoid guest Wi-Fi client isolation.
+
+5. Sign in to the app:
+   Email: owner@aquasense.test
+   Password: AquaSense!2026
+   Business: Demo Kusina
+   Development only. carienderia@aquasense.test is not the seeded owner email.
+
+6. If the computer's IP changes, rebuild from aquasense_mobile:
+   flutter build apk --debug --dart-define-from-file=config/api.local.json
+   Install the resulting build/app/outputs/flutter-apk/app-debug.apk.
+   Use Flutter at C:\Users\hyoyo\develop\flutter\bin on this computer.
+
+WHY THE PREVIOUS RELEASE APK FAILED
+The release app requires HTTPS, while local XAMPP uses HTTP. That configuration
+error was incorrectly shown as an unreadable service response in version 0.1.1.
+Also, 10.0.2.2 is for an Android emulator and cannot identify this PC from a phone.
+The local-testing APK uses debug HTTP support and this PC's LAN address.
+Production release builds retain HTTPS requirements. Follow DEPLOYMENT.md and
+build with config/api.production.json. Do not distribute this local test APK as
+a production application.

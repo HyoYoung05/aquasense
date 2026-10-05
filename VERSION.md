@@ -2,6 +2,14 @@
 
 1.0.2
 
+## Repository integration - 2026-10-05
+
+The backend remains version **1.0.2**. This repository update adds the Flutter
+Owner application under `mobile/` at version **0.6.0+12**, including Mobile
+Phase 5 oil surrender submission, protected evidence, history, review-state
+presentation, tests, and documentation. Flutter build output, local API files,
+Wi-Fi passwords, and temporary network credentials remain excluded from Git.
+
 ## 1.0.2
 
 Date: 2026-10-04

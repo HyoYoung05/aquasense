@@ -1,0 +1,41 @@
+TEMPORARY: Keep this testing setup until the user explicitly requests its removal. Do not remove it automatically.
+
+AQUASENSE+ WI-FI TEST SETUP
+=========================
+
+1. Open wifi.local.txt locally in your editor for the two Wi-Fi credentials.
+   Select the available network in the phone and computer Wi-Fi settings.
+   Flutter uses the device's active connection; this file is a manual reference.
+
+2. For local XAMPP testing, run Apache and the configured database on the computer.
+   On the original development computer, start the existing database task:
+   Start-ScheduledTask -TaskName 'AQUASENSE Local Database'
+
+3. When changing Wi-Fi networks, check the API computer's current IPv4 address
+   using ipconfig. Do not assume the previous address still applies.
+
+4. In the aquasense_mobile folder, create config/api.local.json from
+   config/api.development.example.json only if config/api.local.json is missing.
+   Set API_BASE_URL to the computer's current reachable API address, for example:
+   http://YOUR-PC-IP/AQUASENSE+/aquasense-web/api/mobile
+   Replace YOUR-PC-IP. Include the deployed project path and /api/mobile.
+   Wi-Fi names and passwords are not API URLs.
+
+5. On the phone browser, open that API address followed by /profile.php.
+   Expected: a JSON sign-in message (HTTP 401). If unreachable, check Apache,
+   network isolation and the computer's firewall permission for local Apache.
+
+6. Rebuild from aquasense_mobile when the API address changes:
+   flutter build apk --debug --dart-define-from-file=config/api.local.json
+   Install build/app/outputs/flutter-apk/app-debug.apk on the phone.
+   A missing API_BASE_URL still causes the Server configuration error screen.
+
+7. Repeat on the second network when available, updating the API address as needed.
+   Verify sign-in, dashboard loading and sign-out on each network.
+   Network availability and actual phone connectivity have not been tested here.
+
+The Wi-Fi credential file is excluded by the mobile project's .gitignore and
+this folder blocks Apache HTTP access through .htaccess. Open it in your editor.
+Do not add wifi.local.txt to Flutter assets or upload it with a public deployment.
+Production uses the always-on HTTPS API and each user's available internet
+connection; it does not depend on either of these test Wi-Fi networks.

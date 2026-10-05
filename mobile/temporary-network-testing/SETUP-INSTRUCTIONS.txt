@@ -1,0 +1,57 @@
+AQUASENSE+ TEMPORARY REMOTE PHONE TEST
+====================================
+Keep this folder until the user explicitly requests removal.
+
+FILES
+wifi_credentials.local.h: the two supplied Wi-Fi networks in C++ format.
+This is a private reference; Flutter does not read or execute this header.
+api.tailscale.local.json: separate temporary API setting for the test APK.
+
+CONNECTION
+1. Keep the computer awake and connected to the internet. Run Apache and the
+   existing AQUASENSE database task on port 3307.
+2. Open Tailscale on the computer. It must show Connected. If stuck starting,
+   restart Tailscale; Windows may require an administrator to restart its service.
+3. On Android, install/open Tailscale and sign in to the same Tailscale account.
+   Accept Android's VPN prompt and keep Tailscale connected.
+4. The phone can use either supplied Wi-Fi network or mobile data. The computer
+   can stay on its own network. Both must have working internet access.
+5. Open this address in the PHONE browser:
+   http://100.109.38.25/AQUASENSE+/aquasense-web/api/mobile/profile.php
+   Expected: JSON asking for sign-in (HTTP 401). A timeout means the private
+   connection is not ready. Confirm both Tailscale devices show Connected.
+6. Install aquasense-owner-tailscale-debug.apk from this folder after building.
+   Sign in with the existing development owner account documented in README.md.
+   Test sign-in, dashboard, logout, then repeat using the other connection.
+
+BUILD FROM aquasense_mobile
+flutter build apk --debug --dart-define-from-file=temporary-network-testing/api.tailscale.local.json
+Copy build/app/outputs/flutter-apk/app-debug.apk to this folder as:
+aquasense-owner-tailscale-debug.apk
+
+ADDRESS
+100.109.38.25 is this computer's address from its existing Tailscale registration.
+Confirm it in Tailscale after reconnecting. If the registered address changes,
+update api.tailscale.local.json, rebuild, and reinstall the APK.
+This debug build uses HTTP within the private Tailscale connection. Production
+release HTTPS requirements are unchanged.
+
+VERIFIED STATUS
+The APK built successfully and is saved as aquasense-owner-tailscale-debug.apk.
+The existing database task is enabled and running. Tailscale reports the computer
+and registered Android device online; a Tailscale ping to Android succeeded.
+The PHP profile endpoint returned HTTP 401 through 100.109.38.25. Owner login,
+authenticated dashboard, and logout succeeded through that address when tested
+on the computer. The test token was revoked afterward.
+Installation and actual app login on the phone, especially from another network,
+still need to be verified. The computer must remain awake and online.
+
+PRIVACY AND LIFETIME
+The credential header, local JSON, and generated APK are excluded from Git.
+This folder denies Apache HTTP access; transfer the APK by USB or another
+private file transfer. Wi-Fi passwords are not bundled in the APK.
+Existing testing/ files remain intact. Remove this temporary setup only when
+the user explicitly requests it. Public production hosting remains separate.
+
+Official connection guide:
+https://tailscale.com/kb/1452/connect-to-devices
