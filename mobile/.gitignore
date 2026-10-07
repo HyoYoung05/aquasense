@@ -46,6 +46,13 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Android production signing material
+/android/key.properties
+/android/*.jks
+/android/*.keystore
+/android/app/*.jks
+/android/app/*.keystore
+
 # Private local Wi-Fi testing credentials
 /testing/wifi.local.txt
 

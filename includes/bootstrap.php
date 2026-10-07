@@ -5,9 +5,16 @@ $config = require dirname(__DIR__) . '/config/config.php';
 require_once __DIR__ . '/functions.php';
 require_once dirname(__DIR__) . '/config/database.php';
 
-set_exception_handler(function (Throwable $exception): void {
-    // Details stay in the protected server log, never in the HTTP response.
-    error_log((string) $exception);
+set_exception_handler(function (Throwable $exception) use ($config): void {
+    // Keep actionable context in the protected log without serializing stack
+    // arguments, which may contain passwords, tokens, or other request data.
+    error_log(sprintf(
+        '%s: %s in %s:%d',
+        get_class($exception),
+        $exception->getMessage(),
+        $exception->getFile(),
+        $exception->getLine(),
+    ));
     if (PHP_SAPI === 'cli') {
         fwrite(STDERR, "AQUASENSE+ could not complete the request. Check the protected application log.\n");
         exit(1);

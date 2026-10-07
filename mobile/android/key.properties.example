@@ -1,0 +1,6 @@
+# Copy to key.properties and keep the real file private.
+# Paths may be absolute or relative to mobile/android/app.
+storeFile=../private/aquasense-owner-upload.jks
+storePassword=REPLACE_LOCALLY
+keyAlias=aquasense-owner
+keyPassword=REPLACE_LOCALLY

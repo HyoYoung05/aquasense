@@ -51,3 +51,7 @@ for (const form of document.querySelectorAll('form[data-confirm]')) {
         if (!window.confirm(form.dataset.confirm)) event.preventDefault();
     });
 }
+
+for (const printButton of document.querySelectorAll('[data-print-page]')) {
+    printButton.addEventListener('click', () => window.print());
+}

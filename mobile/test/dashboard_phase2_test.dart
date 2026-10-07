@@ -282,7 +282,10 @@ void main() {
     await tester.tap(find.text('High level'));
     expect(openedAlert, 9);
     expect(find.textContaining('OS-20261003-A1B2C3D4'), findsOneWidget);
-    expect(find.text('kg: 5 pending · 8 distributed'), findsOneWidget);
+    expect(
+      find.text('5 kg pending · 8 kg distributed · 13 kg earned'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 

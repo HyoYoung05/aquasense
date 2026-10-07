@@ -4,6 +4,7 @@ import '../../models/oil_surrender.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/oil_surrender_service.dart';
+import '../../services/incentives_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/loading_widget.dart';
@@ -16,6 +17,7 @@ class OilSurrenderScreen extends StatefulWidget {
   final List<SurrenderTrapOption> traps;
   final int establishmentCount;
   final OilSurrenderRepository? repository;
+  final IncentivesRepository? incentivesRepository;
   final EvidencePicker? evidencePicker;
   final Future<void> Function()? onSubmissionSuccess;
 
@@ -25,6 +27,7 @@ class OilSurrenderScreen extends StatefulWidget {
     required this.traps,
     required this.establishmentCount,
     this.repository,
+    this.incentivesRepository,
     this.evidencePicker,
     this.onSubmissionSuccess,
   });
@@ -111,6 +114,8 @@ class _OilSurrenderScreenState extends State<OilSurrenderScreen> {
         builder: (_) => OilSurrenderDetailScreen(
           surrenderId: item.id,
           repository: _repository,
+          incentivesRepository:
+              widget.incentivesRepository ?? IncentivesService(widget.auth),
         ),
       ),
     );

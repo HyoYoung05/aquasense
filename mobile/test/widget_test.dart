@@ -381,6 +381,6 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('owner@aquasense.test'), findsOneWidget);
-    expect(find.textContaining('Owner App v0.6.0+12'), findsOneWidget);
+    expect(find.textContaining('Owner App v0.8.0+14'), findsOneWidget);
   });
 }

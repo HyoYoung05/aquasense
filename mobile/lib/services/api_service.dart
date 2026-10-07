@@ -11,6 +11,7 @@ enum ApiErrorType {
   serverUnavailable,
   unauthorized,
   forbidden,
+  notFound,
   validationError,
   rateLimited,
   serverError,
@@ -23,6 +24,7 @@ extension ApiErrorTypeCode on ApiErrorType {
     ApiErrorType.serverUnavailable => 'SERVER_UNAVAILABLE',
     ApiErrorType.unauthorized => 'UNAUTHORIZED',
     ApiErrorType.forbidden => 'FORBIDDEN',
+    ApiErrorType.notFound => 'NOT_FOUND',
     ApiErrorType.validationError => 'VALIDATION_ERROR',
     ApiErrorType.rateLimited => 'RATE_LIMITED',
     ApiErrorType.serverError => 'SERVER_ERROR',
@@ -317,7 +319,24 @@ class ApiService {
     if (message is! String || message.trim().isEmpty || message.length > 240) {
       return null;
     }
-    return message.trim();
+    final safe = message.trim();
+    final normalized = safe.toLowerCase();
+    const privateMarkers = [
+      'sqlstate',
+      'stack trace',
+      'fatal error',
+      'php warning',
+      'socketexception',
+      'formatexception',
+      '<html',
+      '<!doctype',
+      'bearer ',
+      'authorization:',
+      'c:\\',
+      '/var/www/',
+    ];
+    if (privateMarkers.any(normalized.contains)) return null;
+    return safe;
   }
 
   static ApiException _httpException(int status, String? message) {
@@ -330,6 +349,13 @@ class ApiService {
       return ApiException(
         message ?? 'You do not have permission to perform this action.',
         type: ApiErrorType.forbidden,
+        status: status,
+      );
+    }
+    if (status == 404) {
+      return ApiException(
+        message ?? 'The requested information is not available.',
+        type: ApiErrorType.notFound,
         status: status,
       );
     }

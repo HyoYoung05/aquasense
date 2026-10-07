@@ -1,14 +1,89 @@
 # AQUASENSE+ Version History
 
-1.0.2
+1.0.5
 
-## Repository integration - 2026-10-05
+## 1.0.5
 
-The backend remains version **1.0.2**. This repository update adds the Flutter
-Owner application under `mobile/` at version **0.6.0+12**, including Mobile
-Phase 5 oil surrender submission, protected evidence, history, review-state
-presentation, tests, and documentation. Flutter build output, local API files,
-Wi-Fi passwords, and temporary network credentials remain excluded from Git.
+Date: 2026-10-07
+
+Development Phase: Report print control fix
+
+### Fixed
+
+- Reports and Formal Compliance Report print buttons now use the shared
+  external JavaScript file instead of inline `onclick` handlers blocked by the
+  strict Content Security Policy.
+- Both controls are explicitly non-submit buttons and invoke the browser print
+  dialog through a reusable `data-print-page` action.
+
+### Verification
+
+- Phase 7 HTTP coverage confirms both pages contain the external print action,
+  contain no inline print handler, and load the matching listener from
+  `assets/js/app.js`.
+- The strict `script-src 'self'` policy remains unchanged.
+
+## 1.0.4
+
+Date: 2026-10-07
+
+Development Phase: Establishment Details report selection fix
+
+### Fixed
+
+- Opening Establishment Details without an establishment no longer throws a
+  validation exception or displays the global service-unavailable screen.
+- The report now keeps the Establishment Details tab and filters visible and
+  displays an accessible instruction to select an establishment.
+- Invalid report filters fall back safely to the Overview report rather than
+  retrying the same invalid report configuration.
+- Corrected malformed punctuation in the Establishment Details and report
+  result presentation.
+
+### Verification
+
+- The empty Establishment Details URL returns HTTP 200 with a selection prompt.
+- Selecting an authorized establishment returns HTTP 200 with its registration,
+  grease-trap, monitoring, alert, surrender, and incentive context.
+- Phase 7 regression coverage includes both paths.
+
+## 1.0.3
+
+Date: 2026-10-07
+
+Development Phase: Local administrator/staff login reliability
+
+### Fixed
+
+- Restored the existing isolated AQUASENSE+ MariaDB task on loopback port
+  `3307`, which is the database selected by this machine's ignored local
+  configuration. Starting only XAMPP's original port-3306 MySQL instance does
+  not provide the working AQUASENSE+ database on this computer.
+- Passed application configuration into the global exception handler so a
+  database outage renders the complete branded service-unavailable page
+  without an undefined-variable warning.
+- Exception logging no longer serializes stack arguments that could contain a
+  submitted password, bearer token, or other request data.
+- Corrected the authentication-page title separator encoding.
+
+### Verification
+
+- The isolated database is listening on `127.0.0.1:3307`.
+- The seeded administrator and environmental-staff accounts both completed
+  login and reached `admin/dashboard.php` over the actual local HTTP site.
+- PHP syntax and retained authentication/integration checks pass.
+
+## Repository integration - 2026-10-07
+
+The backend is version **1.0.5**. The Flutter Owner application under
+`mobile/` is now version **0.8.0+14**, the Mobile Phase 7 release candidate.
+Final production configuration, security, Android branding/signing safeguards,
+navigation, API-error privacy, APK/AAB validation, and mobile release documents
+are complete. The public HTTPS host, production signing key, application-ID
+decision, installed-device acceptance, and physical end-to-end run remain
+external release blockers. Flutter build output, local API files, signing
+secrets, Wi-Fi passwords, and temporary network credentials remain excluded
+from Git.
 
 ## 1.0.2
 

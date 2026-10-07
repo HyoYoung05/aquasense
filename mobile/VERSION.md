@@ -2,7 +2,120 @@
 
 ## Current Version
 
-0.6.0+12
+0.8.0+14
+
+## 0.8.0+14 - 2026-10-07
+
+Development Phase: Mobile Phase 7 Final Release Hardening (Release Candidate)
+
+### Added
+
+- Added production architecture, deployment, security, capstone demo, and
+  mobile production-checklist documentation.
+- Added an AQUASENSE+ launcher icon and Android splash image from the existing
+  water-drop identity.
+- Added production signing configuration through ignored
+  `android/key.properties` and a safe committed example.
+- Added distinct not-found API categorization and tests for unsafe backend
+  error-message suppression.
+
+### Changed
+
+- Increased the application version from `0.7.0+13` to `0.8.0+14` because
+  deployment-dependent release blockers prevent a justified `1.0.0` release.
+- Completed the authenticated navigation destinations and removed the final
+  placeholder route.
+- Declared camera hardware optional while retaining Internet and Camera as the
+  only main-manifest permissions.
+- Made debug signing of release-mode validation artifacts an explicit
+  environment opt-in instead of a silent Gradle fallback.
+
+### Fixed
+
+- Raw SQL, PHP, HTML, stack-trace, filesystem, socket, and format errors can no
+  longer appear as short server messages in release UI.
+- HTTP `404` no longer collapses into a generic server failure.
+- Corrected malformed punctuation in Alerts UI copy.
+- Removed default Flutter launcher and splash branding.
+- Updated the retained backend Phase 8 release check to accept later compatible
+  website patch versions instead of requiring exactly `1.0.0`.
+
+### Known Limitations
+
+- The final public HTTPS API hostname has not been supplied or accepted.
+- Production signing credentials and a keystore have not been configured.
+- The placeholder application ID `com.example.aquasense_mobile` requires a
+  deliberate final-distribution decision.
+- Installed Android-device, physical ESP32, public owner-isolation, alert,
+  surrender, and incentive end-to-end acceptance remains pending.
+
+### Verification
+
+- `flutter analyze`: no issues.
+- `flutter test`: 113 passed, 0 failed, 0 skipped.
+- Release-mode APK and AAB assembled with an explicit HTTPS validation URL and
+  explicit debug-signing opt-in.
+- Release-mode no-URL APK assembled; startup tests confirm the visible Server
+  Configuration Error state.
+- Backend verification passed 50 Owner API, 39 Oil Surrender, 41 Incentive, 36
+  CORS, 13 production-configuration, and 51 retained website release checks.
+- Validation artifacts are not production signed and must not be distributed
+  as production builds.
+
+## 0.7.0+13 - 2026-10-06
+
+Development Phase: Mobile Phase 6 Owner Rice Incentives
+
+### Added
+
+- Added the functional Rice Incentives module with backend-grouped earned,
+  pending, and distributed totals for each reward unit.
+- Added newest-first incentive history with All, Pending Distribution,
+  Distributed, and Cancelled filters, centralized status labels, and safe
+  handling for future status values.
+- Added read-only Incentive detail with the stored reward, related oil
+  surrender, processing timestamp, distribution state, and distribution date.
+- Added approved Oil Surrender linkage to matching backend incentives and an
+  explicit Awaiting Processing state when no incentive exists yet.
+- Added Phase 6 model, service, UI, integration, authentication, refresh,
+  failure-retention, multiple-unit, and regression tests.
+
+### Changed
+
+- Increased the application version from `0.6.0+12` to `0.7.0+13`.
+- Dashboard Incentives now displays actual grouped backend totals and opens the
+  functional module.
+- Incentive data refreshes through pull-to-refresh, when returning from detail,
+  and after the app resumes, without continuous polling.
+
+### Fixed
+
+- Approved surrenders without a processed incentive no longer risk appearing
+  as a fabricated zero reward or client-side estimate.
+- Different reward units remain separate in totals and history.
+- Failed refreshes retain the last valid in-session incentive data.
+- Nullable distribution dates and optional surrender metadata no longer cause
+  display failures; unknown statuses render a readable fallback.
+
+### Known Issues
+
+- Owners cannot manage distribution, by design. Distribution remains a
+  Barangay administrative action.
+- Reward eligibility and calculations remain backend-only; Flutter contains no
+  official incentive formula.
+- Final production/mobile hardening is Mobile Phase 7. A real HTTPS API host,
+  production signing, application-ID migration, and installed-device
+  acceptance remain pending.
+
+### Verification
+
+- `flutter analyze`: no issues.
+- `flutter test`: 112 passed, 0 failed, 0 skipped.
+- PHP Phase 6 fixture validates owner isolation, multiple reward units,
+  distribution state/date, and historical reward snapshots.
+- Development APK built with an explicit local `API_BASE_URL`.
+- No Android device was connected, so installed-phone interaction remains a
+  manual acceptance item.
 
 ## 0.6.0+12 - 2026-10-05
 

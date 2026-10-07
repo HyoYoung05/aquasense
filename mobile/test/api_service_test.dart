@@ -72,34 +72,78 @@ void main() {
     api.close();
   });
 
-  test('forbidden, unavailable, and server failures are distinct', () async {
-    for (final entry in {
-      403: ApiErrorType.forbidden,
-      503: ApiErrorType.serverUnavailable,
-      500: ApiErrorType.serverError,
-    }.entries) {
-      final api = ApiService(
-        baseUrl: baseUrl,
-        client: MockClient(
-          (_) async => http.Response(
-            jsonEncode({'success': false, 'message': 'Safe message'}),
-            entry.key,
+  test(
+    'forbidden, not-found, unavailable, and server failures are distinct',
+    () async {
+      for (final entry in {
+        403: ApiErrorType.forbidden,
+        404: ApiErrorType.notFound,
+        503: ApiErrorType.serverUnavailable,
+        500: ApiErrorType.serverError,
+      }.entries) {
+        final api = ApiService(
+          baseUrl: baseUrl,
+          client: MockClient(
+            (_) async => http.Response(
+              jsonEncode({'success': false, 'message': 'Safe message'}),
+              entry.key,
+            ),
           ),
-        ),
-      );
-      await expectLater(
-        api.get('profile.php'),
-        throwsA(
-          isA<ApiException>().having(
-            (error) => error.type,
-            'type',
-            entry.value,
+        );
+        await expectLater(
+          api.get('profile.php'),
+          throwsA(
+            isA<ApiException>().having(
+              (error) => error.type,
+              'type',
+              entry.value,
+            ),
           ),
-        ),
-      );
-      api.close();
-    }
-  });
+        );
+        api.close();
+      }
+    },
+  );
+
+  test(
+    'unsafe JSON error messages are replaced with private-safe text',
+    () async {
+      for (final unsafe in [
+        'SQLSTATE[HY000] database failed',
+        'PHP Warning: include C:\\private\\config.php',
+        'SocketException: connection refused',
+        '<!DOCTYPE html><html>server error</html>',
+        'Authorization: Bearer private-token',
+      ]) {
+        final api = ApiService(
+          baseUrl: baseUrl,
+          client: MockClient(
+            (_) async => http.Response(
+              jsonEncode({'success': false, 'message': unsafe}),
+              422,
+            ),
+          ),
+        );
+        await expectLater(
+          api.post('oil-surrender.php'),
+          throwsA(
+            isA<ApiException>()
+                .having(
+                  (error) => error.type,
+                  'type',
+                  ApiErrorType.validationError,
+                )
+                .having(
+                  (error) => error.message,
+                  'message',
+                  isNot(contains(unsafe)),
+                ),
+          ),
+        );
+        api.close();
+      }
+    },
+  );
 
   test('timeout becomes a network error', () async {
     final api = ApiService(

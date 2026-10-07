@@ -159,7 +159,7 @@ class _AlertsScreenState extends State<AlertsScreen>
   @override
   Widget build(BuildContext context) {
     if (loading && data == null) {
-      return const LoadingWidget(label: 'Loading alertsâ€¦');
+      return const LoadingWidget(label: 'Loading alerts…');
     }
     if (data == null) {
       return Padding(
@@ -276,7 +276,7 @@ class _AlertsScreenState extends State<AlertsScreen>
                   ),
                 ),
                 Text(
-                  'Read-only alerts Â· updated ${readingTime(DateTime.now().toUtc())}',
+                  'Read-only alerts · updated ${readingTime(DateTime.now().toUtc())}',
                 ),
               ],
             ),
@@ -361,7 +361,7 @@ class _AlertsScreenState extends State<AlertsScreen>
                   DropdownMenuItem(
                     value: t.id,
                     child: Text(
-                      '${t.name} Â· ${t.businessName}',
+                      '${t.name} · ${t.businessName}',
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -471,7 +471,7 @@ class _AlertsScreenState extends State<AlertsScreen>
                             ),
                           ),
                           Text(
-                            '${a.greaseTrapName} Â· ${a.businessName}',
+                            '${a.greaseTrapName} · ${a.businessName}',
                             overflow: TextOverflow.ellipsis,
                           ),
                         ],
@@ -494,7 +494,7 @@ class _AlertsScreenState extends State<AlertsScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Last triggered ${relativeTime(a.lastTriggeredAt)} Â· ${readingTime(a.lastTriggeredAt)}',
+                  'Last triggered ${relativeTime(a.lastTriggeredAt)} · ${readingTime(a.lastTriggeredAt)}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

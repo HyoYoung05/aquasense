@@ -4,7 +4,7 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 test firmware.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.0.2 retains the Phase 1–8 production foundation and adds owner-authorized Mobile Phase 4 read-only alerts, bounded history, detail, and Monitoring alert links.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.0.5 retains the Phase 1-8 production foundation and fixes local login availability, safe outage handling, Establishment Details selection, and CSP-compatible report printing.
 
 ## Current Version
 
@@ -14,10 +14,10 @@ divider. Open `esp32/UltrasonicTest/UltrasonicTest.ino` in Arduino IDE. Copy
 `config.example.h` to an ignored `config.local.h` and supply your own network,
 API endpoint, and provisioned device credentials. Local Wi-Fi passwords, device keys,
 compiler databases, and firmware binaries are excluded from GitHub. The Flutter source is
-tracked under [`mobile/`](mobile/README.md) at version **0.6.0+12**. Generated APKs,
+tracked under [`mobile/`](mobile/README.md) at version **0.8.0+14**. Generated APKs,
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 
-**Version: 1.0.2**
+**Version: 1.0.5**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -372,13 +372,15 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 - **Phase 6 (completed):** configurable incentive rules, atomic reward processing, distribution, owner summaries, and Compliance Ledger interface.
 - **Phase 7 (completed):** report filters, daily/weekly/monthly/custom reporting, audit review, and CSV/PDF/print exports over indexed operational records.
 - **Phase 8 (completed):** security, integration, deployment, performance, accessibility, backup/restore, documentation, and capstone release validation.
-- The sibling Flutter app now implements Mobile Phase 1. The sibling ESP32 sketch now supports one ultrasonic bench test; physical sensor validation and calibration remain incomplete.
+- The Flutter Owner app is a Mobile Phase 7 release candidate with functional Authentication, Dashboard, Monitoring, Alerts, Oil Surrender, Incentives, and Profile modules. Final public-domain, production-signing, installed-device, and physical-hardware acceptance remain incomplete.
 
 ### Current limitations
 
 - The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
 - PDF detail is limited to 500 rows and CSV detail to 10,000 rows; narrower filters are required for complete exports beyond those limits.
-- The separate Flutter UI may still need screens for the new Phase 6 owner endpoint.
+- The Flutter Owner app is version `0.8.0+14`. Reward calculations and
+  distribution controls remain exclusively in the PHP backend/Barangay site.
+  See the [mobile production checklist](docs/MOBILE_PRODUCTION_CHECKLIST.md).
 
 ## Sensor Integration
 

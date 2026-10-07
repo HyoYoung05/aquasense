@@ -1,10 +1,9 @@
 # AQUASENSE+ Carinderia Owner App
 
-Flutter owner application for AQUASENSE+. Version **0.6.0+12** completes Mobile
-Phase 5: authenticated oil surrender submission, photo evidence, history,
-protected detail viewing, and Barangay review-state tracking. It preserves the
-Phase 1 authentication foundation, Phase 2 Dashboard, Phase 3 Monitoring, and
-Phase 4 Alerts.
+Flutter owner application for AQUASENSE+. Version **0.8.0+14** is the Mobile
+Phase 7 release candidate. It preserves all Phase 1 through 6 workflows and
+adds final production configuration, security, Android, branding, navigation,
+error-privacy, release-build, and documentation hardening.
 
 The app communicates only with the PHP API. It contains no SQL, MySQL package,
 or database credential.
@@ -267,7 +266,8 @@ navigation rail on wider displays:
 - Monitoring: Mobile Phase 3 current sensors, history, and charts
 - Alerts: Mobile Phase 4 active/history list and read-only details
 - Oil Surrender: Mobile Phase 5 submission, evidence, history, and detail
-- Incentives: Mobile Phase 6 placeholder
+- Incentives: Mobile Phase 6 reward summary, pending/distributed totals,
+  filters, transaction history, and read-only detail
 - Profile: owner name, email, establishments, app version, and logout
 
 The shell uses centralized authentication state, reusable loading/error/empty
@@ -284,9 +284,11 @@ scrollable with the keyboard open and blocks repeated submission.
 - Main/release manifest: does not enable cleartext traffic
 
 The existing application ID was preserved to avoid breaking installed builds.
-It is still a placeholder identity and must be deliberately migrated before
-store distribution. Release signing also still uses the debug key and must be
-replaced with a protected production signing configuration.
+It is still a placeholder identity and requires an explicit keep-or-migrate
+decision before distribution. Release signing reads the ignored
+`android/key.properties`; it no longer silently selects the debug key. Debug
+signing for a release-mode validation artifact requires the explicit
+`AQUASENSE_ALLOW_DEBUG_RELEASE_SIGNING=true` environment opt-in.
 
 ## Development account
 
@@ -307,22 +309,63 @@ and denied through Apache. They are temporary references and are not consumed
 by production Flutter code. A temporary Tailscale APK still requires the
 computer, Apache, MariaDB, and both Tailscale clients to stay online.
 
-## Verification for 0.6.0+12
+## Mobile Phase 6 rice incentives
+
+`GET incentives.php` is the single owner-authorized source for reward summaries
+and the newest 200 incentive transactions. The Bearer token determines the
+owner; the app sends no owner or establishment selector. Totals are displayed
+separately for every backend reward unit, so kilograms, grams, packs, or future
+units are never combined.
+
+The Incentives screen prioritizes pending totals, the latest reward,
+distributed totals, and full history. History supports All, Pending
+Distribution, Distributed, and Cancelled filters. CALCULATED and
+APPROVED_FOR_DISTRIBUTION remain pending until the backend reports DISTRIBUTED.
+Each detail shows only fields exposed by the owner API: transaction and
+surrender codes, stored oil and reward quantities/units, status, processing
+time, and backend distribution date. Unknown future statuses remain readable.
+
+Approved Oil Surrender details query the same endpoint and match the backend
+`surrender_code`. A match opens the Incentive detail. If no transaction exists,
+the app displays `Awaiting Processing` without a zero or estimated reward.
+Reward eligibility, rule selection, calculation, amount, unit, distribution,
+and historical values remain backend-controlled. Owners cannot approve,
+cancel, edit, claim, redeem, or mark rewards distributed.
+
+Manual pull-to-refresh and refresh after returning from detail or resuming the
+app update summaries and history. A refresh failure retains the last in-session
+data and presents a safe retry message. The app does not poll continuously.
+
+## Mobile Phase 7 release hardening
+
+The final review keeps every destination functional and removes the remaining
+navigation placeholder. HTTP `404` is categorized separately, and unsafe raw
+SQL/PHP/HTML/stack/filesystem responses are replaced with safe messages. The
+launcher icon and Android splash use the AQUASENSE+ water-drop artwork rather
+than Flutter defaults.
+
+The app is a release candidate because a real public API hostname, production
+signing key, final application-ID decision, and installed-device/public
+end-to-end acceptance are deployment inputs that are not available in this
+repository.
+
+## Verification for 0.8.0+14
 
 - `flutter analyze`: no issues
-- `flutter test`: 96 passed, 0 failed, 0 skipped
+- `flutter test`: 113 passed, 0 failed, 0 skipped
 - PHP owner mobile integration suite: 50 checks passed
 - PHP Phase 5 end-to-end suite: 39 checks passed, including multipart image
   upload, MIME/size rejection, idempotent replay, owner isolation, protected
   photo access, Hybrid Verification data, staff review, approval, and rejection
-- Debug APK without `API_BASE_URL`: built successfully; startup widget tests
-  verify the visible configuration error screen
-- Debug APK with the reachable local API:
-  `build/verification/aquasense-owner-v0.6.0+12-local-debug.apk`
-- Configuration-error APK:
-  `build/verification/aquasense-owner-v0.6.0+12-config-error-debug.apk`
-- HTTPS release configuration check:
-  `build/verification/aquasense-owner-v0.6.0+12-https-config-check.apk`
+- PHP Phase 6 end-to-end suite: 41 checks passed, including owner isolation,
+  multiple units, distribution status/date, and historical reward snapshots
+- PHP CORS suite: 36 checks passed; production configuration: 13 checks passed;
+  retained website release suite: 51 checks passed
+- Release-mode APK and AAB built successfully with an explicit HTTPS validation
+  URL and explicit debug-signing opt-in. They are build-validation artifacts,
+  not production-signed deliverables.
+- Release-mode APK without `API_BASE_URL` built successfully; startup widget
+  tests verify the visible configuration error screen.
 - The isolated backend fixture completed full Owner submission and Barangay
   review flows through the actual local HTTP endpoints and removed its random
   fixtures afterward. A persistent submission using the shared development
@@ -331,16 +374,24 @@ computer, Apache, MariaDB, and both Tailscale clients to stay online.
 The verification APK directory is under ignored build output. No Android phone
 or emulator was connected for installed-device interaction.
 
-## Current limitations and next phase
+## Current limitations and release blockers
 
-Mobile Phase 6 is the exact next task: read-only Owner incentive summary and
-transaction history sourced from backend-generated incentive records. The app
-must not calculate rewards or expose Barangay distribution controls. AI image
-verification is not implemented. Final production signing, the real HTTPS API
-host, application-ID migration, installed-phone camera/gallery acceptance, and
-release hardening remain pending. Push notifications remain future work, and
-physical HC-SR04 acceptance still requires the ESP32 and an Android device.
+- The final public HTTPS API domain has not been supplied or tested.
+- A production signing keystore and credentials have not been configured.
+- The placeholder Android application ID still needs an owner decision.
+- No Android phone/emulator was connected for installed-device, responsive,
+  keyboard, Back navigation, or accessibility acceptance.
+- Physical ESP32 telemetry, alert/offline recovery, and the complete public
+  Owner/Barangay workflow still require hardware and the deployed API.
+- AI image verification and push notifications remain outside the implemented
+  scope.
 
-See [DEPLOYMENT.md](DEPLOYMENT.md), [VERSION.md](VERSION.md), and
-`../aquasense-web/docs/MOBILE_API.md` for deployment and backend contract
-details.
+## Documentation index
+
+- [Mobile API contract](../docs/MOBILE_API.md)
+- [Mobile architecture](../docs/MOBILE_ARCHITECTURE.md)
+- [Mobile deployment](../docs/MOBILE_DEPLOYMENT.md)
+- [Mobile security](../docs/MOBILE_SECURITY.md)
+- [Capstone mobile demo](../docs/MOBILE_DEMO.md)
+- [Mobile production checklist](../docs/MOBILE_PRODUCTION_CHECKLIST.md)
+- [Mobile version history](VERSION.md)

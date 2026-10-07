@@ -3,22 +3,27 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../../models/oil_surrender.dart';
+import '../../models/incentive_summary.dart';
 import '../../services/api_service.dart';
 import '../../services/oil_surrender_service.dart';
+import '../../services/incentives_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/state_panel.dart';
 import 'oil_surrender_screen.dart';
+import '../incentives/incentive_detail_screen.dart';
 
 class OilSurrenderDetailScreen extends StatefulWidget {
   final int surrenderId;
   final OilSurrenderRepository repository;
+  final IncentivesRepository? incentivesRepository;
 
   const OilSurrenderDetailScreen({
     super.key,
     required this.surrenderId,
     required this.repository,
+    this.incentivesRepository,
   });
 
   @override
@@ -31,6 +36,9 @@ class _OilSurrenderDetailScreenState extends State<OilSurrenderDetailScreen> {
   String? _error;
   bool _loading = false;
   Future<Uint8List>? _photo;
+  IncentiveTransaction? _incentive;
+  String? _incentiveError;
+  bool _incentiveLoading = false;
 
   @override
   void initState() {
@@ -53,12 +61,40 @@ class _OilSurrenderDetailScreenState extends State<OilSurrenderDetailScreen> {
             ? null
             : widget.repository.loadPhoto(item.photo!.id);
       });
+      if (item.status == 'APPROVED' && widget.incentivesRepository != null) {
+        await _loadIncentive(item.transactionCode);
+      }
     } on ApiException catch (exception) {
       if (mounted && exception.type != ApiErrorType.unauthorized) {
         setState(() => _error = exception.message);
       }
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _loadIncentive(String surrenderCode) async {
+    if (_incentiveLoading || widget.incentivesRepository == null) return;
+    setState(() {
+      _incentiveLoading = true;
+      _incentiveError = null;
+    });
+    try {
+      final summary = await widget.incentivesRepository!.load();
+      IncentiveTransaction? match;
+      for (final record in summary.transactions) {
+        if (record.surrenderCode == surrenderCode) {
+          match = record;
+          break;
+        }
+      }
+      if (mounted) setState(() => _incentive = match);
+    } on ApiException catch (exception) {
+      if (mounted && exception.type != ApiErrorType.unauthorized) {
+        setState(() => _incentiveError = exception.message);
+      }
+    } finally {
+      if (mounted) setState(() => _incentiveLoading = false);
     }
   }
 
@@ -192,6 +228,25 @@ class _OilSurrenderDetailScreenState extends State<OilSurrenderDetailScreen> {
                       ),
                     ],
                   ),
+                  if (item.status == 'APPROVED' &&
+                      widget.incentivesRepository != null) ...[
+                    const SizedBox(height: 12),
+                    _IncentiveLinkCard(
+                      loading: _incentiveLoading,
+                      incentive: _incentive,
+                      error: _incentiveError,
+                      onRetry: () => _loadIncentive(item.transactionCode),
+                      onOpen: _incentive == null
+                          ? null
+                          : () => Navigator.of(context).push<void>(
+                              MaterialPageRoute(
+                                builder: (_) => IncentiveDetailScreen(
+                                  transaction: _incentive!,
+                                ),
+                              ),
+                            ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   _Section(
                     title: 'Photo evidence',
@@ -258,6 +313,85 @@ class _OilSurrenderDetailScreenState extends State<OilSurrenderDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _IncentiveLinkCard extends StatelessWidget {
+  final bool loading;
+  final IncentiveTransaction? incentive;
+  final String? error;
+  final VoidCallback onRetry;
+  final VoidCallback? onOpen;
+
+  const _IncentiveLinkCard({
+    required this.loading,
+    required this.incentive,
+    required this.error,
+    required this.onRetry,
+    required this.onOpen,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const Card(
+        child: ListTile(
+          leading: CircularProgressIndicator(),
+          title: Text('Checking rice incentive…'),
+        ),
+      );
+    }
+    if (error != null) {
+      return Card(
+        child: ListTile(
+          leading: const Icon(Icons.cloud_off_outlined),
+          title: const Text('Incentive status unavailable'),
+          subtitle: Text(error!),
+          trailing: TextButton(onPressed: onRetry, child: const Text('Retry')),
+        ),
+      );
+    }
+    if (incentive == null) {
+      return const Card(
+        child: ListTile(
+          leading: Icon(Icons.schedule_outlined, color: Colors.orange),
+          title: Text(
+            'Awaiting Processing',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          subtitle: Text('Approved. Incentive processing is pending.'),
+        ),
+      );
+    }
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Rice Incentive Available',
+              style: TextStyle(
+                color: forest,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${cleanQuantity(incentive!.rewardQuantity)} ${incentive!.rewardUnit}',
+            ),
+            Text(incentiveStatusLabel(incentive!.status)),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: onOpen,
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('View Incentive'),
+            ),
+          ],
+        ),
       ),
     );
   }

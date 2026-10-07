@@ -1,7 +1,7 @@
 name: aquasense_mobile
-description: AQUASENSE+ Carinderia Owner application, Phase 5.
+description: AQUASENSE+ Carinderia Owner application, Mobile Phase 7 release candidate.
 publish_to: 'none'
-version: 0.6.0+12
+version: 0.8.0+14
 environment:
   sdk: '>=3.11.0 <4.0.0'
 dependencies:

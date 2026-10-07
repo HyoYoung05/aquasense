@@ -27,6 +27,14 @@ String cleanNumber(double value, {int decimals = 1}) {
   return value.toStringAsFixed(decimals);
 }
 
+String cleanQuantity(double value, {int maxDecimals = 3}) {
+  if (value == value.roundToDouble()) return value.toInt().toString();
+  return value
+      .toStringAsFixed(maxDecimals)
+      .replaceFirst(RegExp(r'0+$'), '')
+      .replaceFirst(RegExp(r'\.$'), '');
+}
+
 String chartTime(DateTime utc, {required bool multiDay}) {
   final local = utc.toLocal();
   if (multiDay) return '${_months[local.month - 1]} ${local.day}';

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/alert_summary.dart';
 import '../../models/dashboard_snapshot.dart';
 import '../../models/establishment.dart';
+import '../../models/incentive_summary.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/state_panel.dart';
@@ -366,13 +367,14 @@ class _IncentiveCard extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Text(
-                      '${unit.unit}: ${cleanNumber(unit.pending)} pending · '
-                      '${cleanNumber(unit.distributed)} distributed',
+                      '${cleanQuantity(unit.pending)} ${unit.unit} pending · '
+                      '${cleanQuantity(unit.distributed)} ${unit.unit} distributed · '
+                      '${cleanQuantity(unit.earned)} ${unit.unit} earned',
                     ),
                   ),
                 if (summary.latest != null)
                   Text(
-                    'Latest status: ${summary.latest!.status}',
+                    'Latest status: ${incentiveStatusLabel(summary.latest!.status)}',
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
               ],

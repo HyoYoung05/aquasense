@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#103f3b">
-    <title><?= e($pageTitle) ?> · AQUASENSE+</title>
+    <title><?= e($pageTitle) ?> &middot; AQUASENSE+</title>
     <link rel="stylesheet" href="<?= e(url('assets/css/style.css')) ?>?v=<?= e(APP_VERSION) ?>">
     <script src="<?= e(url('assets/js/app.js')) ?>" defer></script>
 </head>

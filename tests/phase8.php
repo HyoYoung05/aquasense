@@ -28,7 +28,7 @@ function p8_login(string $base,string $email,string $password):CurlHandle{
     curl_setopt_array($client,[CURLOPT_URL=>$base.'/public/login.php',CURLOPT_POST=>true,CURLOPT_CUSTOMREQUEST=>'POST',CURLOPT_POSTFIELDS=>http_build_query(['csrf_token'=>$match[1]??'','email'=>$email,'password'=>$password])]);curl_exec($client);return$client;
 }
 try {
-    p8_check(APP_VERSION==='1.0.0','Release version is 1.0.0');
+    p8_check(version_compare(APP_VERSION, '1.0.0', '>='), 'Release version is 1.0.0 or newer');
     p8_check($config['require_https']===false,'Development mode does not force HTTPS');
     p8_check(phase3_simulator_available('development')&&!phase3_simulator_available('test')&&!phase3_simulator_available('production'),'Simulator is limited to development mode');
     p8_check(in_array($config['log_level'],['error','warning','info'],true),'Configured log level is valid');

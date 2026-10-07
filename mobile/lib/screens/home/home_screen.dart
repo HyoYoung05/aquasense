@@ -9,6 +9,7 @@ import '../../services/dashboard_service.dart';
 import '../../services/monitoring_service.dart';
 import '../../services/alerts_service.dart';
 import '../../services/oil_surrender_service.dart';
+import '../../services/incentives_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/state_panel.dart';
@@ -17,6 +18,7 @@ import '../monitoring/monitoring_screen.dart';
 import '../alerts/alerts_screen.dart';
 import '../alerts/alert_detail_screen.dart';
 import '../oil_surrender/oil_surrender_screen.dart';
+import '../incentives/incentives_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final AuthService auth;
@@ -24,6 +26,7 @@ class HomeScreen extends StatefulWidget {
   final MonitoringRepository? monitoringRepository;
   final AlertsRepository? alertsRepository;
   final OilSurrenderRepository? oilSurrenderRepository;
+  final IncentivesRepository? incentivesRepository;
   final EvidencePicker? evidencePicker;
 
   const HomeScreen({
@@ -33,6 +36,7 @@ class HomeScreen extends StatefulWidget {
     this.monitoringRepository,
     this.alertsRepository,
     this.oilSurrenderRepository,
+    this.incentivesRepository,
     this.evidencePicker,
   });
 
@@ -43,22 +47,17 @@ class HomeScreen extends StatefulWidget {
 class _Destination {
   final String label;
   final IconData icon;
-  final String placeholder;
 
-  const _Destination(this.label, this.icon, this.placeholder);
+  const _Destination(this.label, this.icon);
 }
 
 const _destinations = [
-  _Destination('Home', Icons.home_outlined, ''),
-  _Destination('Monitoring', Icons.monitor_heart_outlined, ''),
-  _Destination('Alerts', Icons.notifications_outlined, ''),
-  _Destination('Oil Surrender', Icons.oil_barrel_outlined, ''),
-  _Destination(
-    'Incentives',
-    Icons.card_giftcard_outlined,
-    'Incentive history will be available in Mobile Phase 6.',
-  ),
-  _Destination('Profile', Icons.person_outline, ''),
+  _Destination('Home', Icons.home_outlined),
+  _Destination('Monitoring', Icons.monitor_heart_outlined),
+  _Destination('Alerts', Icons.notifications_outlined),
+  _Destination('Oil Surrender', Icons.oil_barrel_outlined),
+  _Destination('Incentives', Icons.card_giftcard_outlined),
+  _Destination('Profile', Icons.person_outline),
 ];
 
 class _HomeScreenState extends State<HomeScreen> {
@@ -145,7 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 applicationVersion: appVersion,
                 children: const [
                   Text(
-                    'Mobile Phase 5 owner dashboard, monitoring, alerts, and authenticated oil surrender submission and history.',
+                    'Final release candidate with owner dashboard, monitoring, alerts, oil surrender, and read-only rice incentives.',
                   ),
                 ],
               ),
@@ -233,6 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return OilSurrenderScreen(
         auth: widget.auth,
         repository: widget.oilSurrenderRepository,
+        incentivesRepository: widget.incentivesRepository,
         evidencePicker: widget.evidencePicker,
         establishmentCount: establishments.length,
         traps: [
@@ -247,12 +247,14 @@ class _HomeScreenState extends State<HomeScreen> {
         onSubmissionSuccess: loadDashboard,
       );
     }
+    if (selectedIndex == 4) {
+      return IncentivesScreen(
+        auth: widget.auth,
+        repository: widget.incentivesRepository,
+      );
+    }
     if (selectedIndex == 5) return _profilePage();
-    return StatePanel.empty(
-      icon: _destinations[selectedIndex].icon,
-      title: _destinations[selectedIndex].label,
-      message: _destinations[selectedIndex].placeholder,
-    );
+    return _profilePage();
   }
 
   Widget _dashboardPage() {
