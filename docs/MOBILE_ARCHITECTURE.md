@@ -1,6 +1,6 @@
 # AQUASENSE+ Owner App Architecture
 
-Version: `0.8.0+14` (Mobile Phase 7 release candidate)
+Version: `0.8.3+17` (Android back navigation and top dashboard actions)
 
 ## Production data path
 
@@ -75,5 +75,5 @@ single safe refresh.
 The shared timestamp utility parses backend timestamps once and displays them
 in local time. Sensor units come from the API contract: distance in `cm`, waste
 level in `%`, temperature in `°C`, calibrated turbidity in `NTU`, flow in
-`L/min`, and uncalibrated gas as a raw reading. Null sensor data remains absent
+`L/min`, plus uncalibrated gas and odor as separate raw readings. Null sensor data remains absent
 and is never converted to zero.

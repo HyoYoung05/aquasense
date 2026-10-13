@@ -522,6 +522,12 @@ class _MonitoringScreenState extends State<MonitoringScreen>
       ('Turbidity', reading?.turbidity, 'NTU', Icons.opacity_outlined),
       ('Flow Rate', reading?.flowRate, 'L/min', Icons.air_outlined),
       ('Gas Sensor Reading', reading?.gasValue, 'raw', Icons.co2_outlined),
+      (
+        'Odor Sensor Reading',
+        reading?.odorValue,
+        'raw',
+        Icons.sensors_outlined,
+      ),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -538,7 +544,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns,
-            childAspectRatio: columns == 1 ? 2.0 : 1.35,
+            childAspectRatio: columns == 1 ? 2.0 : (columns == 2 ? 1.35 : 1.05),
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
           ),
@@ -822,6 +828,7 @@ class _HistoryTile extends StatelessWidget {
       if (point.turbidity != null) '${cleanNumber(point.turbidity!)} NTU',
       if (point.flowRate != null) '${cleanNumber(point.flowRate!)} L/min',
       if (point.gasValue != null) 'Gas ${cleanNumber(point.gasValue!)} raw',
+      if (point.odorValue != null) 'Odor ${cleanNumber(point.odorValue!)} raw',
     ];
     return ListTile(
       contentPadding: EdgeInsets.zero,

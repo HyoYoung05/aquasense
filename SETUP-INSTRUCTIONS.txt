@@ -85,10 +85,12 @@ On a fresh installation:
   o. Import database\migrations\006-phase5-oil-surrender.sql.
   p. Import database\migrations\007-phase6-incentives.sql.
   q. Import database\migrations\008-phase7-reporting.sql.
+  r. Import database\migrations\009-system-admin-role.sql.
+  s. Import database\migrations\010-separate-odor-reading.sql.
 
 Import schema.sql BEFORE sample-data.sql, then apply migrations in numeric order.
 All files must use the same server. After the complete import, the database should
-contain 19 tables, the nullable establishment notes column, and two staff users.
+contain 19 tables, the nullable establishment notes column, and three website users.
 
 Import these files only once into a fresh database. They are not update scripts.
 If tables already exist, inspect the database before doing anything further.
@@ -122,6 +124,10 @@ Open:
   http://localhost/aquasense-web/
 
 DEVELOPMENT ACCOUNTS ONLY:
+
+Admin (full website access):
+  Email: systemadmin@aquasense.test
+  Password: AquaSense!2026
 
 Barangay Administrator:
   Email: admin@aquasense.test
@@ -404,8 +410,8 @@ records are removed afterward. Phase 4 is the next task and will add alert autom
 
 PHASE 8 / PRODUCTION RELEASE
 ----------------------------
-For a local development install: import schema.sql, migrations 001 through 008, then sample-data.sql.
-For production: import schema.sql, migrations 001 through 008, then reference-data.sql. Never import sample-data.sql.
-Production also requires an HTTPS AQUASENSE_APP_URL, environment-managed database credentials, private upload/log paths, Composer dependencies, cron for scripts/check_offline_devices.php, backups, monitoring, and the first-administrator CLI.
+For a local development install: import schema.sql, migrations 001 through 010, then sample-data.sql.
+For production: import schema.sql, migrations 001 through 010, then reference-data.sql. Never import sample-data.sql.
+Production also requires an HTTPS AQUASENSE_APP_URL, environment-managed database credentials, private upload/log paths, Composer dependencies, cron for scripts/check_offline_devices.php, backups, monitoring, and the first full-access Admin CLI.
 Read docs/DEPLOYMENT.md and complete docs/PRODUCTION_CHECKLIST.md before go-live.
 The application reads process environment variables; a .env file is not required or automatically parsed.

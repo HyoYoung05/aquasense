@@ -4,7 +4,7 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 test firmware.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.0.5 retains the Phase 1-8 production foundation and fixes local login availability, safe outage handling, Establishment Details selection, and CSP-compatible report printing.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.1.0 adds a dedicated full-access Admin role and limits Barangay Administrator and Environmental Staff navigation to Dashboard and Operations.
 
 ## Current Version
 
@@ -14,10 +14,11 @@ divider. Open `esp32/UltrasonicTest/UltrasonicTest.ino` in Arduino IDE. Copy
 `config.example.h` to an ignored `config.local.h` and supply your own network,
 API endpoint, and provisioned device credentials. Local Wi-Fi passwords, device keys,
 compiler databases, and firmware binaries are excluded from GitHub. The Flutter source is
-tracked under [`mobile/`](mobile/README.md) at version **0.8.0+14**. Generated APKs,
+tracked under [`mobile/`](mobile/README.md) at version **0.8.3+17**. Generated APKs,
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
+The current Android development build is verified with Flutter **3.41.6**.
 
-**Version: 1.0.5**
+**Version: 1.1.0**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -54,11 +55,22 @@ Import the SQL files using the steps below. `.gitattributes` keeps text line end
 
 **Phase 8 — Final System Hardening and Production Preparation.** The repository is the 1.0.0 production/capstone release package. A real launch still requires an authorized host, domain, TLS certificate, secrets, official thresholds/policy, client builds, physical-device verification, backups, and checklist approval.
 
+### Website access roles
+
+| Role | Sidebar and route access |
+| --- | --- |
+| Admin | Dashboard, Administrative Core, Operations, and Administration |
+| Barangay Administrator | Dashboard and Operations; may perform operational review actions |
+| Barangay Environmental Staff | Dashboard and Operations with read-only operational access |
+| Carinderia Owner | Flutter owner app only; no administrative website access |
+
+The server enforces the same boundaries on direct URLs. Hiding a sidebar item is not used as an authorization control.
+
 ### Phase 2 administrative features
 
 - Dashboard summary cards, grease-trap status, recent alerts, account activity, and vanilla-JavaScript charts use current database values only.
-- Administrators can create, edit, activate, and deactivate establishments, grease traps, and devices. The interface retains records instead of deleting them.
-- Environmental staff have authenticated read access; their management POST requests receive HTTP 403.
+- Admin can create, edit, activate, and deactivate establishments, grease traps, and devices. The interface retains records instead of deleting them.
+- Barangay Administrator and Environmental Staff do not receive Administrative Core navigation or direct-route access.
 - Threshold validation enforces `low < medium < high < critical <= 100`.
 - Device assignment history is retained, and cross-establishment selections are rejected.
 - Missing sensor measurements say **No data yet**, **Awaiting device**, or **Awaiting telemetry**.
@@ -75,8 +87,8 @@ Import the SQL files using the steps below. `.gitattributes` keeps text line end
   history without exposing other establishments, calibration settings, or
   device secrets. Owner history is limited to 50 readings per page and supports
   Last Hour through 30 Days plus a 31-day custom range.
-- Administrators can generate or rotate a device credential. Plaintext appears once; only its SHA-256 hash is stored.
-- The development-only administrator simulator calls the same HTTP telemetry endpoint and marks its records as simulated.
+- Admin can generate or rotate a device credential. Plaintext appears once; only its SHA-256 hash is stored.
+- The development-only Admin simulator calls the same HTTP telemetry endpoint and marks its records as simulated.
 - See [ESP32 API contract](docs/ESP32_API.md) for headers, payloads, responses, retry behavior, and interval guidance.
 
 ### Phase 4 alert features
@@ -84,7 +96,7 @@ Import the SQL files using the steps below. `.gitattributes` keeps text line end
 - The reusable alert engine evaluates backend-derived level, temperature, turbidity, flow, and device-heartbeat conditions only after telemetry validation.
 - Supported types are HIGH_LEVEL, CRITICAL_LEVEL, OVERFLOW_WARNING, OVERFLOW, HIGH_TEMPERATURE, EMULSION_WARNING, HIGH_TURBIDITY, ABNORMAL_FLOW, and DEVICE_OFFLINE.
 - One ACTIVE or ACKNOWLEDGED record is retained per assignment and alert type; later readings update its value, timestamp, and trigger count instead of inserting duplicates.
-- Recovered sensor conditions are resolved automatically without erasing acknowledgment history. Administrators can acknowledge or resolve alerts with an optional note; environmental staff retain read-only access.
+- Recovered sensor conditions are resolved automatically without erasing acknowledgment history. Admin and Barangay Administrator can acknowledge or resolve alerts with an optional note; Environmental Staff retain read-only access.
 - Alert Settings manages global temperature, turbidity, flow, overflow, and offline thresholds. Grease-trap level thresholds remain per trap and enforce Low < Medium < High < Critical.
 - `php scripts/check_offline_devices.php` performs the database-based offline check and is suitable for cron.
 - Dashboard, Monitoring, grease-trap details, device details, authenticated admin APIs, and the owner-safe mobile dashboard expose actual alert records.
@@ -101,7 +113,7 @@ The 2026-09-30 AQS-001 development simulation used the real HTTP telemetry endpo
 - Authenticated owners submit positive quantities in `L` or `kg` with a UUID idempotency key, optional notes/trap selection, and mandatory multipart photo evidence.
 - JPEG, PNG, and WEBP files are checked by upload status, byte limit, extension, MIME detection, and decoded image metadata. Random names are saved under the configurable private storage root.
 - Owner history, detail, and photo routes enforce token identity and establishment ownership. Direct access to the upload directory remains denied.
-- The Barangay review queue supports status, establishment, date, reviewer, unit, and text filters. Administrators can move PENDING submissions to UNDER_REVIEW and then manually APPROVE or REJECT them; rejection requires a reason.
+- The Barangay review queue supports status, establishment, date, reviewer, unit, and text filters. Admin and Barangay Administrator can move PENDING submissions to UNDER_REVIEW and then manually APPROVE or REJECT them; rejection requires a reason.
 - Hybrid Verification displays owner data, protected photo evidence, and telemetry within a configurable window before and after submission. Missing telemetry is reported honestly and never causes automatic rejection.
 - Conditional versioned updates reject stale conflicting decisions. Audit and compliance records are written transactionally for submission, photo, review start, approval, and rejection.
 - Approved records become eligible for deliberate Phase 6 incentive processing; approval alone does not award rice.
@@ -109,11 +121,11 @@ The 2026-09-30 AQS-001 development simulation used the real HTTP telemetry endpo
 
 ### Phase 6 incentive and compliance features
 
-- Administrators configure effective-dated `L` or `kg` oil rules with `kg` or `g` rice rewards. No official Sana Oil conversion rate is seeded or assumed.
+- Admin configures effective-dated `L` or `kg` oil rules with `kg` or `g` rice rewards. No official Sana Oil conversion rate is seeded or assumed.
 - `FIXED_PER_THRESHOLD` uses complete threshold blocks and never rounds upward. `FIXED_TRANSACTION` grants one configured reward after the minimum is met.
 - Only `APPROVED` oil surrenders are processed. Row locking, an application check, and a unique database constraint prevent duplicate rewards during retries or concurrent actions.
 - Each incentive stores its rule and result snapshot, so later rule edits never rewrite historical rewards.
-- Distribution requires explicit administrator confirmation and records the distributor, timestamp, optional notes, audit event, and Compliance Ledger event. Phase 6 provides no casual reversal.
+- Distribution requires explicit Admin or Barangay Administrator confirmation and records the distributor, timestamp, optional notes, audit event, and Compliance Ledger event. Phase 6 provides no casual reversal.
 - Owner Bearer clients can read unit-grouped earned, distributed, and pending totals plus their own transaction history through `GET /api/mobile/incentives.php`.
 - The append-only staff Compliance Ledger records registration, alert, surrender, and incentive lifecycle events and supports event, date, establishment, device, grease-trap, and transaction searches without edit or delete controls.
 - Dashboard and establishment details use actual incentive records and preserve unlike units separately.
@@ -175,7 +187,7 @@ These are the standard steps for a healthy XAMPP installation. See **Current mac
 5. Open [phpMyAdmin](http://localhost/phpmyadmin/).
 6. Create a database named **aquasense**, using `utf8mb4_unicode_ci`.
 7. Select **aquasense**, choose **Import**, select `database/schema.sql`, and click **Import/Go**. The SQL creates tables in the database selected by the importer, so production hosts may use their assigned database name without editing the schema.
-8. Apply migrations `001-mobile-tokens.sql` through `008-phase7-reporting.sql` in numeric order.
+8. Apply migrations `001-mobile-tokens.sql` through `010-separate-odor-reading.sql` in numeric order.
 9. For local development, import `database/sample-data.sql`. For a production-style empty database, import `database/reference-data.sql` instead; it creates roles but no users or passwords.
 10. Run `composer install` in the project directory to install the locked PDF dependency.
 11. If your local database credentials differ, copy `config/local.example.php` to `config/local.php` and adjust the settings. Set every development database value in the ignored file; the committed application has no database username, database name, or password defaults.
@@ -193,8 +205,18 @@ Open [credentials.txt](credentials.txt) locally in your editor for the developme
 | --- | --- | --- |
 | Barangay Administrator | `admin@aquasense.test` | `AquaSense!2026` |
 | Barangay Environmental Staff | `staff@aquasense.test` | `AquaSense!2026` |
+| Admin | `systemadmin@aquasense.test` | `AquaSense!2026` |
 
 `sample-data.sql` contains only PHP `password_hash()` output, not plaintext passwords in user records. Login uses `password_verify()` and rehashes passwords when the configured PHP default changes. The optional mobile development helper creates `owner@aquasense.test` with password `AquaSense!2026` and links fictional Demo Kusina. Owners cannot access the administrative website.
+
+For an existing development database, apply migrations 009-010 and provision or
+repair the demo Admin account with:
+
+```powershell
+C:\xampp\php\php.exe database\website-development.php --allow-demo-data
+```
+
+The helper refuses non-development environments. It does not create production users.
 
 ## Owner mobile API and Flutter app
 
@@ -204,7 +226,7 @@ history, alerts, protected oil-surrender evidence, and incentive APIs under
 [Flutter Owner app](mobile/README.md) implements Mobile Phases 1 through 5,
 including authenticated oil surrender submission and review-state history.
 
-For an existing or fresh installation, select the `aquasense` database and import migrations 001, 002, and 003 in order. Do not rerun the full schema on an existing database.
+For an existing or fresh installation, select the `aquasense` database and import migrations 001 through 010 in order. Do not rerun the full schema on an existing database.
 
 For local development only, run from the website directory:
 
@@ -224,7 +246,7 @@ Verify the new API with `C:\xampp\php\php.exe tests\mobile-api.php --allow-local
 
 - **Name:** `aquasense`
 - **Structure:** [database/schema.sql](database/schema.sql), 17 InnoDB tables with foreign keys, indexes, uniqueness constraints, timestamps, and numeric checks.
-- **Development records:** [database/sample-data.sql](database/sample-data.sql), three roles, two staff accounts, one fictional establishment, one trap, one simulated device, one assignment, configurable settings, and setup ledger/audit entries.
+- **Development records:** [database/sample-data.sql](database/sample-data.sql), four roles, three website accounts, one fictional establishment, one trap, one simulated device, one assignment, configurable settings, and setup ledger/audit entries.
 - **Configuration:** `config/config.php`; optional ignored overrides in `config/local.php`.
 - **Connection:** `config/database.php`, PDO, `utf8mb4`, exceptions, and native prepared statements.
 - **Time:** stored timestamps use UTC; the interface displays Asia/Manila time.
@@ -235,7 +257,7 @@ Environment overrides: `AQUASENSE_DB_HOST`, `AQUASENSE_DB_PORT`, `AQUASENSE_DB_N
 
 | Table | Purpose and relationships |
 | --- | --- |
-| `roles` | One role has many users; administrator, environmental staff, and owner. |
+| `roles` | One role has many users; full Admin, Barangay Administrator, Environmental Staff, and owner. |
 | `users` | Each user has one role. Referenced by submissions, reviews, distributions, account activity, and record authorship. Deactivate rather than delete users with history. |
 | `establishments` | One establishment has many grease traps and oil surrenders. Optional `owner_user_id` links the owner account; recorded owner details and Phase 2 notes support registration before an account exists. |
 | `grease_traps` | Each trap belongs to an establishment and stores capacity, ordered thresholds, and optional empty/full ultrasonic calibration. |
@@ -285,6 +307,8 @@ aquasense-web/
     migrations/006-...sql      Phase 5 surrender/review migration
     migrations/007-...sql      Phase 6 incentives/ledger migration
     migrations/008-...sql      Phase 7 reporting index migration
+    migrations/009-...sql      full Admin role migration
+    migrations/010-...sql      separate odor telemetry migration
   docs/ESP32_API.md            ESP32 request, authentication, and retry contract
   public/
     index.php                  public entry redirect
@@ -332,7 +356,7 @@ aquasense-web/
     session-expiry.php         session inactivity verification
 ```
 
-Protected directories have their own `.htaccess` files. Later modules use one protected, whitelisted scope-notice page; it performs no unfinished workflow action. Keep any future administrative page behind `includes/bootstrap.php` followed by `require_staff()` or `require_roles(['administrator'])` before emitting HTML. Hiding menu items is not an authorization control.
+Protected directories have their own `.htaccess` files. Later modules use one protected, whitelisted scope-notice page; it performs no unfinished workflow action. Keep future operational pages behind `includes/bootstrap.php` followed by `require_staff()`, and full-access pages behind `require_system_admin()`, before emitting HTML. Hiding menu items is not an authorization control.
 
 ## Features
 
@@ -341,7 +365,7 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 - XAMPP-compatible project structure and main localhost entry point.
 - Full relational database foundation and fictional development seed.
 - PDO connection and separated local configuration.
-- Administrator and environmental staff sign-in with generic invalid-login feedback.
+- Admin, Barangay Administrator, and Environmental Staff sign in with generic invalid-login feedback.
 - Session regeneration on login, inactivity expiry, and current database role/activity checks on protected requests.
 - Secure POST logout with CSRF checks, session destruction, and old-session rejection.
 - Login throttling and account authentication audit events.
@@ -352,8 +376,8 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 - Screen-edge authentication header and footer: brand at the upper left, administrative tag at the upper center, Barangay information at the lower left, and authorization text at the lower right. Reserved content padding and mobile rows keep these fixed elements clear of the form.
 - Dashboard setup status, account details, and current-user authentication history.
 - Database-backed operational totals, trap/device states, recent alerts, and summary charts without fabricated readings.
-- Administrator management for establishments, grease traps, devices, activation state, and device assignment history.
-- Environmental-staff read access with server-enforced administrator-only writes.
+- Admin management for establishments, grease traps, devices, activation state, and device assignment history.
+- Barangay Administrator and Environmental Staff access is limited to Dashboard and Operations; operational writes remain limited by role.
 - Ordered threshold validation, cross-establishment assignment protection, CSRF checks, escaped output, prepared statements, and management audit events.
 - Production-capable device telemetry, hashed credentials, server-side calibration, future-sensor columns, idempotency, rate control, and heartbeat updates.
 - Authenticated monitoring/history APIs, live polling, date filters, bounded tables, actual-data charts, device/trap telemetry integration, and development simulation through the real API.
@@ -378,8 +402,12 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 
 - The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
 - PDF detail is limited to 500 rows and CSV detail to 10,000 rows; narrower filters are required for complete exports beyond those limits.
-- The Flutter Owner app is version `0.8.0+14`. Reward calculations and
-  distribution controls remain exclusively in the PHP backend/Barangay site.
+- The Flutter Owner app is version `0.8.3+17`. Dashboard Quick Actions appear
+  at the top of the owner dashboard, and swiping down refreshes its data.
+  Android back gestures return through previously visited tabs before exiting
+  from Home.
+  Reward calculations and distribution controls remain exclusively in the PHP
+  backend/Barangay site.
   See the [mobile production checklist](docs/MOBILE_PRODUCTION_CHECKLIST.md).
 
 ## Sensor Integration
@@ -394,9 +422,9 @@ The original sample-data import creates a fictional device assignment without te
 - Session ID regeneration after login and a 30-minute configurable inactivity limit.
 - Database-backed active-account and role checks for every administrative request.
 - CSRF tokens on login, logout, and every Phase 2 management action; state changes use POST. Invalid tokens return HTTP 403.
-- Administrator-only establishment, trap, and device writes are enforced on the server; environmental staff retain read-only access.
+- Admin-only establishment, trap, and device access is enforced on the server.
 - Device telemetry uses a separate hashed 64-hex credential, active-device and assignment checks, strict JSON/range validation, duplicate protection, configurable rate control, and production HTTPS.
-- Monitoring JSON requires a current administrator or environmental-staff session. The simulator requires administrator access and returns 404 in production.
+- Monitoring JSON accepts Admin, Barangay Administrator, or Environmental Staff sessions. The simulator requires Admin access and returns 404 in production.
 - Server-side validation and HTML output escaping, including account names and submitted email values.
 - Five sign-in attempts per hashed email or direct client IP within a 15-minute default window; successful attempts remove their own attempt entry. Older entries no longer count; scheduled retention cleanup is a future maintenance task.
 - Content Security Policy, no framing, MIME-sniffing protection, and no-store account responses.
@@ -540,7 +568,7 @@ The separate `../aquasense-esp32/` project still contains the Arduino IDE HC-SR0
 
 `POST api/device/telemetry.php` is available in development and production. Production HTTPS enforcement applies. Send `Content-Type: application/json`, `X-Device-Key`, device code, assigned trap ID, and ultrasonic distance. Existing Bearer-header firmware remains compatible. PHP validates the credential, active assignment, configurable range, optional fields, timestamp window, and rate limit. It calculates fill and state from grease-trap calibration, records UTC device/server timestamps, and updates `devices.last_seen_at` transactionally.
 
-Migration 004 copies existing ultrasonic test calibration to the assigned grease trap and adds diagnostic percentage, UUID/sequence idempotency, payload fingerprint, received time, and indexes. Temperature, turbidity, flow, and gas remain nullable until hardware exists. History requests are bounded to 100 rows per page and at most 31 custom days; no automatic retention deletion is enabled.
+Migration 004 copies existing ultrasonic test calibration to the assigned grease trap and adds diagnostic percentage, UUID/sequence idempotency, payload fingerprint, received time, and indexes. Migration 010 adds a separate nullable odor reading while preserving existing gas data. Temperature, turbidity, flow, gas, and odor remain nullable until hardware exists. History requests are bounded to 100 rows per page and at most 31 custom days; no automatic retention deletion is enabled.
 
 On this computer, AQS-001 remains assigned to test trap 12 under fictional Demo Kusina with 30 cm empty / 5 cm full calibration. The Phase 3 manual test sent 12.4 cm through the real endpoint with the development simulator marker. The backend stored 70.4% MEDIUM and exposed it across authenticated monitoring surfaces. This confirms the data path without presenting the value as a physical sensor measurement.
 

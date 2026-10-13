@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__).'/includes/bootstrap.php';require_once dirname(__DIR__).'/includes/admin-core.php';
-$user=require_staff();$canManage=$user['role_slug']==='administrator';$pageTitle='Grease Traps';$activeNav='grease-traps';$errors=[];$action=$_GET['action']??'list';$editId=query_id();
+$user=require_system_admin();$canManage=true;$pageTitle='Grease Traps';$activeNav='grease-traps';$errors=[];$action=$_GET['action']??'list';$editId=query_id();
 if($_SERVER['REQUEST_METHOD']==='POST'){
- if(!$canManage){http_response_code(403);$errors[]='Only Barangay Administrators can change grease trap records.';}
+ if(!$canManage){http_response_code(403);$errors[]='Only Admin can change grease trap records.';}
  elseif(!valid_csrf()){http_response_code(403);$errors[]='The form expired. Reload and try again.';}
  else try{$post=post_string('action');$id=post_id('id');
   if($post==='create'){$id=phase2_create_trap($_POST,(int)$user['id']);flash('success','Grease trap registered.');redirect('admin/grease-trap-view.php?id='.$id);}

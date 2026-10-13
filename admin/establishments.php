@@ -2,10 +2,10 @@
 declare(strict_types=1);
 require dirname(__DIR__) . '/includes/bootstrap.php';
 require_once dirname(__DIR__) . '/includes/admin-core.php';
-$user=require_staff();$pageTitle='Establishments';$activeNav='establishments';$canManage=$user['role_slug']==='administrator';
+$user=require_system_admin();$pageTitle='Establishments';$activeNav='establishments';$canManage=true;
 $errors=[];$action=$_GET['action']??'list';$editId=query_id();
 if($_SERVER['REQUEST_METHOD']==='POST'){
-    if(!$canManage){http_response_code(403);$errors[]='Only Barangay Administrators can change establishment records.';}
+    if(!$canManage){http_response_code(403);$errors[]='Only Admin can change establishment records.';}
     elseif(!valid_csrf()){http_response_code(403);$errors[]='The form expired. Reload the page and try again.';}
     else try{
         $postAction=post_string('action');$id=post_id('id');

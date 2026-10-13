@@ -3,7 +3,7 @@ declare(strict_types=1);
 require dirname(__DIR__).'/includes/bootstrap.php';
 require_once dirname(__DIR__).'/includes/telemetry.php';require_once dirname(__DIR__).'/includes/admin-core.php';
 if(!phase3_simulator_available($config['environment'])){http_response_code(404);header('Content-Type: text/plain; charset=utf-8');exit('Not found.');}
-$user=require_administrator();$pageTitle='Telemetry Simulator';$activeNav='monitoring';$errors=[];$result=null;
+$user=require_system_admin();$pageTitle='Telemetry Simulator';$activeNav='monitoring';$errors=[];$result=null;
 $devices=db()->query("SELECT d.id,d.device_code,d.name,a.grease_trap_id,g.name trap_name,e.business_name FROM devices d JOIN device_assignments a ON a.device_id=d.id AND a.ended_at IS NULL JOIN grease_traps g ON g.id=a.grease_trap_id JOIN establishments e ON e.id=g.establishment_id WHERE d.is_active=1 AND g.is_active=1 AND e.is_active=1 ORDER BY d.device_code")->fetchAll();
 if($_SERVER['REQUEST_METHOD']==='POST'){
     if(!valid_csrf()){http_response_code(403);$errors[]='The form expired. Reload and try again.';}
@@ -14,7 +14,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         if(!$errors){
             $hex=bin2hex(random_bytes(16));$hex[12]='4';$hex[16]=dechex((hexdec($hex[16])&3)|8);$uuid=sprintf('%s-%s-%s-%s-%s',substr($hex,0,8),substr($hex,8,4),substr($hex,12,4),substr($hex,16,4),substr($hex,20,12));
             $payload=['device_id'=>$selected['device_code'],'grease_trap_id'=>$trapId,'ultrasonic_distance'=>(float)$distance,'reading_uuid'=>$uuid];
-            foreach(['temperature','turbidity','flow_rate','gas_value'] as $field)if(phase2_text($_POST,$field)!=='')$payload[$field]=(float)phase2_text($_POST,$field);
+            foreach(['temperature','turbidity','flow_rate','gas_value','odor_value'] as $field)if(phase2_text($_POST,$field)!=='')$payload[$field]=(float)phase2_text($_POST,$field);
             $endpoint=rtrim((string)$config['test_base_url'],'/').'/api/device/telemetry.php';
             if(!filter_var($endpoint,FILTER_VALIDATE_URL))$errors[]='Configure test_base_url before using the simulator.';
             else{
@@ -35,6 +35,6 @@ require dirname(__DIR__).'/includes/header.php';
 <label class="form-field"><span>Device *</span><select name="device_id" required><option value="">Select device</option><?php foreach($devices as $device): ?><option value="<?= (int)$device['id'] ?>"<?= selected($_POST['device_id']??'',(string)$device['id']) ?>><?= e($device['device_code'].' · '.$device['name']) ?></option><?php endforeach; ?></select></label>
 <label class="form-field"><span>Grease trap *</span><select name="grease_trap_id" required><option value="">Select grease trap</option><?php foreach($devices as $device): ?><option value="<?= (int)$device['grease_trap_id'] ?>"<?= selected($_POST['grease_trap_id']??'',(string)$device['grease_trap_id']) ?>><?= e($device['business_name'].' · '.$device['trap_name']) ?></option><?php endforeach; ?></select></label>
 <label class="form-field form-span"><span>Device credential *</span><input type="password" name="device_key" minlength="64" maxlength="64" required autocomplete="new-password"></label>
-<?php foreach([['ultrasonic_distance','Ultrasonic distance (cm) *','12.4'],['temperature','Temperature (°C)',''],['turbidity','Turbidity (NTU)',''],['flow_rate','Flow rate (L/min)',''],['gas_value','Gas / odor reading','']] as [$name,$label,$placeholder]): ?><label class="form-field"><span><?= e($label) ?></span><input type="number" step="0.01" name="<?= e($name) ?>" value="<?= e(phase2_text($_POST,$name)) ?>" placeholder="<?= e($placeholder) ?>"<?= $name==='ultrasonic_distance'?' required':'' ?>></label><?php endforeach; ?>
+<?php foreach([['ultrasonic_distance','Ultrasonic distance (cm) *','12.4'],['temperature','Temperature (°C)',''],['turbidity','Turbidity (NTU)',''],['flow_rate','Flow rate (L/min)',''],['gas_value','Gas reading',''],['odor_value','Odor reading','']] as [$name,$label,$placeholder]): ?><label class="form-field"><span><?= e($label) ?></span><input type="number" step="0.01" name="<?= e($name) ?>" value="<?= e(phase2_text($_POST,$name)) ?>" placeholder="<?= e($placeholder) ?>"<?= $name==='ultrasonic_distance'?' required':'' ?>></label><?php endforeach; ?>
 </div><div class="form-actions"><a class="button button-secondary" href="<?= e(url('admin/monitoring.php')) ?>">Return to monitoring</a><button class="button button-primary" type="submit">Send through telemetry API</button></div></form>
 <?php require dirname(__DIR__).'/includes/footer.php'; ?>

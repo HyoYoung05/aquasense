@@ -173,7 +173,7 @@ New firmware may prefer `X-Device-Key: <64-hex private device key>`. The existin
 
 The key is separate from owner login tokens and database passwords. PHP stores only its hash.
 Only the active assigned device can write to the active trap/establishment.
-The existing five-field sketch remains compatible. Phase 3 requires device_id, grease_trap_id, and raw distance; firmware percentage/status are diagnostic inputs and the server calculates authoritative values from trap calibration. The configured body limit defaults to 4096 bytes. Future temperature, turbidity, flow, gas, timestamp, UUID, and sequence fields are optional. The server rejects invalid ranges, assignments, timestamps, duplicate conflicts, and samples inside the configured minimum interval. Timestamps are stored in UTC.
+The existing five-field sketch remains compatible. Phase 3 requires device_id, grease_trap_id, and raw distance; firmware percentage/status are diagnostic inputs and the server calculates authoritative values from trap calibration. The configured body limit defaults to 4096 bytes. Future temperature, turbidity, flow, gas, odor, timestamp, UUID, and sequence fields are optional. Gas uses `gas_value` and odor uses the separate `odor_value` field. The server rejects invalid ranges, assignments, timestamps, duplicate conflicts, and samples inside the configured minimum interval. Timestamps are stored in UTC.
 
 | HTTP | Meaning |
 | --- | --- |

@@ -35,7 +35,8 @@ Optional fields:
 - `temperature`: degrees Celsius
 - `turbidity`: NTU
 - `flow_rate`: liters per minute
-- `gas_value`: future gas/odor sensor reading
+- `gas_value`: gas sensor reading
+- `odor_value`: separate odor sensor reading
 - `recorded_at`: ISO 8601 device timestamp; omit until device time is trustworthy
 - `reading_uuid`: standard UUID for retry-safe duplicate protection
 - `sequence_number`: non-negative per-device sequence value for duplicate protection

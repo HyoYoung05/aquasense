@@ -6,9 +6,10 @@
   not reveal whether an email exists. Attempts are throttled in the database.
 - Staff sessions use strict cookie mode, HttpOnly, SameSite=Lax, Secure over HTTPS,
   inactivity expiry, login/logout ID rotation, and CSRF protection for state changes.
-- Roles are reloaded from the database on each request. Administrators manage
-  records; environmental staff have the documented read/read-only access; owners
-  cannot enter the staff website.
+- Roles are reloaded from the database on each request. Admin receives the full
+  sidebar and direct-route access. Barangay Administrator and Environmental Staff
+  receive Dashboard and Operations only; operational writes remain limited by
+  role. Owners cannot enter the staff website.
 - Mobile tokens are random, hashed at rest, expiring, owner-only, and invalidated by
   account deactivation or password change. Every owner query enforces ownership.
 - Device credentials are random per device, shown only when generated, hashed at

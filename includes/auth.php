@@ -45,12 +45,22 @@ function require_roles(array $roles): array
 
 function require_staff(): array
 {
-    return require_roles(['administrator', 'environmental_staff']);
+    return require_roles(['system_admin', 'administrator', 'environmental_staff']);
 }
 
-function require_administrator(): array
+function require_system_admin(): array
 {
-    return require_roles(['administrator']);
+    return require_roles(['system_admin']);
+}
+
+function is_system_admin(array $user): bool
+{
+    return ($user['role_slug'] ?? '') === 'system_admin';
+}
+
+function can_manage_operations(array $user): bool
+{
+    return in_array($user['role_slug'] ?? '', ['system_admin', 'administrator'], true);
 }
 
 function attempt_login(string $email, string $password): ?string
@@ -76,7 +86,7 @@ function attempt_login(string $email, string $password): ?string
     $dummyHash = '$2y$12$ArYeuNFsn1OIprnoIGNZvOtBMyOFL6elYdjrPt5EE4YAhx0Ag8w6e';
     $valid = password_verify($password, $user['password_hash'] ?? $dummyHash);
     if (!$user || !$valid || !(bool) $user['is_active']
-        || !in_array($user['role_slug'], ['administrator', 'environmental_staff'], true)) {
+        || !in_array($user['role_slug'], ['system_admin', 'administrator', 'environmental_staff'], true)) {
         audit('LOGIN_FAILED');
         return 'Unable to sign in. Check your email and password, or contact your administrator.';
     }

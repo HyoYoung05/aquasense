@@ -16,13 +16,13 @@ Tailscale, a LAN address, Windows Task Scheduler, or phpMyAdmin.
 
 1. Create a dedicated empty database and least-privilege database account.
 2. Import `database/schema.sql`.
-3. Import migrations `001` through `008` in numeric order.
-4. Import `database/reference-data.sql`. It creates only the three role labels.
+3. Import migrations `001` through `010` in numeric order.
+4. Import `database/reference-data.sql`. It creates only the four role labels.
 5. Do **not** import `database/sample-data.sql` or run development helpers.
 6. Run `composer install --no-dev --classmap-authoritative`.
 7. Create private upload/log directories and grant the PHP worker write access.
 8. Configure the environment variables below.
-9. Run the first administrator command from the application directory:
+9. Run the first full-access Admin command from the application directory:
 
    ```sh
    export AQUASENSE_BOOTSTRAP_ADMIN_PASSWORD=''replace-in-secret-shell''
@@ -30,7 +30,7 @@ Tailscale, a LAN address, Windows Task Scheduler, or phpMyAdmin.
    unset AQUASENSE_BOOTSTRAP_ADMIN_PASSWORD
    ```
 
-   It works only when no administrator exists and writes an audit event.
+   It works only when no `system_admin` account exists and writes an audit event.
 10. Configure cron, web-server denials, TLS, monitoring, backups, Flutter, and ESP32.
 11. Complete `docs/PRODUCTION_CHECKLIST.md` on staging and again on production.
 

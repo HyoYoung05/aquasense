@@ -1,6 +1,6 @@
 # AQUASENSE+ Mobile Production Checklist
 
-Version: `0.8.0+14` (Mobile Phase 7 release candidate)
+Version: `0.8.3+17` (Android back navigation and top dashboard actions)
 
 Checked items were verified in source or automated tests on 2026-10-07.
 Deployment-dependent items remain unchecked until performed against the final
@@ -43,7 +43,7 @@ public environment and production-signed build.
 - [ ] Physical ESP32-to-Mobile telemetry/history path passes.
 - [ ] Alert creation, resolution, and device-offline recovery pass end to end.
 - [ ] Oil Surrender approval/rejection and Incentive distribution pass end to end.
-- [x] App version is set to release candidate `0.8.0+14`.
+- [x] App version is set to `0.8.3+17`.
 - [x] README, VERSION, architecture, deployment, security, demo, and checklist documents exist.
 
 The unchecked final-domain, signing, identity, installed-device, and public

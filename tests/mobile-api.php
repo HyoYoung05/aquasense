@@ -81,7 +81,7 @@ try {
     check(count($data['establishments']) === 1 && $data['establishments'][0]['id'] === $sites[0], 'Other owner IDs cannot change account scope');
     check($data['establishments'][0]['traps'][0]['status'] === 'NO DATA', 'Missing telemetry shown as no data');
     $pdo->prepare('UPDATE devices SET last_seen_at=UTC_TIMESTAMP() WHERE id=?')->execute([$devices[0]]);
-    $pdo->prepare("INSERT INTO sensor_readings (device_assignment_id, ultrasonic_distance_cm, waste_level_percent, temperature_c, turbidity_ntu, flow_rate_lpm, gas_value, level_status, is_simulated, recorded_at) VALUES (?, 7, 92, 30.4, 410, 1.8, 725, 'NORMAL', 1, UTC_TIMESTAMP())")
+    $pdo->prepare("INSERT INTO sensor_readings (device_assignment_id, ultrasonic_distance_cm, waste_level_percent, temperature_c, turbidity_ntu, flow_rate_lpm, gas_value, odor_value, level_status, is_simulated, recorded_at) VALUES (?, 7, 92, 30.4, 410, 1.8, 725, 240, 'NORMAL', 1, UTC_TIMESTAMP())")
         ->execute([$assignments[0]]);
     $readingId = (int) $pdo->lastInsertId();
     $pdo->prepare("INSERT INTO alerts (device_assignment_id,sensor_reading_id,alert_type,severity,sensor_name,sensor_value,threshold_value,message,status,first_triggered_at,last_triggered_at) VALUES (?,?, 'CRITICAL_LEVEL','CRITICAL','waste_level_percent',92,90,'Fixture critical alert','ACTIVE',UTC_TIMESTAMP(),UTC_TIMESTAMP())")
@@ -111,7 +111,7 @@ try {
     check($data['establishments'][0]['traps'][0]['reading']['is_simulated'] === true, 'Simulation is explicitly disclosed');
     $monitoring = call_api('monitoring.php', null, $token)['json']['data']['traps'][0];
     check($monitoring['device_status'] === 'ONLINE' && $monitoring['sensor_state'] === 'CRITICAL', 'Mobile monitoring returns backend-derived device and condition state');
-    check((float)$monitoring['reading']['ultrasonic_distance_cm'] === 7.0 && (float)$monitoring['reading']['turbidity_ntu'] === 410.0 && (float)$monitoring['reading']['flow_rate_lpm'] === 1.8 && (float)$monitoring['reading']['gas_value'] === 725.0, 'Mobile monitoring returns actual supported sensor fields');
+    check((float)$monitoring['reading']['ultrasonic_distance_cm'] === 7.0 && (float)$monitoring['reading']['turbidity_ntu'] === 410.0 && (float)$monitoring['reading']['flow_rate_lpm'] === 1.8 && (float)$monitoring['reading']['gas_value'] === 725.0 && (float)$monitoring['reading']['odor_value'] === 240.0, 'Mobile monitoring returns separate gas and odor readings');
     check($monitoring['active_alert']['id'] === $ownedAlertId, 'Monitoring returns the highest active owned alert link');
     $history = call_api('telemetry-history.php?grease_trap_id=' . $traps[0] . '&range=1h&page=1', null, $token)['json']['data'];
     check($history['total'] === 1 && count($history['readings']) === 1 && $history['page'] === 1, 'Owner history returns bounded owned telemetry');

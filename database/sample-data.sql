@@ -1,21 +1,35 @@
 -- DEVELOPMENT DATA ONLY. Never import automatically or into production.
 -- Import manually once, after schema.sql, into a fresh development installation.
--- Both fictional staff accounts use AquaSense!2026, hashed with PHP password_hash().
+-- All three fictional website accounts use AquaSense!2026, hashed with PHP password_hash().
 -- No real residents, sensor measurements, or incentive conversion rules are seeded.
 SET time_zone = '+00:00';
 START TRANSACTION;
 
-INSERT INTO roles (id, slug, name) VALUES
-    (1, 'administrator', 'Barangay Administrator'),
-    (2, 'environmental_staff', 'Barangay Environmental Staff'),
-    (3, 'owner', 'Carinderia Owner');
+INSERT INTO roles (slug, name) VALUES
+    ('administrator', 'Barangay Administrator'),
+    ('environmental_staff', 'Barangay Environmental Staff'),
+    ('owner', 'Carinderia Owner'),
+    ('system_admin', 'Admin')
+ON DUPLICATE KEY UPDATE name = VALUES(name);
 
-INSERT INTO users (id, role_id, full_name, email, password_hash) VALUES
-    (1, 1, 'Alex Santos (Demo)', 'admin@aquasense.test', '$2y$12$ArYeuNFsn1OIprnoIGNZvOtBMyOFL6elYdjrPt5EE4YAhx0Ag8w6e'),
-    (2, 2, 'Jamie Reyes (Demo)', 'staff@aquasense.test', '$2y$12$ArYeuNFsn1OIprnoIGNZvOtBMyOFL6elYdjrPt5EE4YAhx0Ag8w6e');
+SET @administrator_role_id = (SELECT id FROM roles WHERE slug = 'administrator');
+SET @environmental_staff_role_id = (SELECT id FROM roles WHERE slug = 'environmental_staff');
+SET @system_admin_role_id = (SELECT id FROM roles WHERE slug = 'system_admin');
+
+INSERT INTO users (role_id, full_name, email, password_hash) VALUES
+    (@administrator_role_id, 'Alex Santos (Demo)', 'admin@aquasense.test', '$2y$12$ArYeuNFsn1OIprnoIGNZvOtBMyOFL6elYdjrPt5EE4YAhx0Ag8w6e'),
+    (@environmental_staff_role_id, 'Jamie Reyes (Demo)', 'staff@aquasense.test', '$2y$12$ArYeuNFsn1OIprnoIGNZvOtBMyOFL6elYdjrPt5EE4YAhx0Ag8w6e'),
+    (@system_admin_role_id, 'AQUASENSE+ Admin (Demo)', 'systemadmin@aquasense.test', '$2y$12$ArYeuNFsn1OIprnoIGNZvOtBMyOFL6elYdjrPt5EE4YAhx0Ag8w6e')
+ON DUPLICATE KEY UPDATE
+    role_id = VALUES(role_id),
+    full_name = VALUES(full_name),
+    password_hash = VALUES(password_hash),
+    is_active = 1;
+
+SET @administrator_user_id = (SELECT id FROM users WHERE email = 'admin@aquasense.test');
 
 INSERT INTO establishments (id, registration_code, business_name, owner_name, address, registration_date, created_by)
-VALUES (1, 'DEMO-EST-001', 'Demo Kusina', 'Taylor Cruz (Fictional)', 'Demo Street, Barangay San Antonio (fictional address)', '2026-09-14', 1);
+VALUES (1, 'DEMO-EST-001', 'Demo Kusina', 'Taylor Cruz (Fictional)', 'Demo Street, Barangay San Antonio (fictional address)', '2026-09-14', @administrator_user_id);
 
 INSERT INTO grease_traps (id, establishment_id, trap_code, name, capacity_liters,
     low_threshold, medium_threshold, high_threshold, critical_threshold, installation_date)
@@ -44,12 +58,15 @@ INSERT INTO system_settings (setting_key, setting_value, description) VALUES
     ('default_oil_unit', 'L', 'Default oil quantity unit.'),
     ('oil_surrender_max_upload_bytes', '5242880', 'Maximum oil-surrender evidence upload size in bytes.'),
     ('oil_surrender_telemetry_window_hours', '6', 'Hours before and after surrender used for Hybrid Verification telemetry evidence.'),
-    ('default_rice_unit', 'kg', 'Default rice quantity unit.');
+    ('default_rice_unit', 'kg', 'Default rice quantity unit.')
+ON DUPLICATE KEY UPDATE
+    setting_value = VALUES(setting_value),
+    description = VALUES(description);
 
 INSERT INTO compliance_ledger (event_code, event_type, establishment_id, related_record_type, related_record_id, description, event_timestamp, dedupe_key, created_by)
-VALUES ('LED-DEVELOPMENT-SETUP', 'DEVELOPMENT_SETUP', 1, 'establishments', 1, 'Fictional establishment, grease trap, and device added for local development. No actual monitoring, surrender, or incentive activity.', UTC_TIMESTAMP(), 'DEVELOPMENT_SETUP:1', 1);
+VALUES ('LED-DEVELOPMENT-SETUP', 'DEVELOPMENT_SETUP', 1, 'establishments', 1, 'Fictional establishment, grease trap, and device added for local development. No actual monitoring, surrender, or incentive activity.', UTC_TIMESTAMP(), 'DEVELOPMENT_SETUP:1', @administrator_user_id);
 
 INSERT INTO audit_logs (user_id, action, record_type, record_id)
-VALUES (1, 'DEVELOPMENT_SETUP', 'users', 1);
+VALUES (@administrator_user_id, 'DEVELOPMENT_SETUP', 'users', @administrator_user_id);
 
 COMMIT;

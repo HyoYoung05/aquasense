@@ -22,6 +22,12 @@ const ownerPayload = {
   'email': 'owner@aquasense.test',
 };
 
+Future<void> pullToRefreshDashboard(WidgetTester tester) async {
+  await tester.drag(find.byType(ListView).first, const Offset(0, 500));
+  await tester.pump();
+  await tester.pumpAndSettle();
+}
+
 Map<String, dynamic> dashboardPayload({
   double? wasteLevel = 58,
   double? distance = 12.4,
@@ -412,6 +418,10 @@ void main() {
         ),
       ),
     );
+    expect(
+      tester.getTopLeft(find.text('Quick actions')).dy,
+      lessThan(tester.getTopLeft(find.text('Demo Kusina').first).dy),
+    );
     final monitoring = find.widgetWithText(OutlinedButton, 'Monitoring');
     await tester.tap(monitoring);
     expect(destination, 1);
@@ -446,9 +456,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(find.text('58%'), findsOneWidget);
+      expect(find.text('Refresh dashboard'), findsNothing);
+      expect(find.byTooltip('Refresh dashboard'), findsNothing);
       server.level = 72;
-      await tester.tap(find.byTooltip('Refresh dashboard'));
-      await tester.pumpAndSettle();
+      await pullToRefreshDashboard(tester);
       expect(find.text('72%'), findsOneWidget);
       expect(find.text('58%'), findsNothing);
     });
@@ -460,8 +471,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('58%'), findsOneWidget);
       server.offlineDashboard = true;
-      await tester.tap(find.byTooltip('Refresh dashboard'));
-      await tester.pumpAndSettle();
+      await pullToRefreshDashboard(tester);
       expect(find.text('58%'), findsOneWidget);
       expect(
         find.textContaining('Showing the last loaded data'),
@@ -477,8 +487,7 @@ void main() {
       await tester.pumpWidget(OwnerApp(auth: auth));
       await tester.pumpAndSettle();
       server.denyDashboard = true;
-      await tester.tap(find.byTooltip('Refresh dashboard'));
-      await tester.pumpAndSettle();
+      await pullToRefreshDashboard(tester);
       expect(find.byType(LoginScreen), findsOneWidget);
       expect(find.textContaining('session expired'), findsOneWidget);
       expect(store.token, isNull);

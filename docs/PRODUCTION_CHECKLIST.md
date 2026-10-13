@@ -28,7 +28,7 @@ item. Do not launch with an unexplained failure.
 
 ## Database and recovery
 
-- [ ] Schema, migrations 001-008, and reference data imported successfully.
+- [ ] Schema, migrations 001-010, and reference data imported successfully.
 - [ ] Foreign keys, unique constraints, and required indexes match the release.
 - [ ] Thresholds/calibration and official incentive rules were approved and entered.
 - [ ] Encrypted off-host database plus evidence backup completed.
@@ -38,8 +38,8 @@ item. Do not launch with an unexplained failure.
 ## Application security and behavior
 
 - [ ] Security headers appear over HTTPS; private paths return 403/404.
-- [ ] First administrator exists; bootstrap password variable was removed.
-- [ ] Administrator permissions, environmental-staff read-only limits, session expiry,
+- [ ] First full-access Admin exists; bootstrap password variable was removed.
+- [ ] Admin full access, Barangay Administrator Dashboard/Operations access, Environmental Staff read-only limits, session expiry,
       CSRF, logout, login throttling, and owner staff-login denial were verified.
 - [ ] Owner A cannot read Owner B profile/dashboard/surrenders/photos/incentives.
 - [ ] Device key rotation/revocation, invalid key, oversize body, bad range, retry,

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__).'/includes/bootstrap.php';require_once dirname(__DIR__).'/includes/admin-core.php';
-$user=require_staff();$canManage=$user['role_slug']==='administrator';$id=query_id();if(!$id){http_response_code(404);redirect('admin/establishments.php');}
+$user=require_system_admin();$canManage=true;$id=query_id();if(!$id){http_response_code(404);redirect('admin/establishments.php');}
 $q=db()->prepare('SELECT * FROM establishments WHERE id=?');$q->execute([$id]);$est=$q->fetch();if(!$est){http_response_code(404);redirect('admin/establishments.php');}
 $q=db()->prepare("SELECT g.*,d.id device_id,d.device_code,d.name device_name,d.firmware_version,d.last_seen_at,d.is_active device_active,
  r.waste_level_percent,r.temperature_c,r.recorded_at FROM grease_traps g

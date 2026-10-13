@@ -23,7 +23,8 @@ Each ESP32 uses a distinct random credential stored only as a SHA-256 hash.
 ## Application boundaries
 
 - `public/` provides staff authentication.
-- `admin/` provides administrator and environmental-staff pages.
+- `admin/` provides full Admin pages plus Dashboard and Operations pages for
+  Barangay Administrator and Environmental Staff.
 - `api/device/telemetry.php` accepts authenticated ESP32 telemetry.
 - `api/mobile/` provides the owner-scoped Flutter API.
 - `api/admin/` supports authenticated monitoring actions.

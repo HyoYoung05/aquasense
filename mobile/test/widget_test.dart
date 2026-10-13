@@ -381,6 +381,19 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('owner@aquasense.test'), findsOneWidget);
-    expect(find.textContaining('Owner App v0.8.0+14'), findsOneWidget);
+    expect(find.textContaining('Owner App v0.8.3+17'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Unable to load alerts'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('New Surrender'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('32%'), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
   });
 }

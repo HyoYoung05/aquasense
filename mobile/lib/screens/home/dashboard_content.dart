@@ -47,6 +47,8 @@ class DashboardContent extends StatelessWidget {
                     _RefreshNotice(message: refreshError!),
                     const SizedBox(height: 12),
                   ],
+                  _QuickActions(onNavigate: onNavigate),
+                  const SizedBox(height: 24),
                   Text(
                     'Welcome, ${dashboard.user.fullName}',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -111,14 +113,6 @@ class DashboardContent extends StatelessWidget {
                   _IncentiveCard(
                     snapshot: snapshot,
                     onOpen: () => onNavigate(4),
-                  ),
-                  const SizedBox(height: 24),
-                  _QuickActions(onNavigate: onNavigate),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: refreshing ? null : onRefresh,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Refresh dashboard'),
                   ),
                 ],
               ),

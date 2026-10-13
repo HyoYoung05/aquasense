@@ -43,10 +43,11 @@ try {
     p8_check(str_contains($login['body'],'Skip to content')||str_contains($login['body'],'Welcome'),'Login page renders without debug output');
 
     $roles=$pdo->query('SELECT slug,id FROM roles')->fetchAll(PDO::FETCH_KEY_PAIR);$hash=password_hash($password,PASSWORD_DEFAULT);
-    foreach(['administrator','environmental_staff','owner'] as $role){$email='phase8-'.$role.'-'.bin2hex(random_bytes(4)).'@example.test';$emails[$role]=$email;$pdo->prepare('INSERT INTO users(role_id,full_name,email,password_hash)VALUES(?,?,?,?)')->execute([(int)$roles[$role],'Phase 8 '.str_replace('_',' ',$role),$email,$hash]);$ids[$role]=(int)$pdo->lastInsertId();}
+    foreach(['system_admin','administrator','environmental_staff','owner'] as $role){$email='phase8-'.$role.'-'.bin2hex(random_bytes(4)).'@example.test';$emails[$role]=$email;$pdo->prepare('INSERT INTO users(role_id,full_name,email,password_hash)VALUES(?,?,?,?)')->execute([(int)$roles[$role],'Phase 8 '.str_replace('_',' ',$role),$email,$hash]);$ids[$role]=(int)$pdo->lastInsertId();}
     $anonymous=p8_http(null,$base.'/admin/users.php');p8_check($anonymous['status']===303,'User directory requires authentication');
-    $admin=p8_login($base,$emails['administrator'],$password);$users=p8_http($admin,$base.'/admin/users.php');
-    p8_check($users['status']===200&&str_contains($users['body'],$emails['owner']),'Administrator can review account roles and ownership links');
+    $admin=p8_login($base,$emails['system_admin'],$password);$users=p8_http($admin,$base.'/admin/users.php');
+    p8_check($users['status']===200&&str_contains($users['body'],$emails['owner']),'Admin can review account roles and ownership links');
+    $barangay=p8_login($base,$emails['administrator'],$password);p8_check(p8_http($barangay,$base.'/admin/users.php')['status']===303,'Barangay Administrator cannot open the Admin user directory');curl_close($barangay);
     $staff=p8_login($base,$emails['environmental_staff'],$password);p8_check(p8_http($staff,$base.'/admin/users.php')['status']===303,'Environmental staff cannot open administrator user directory');curl_close($staff);
     $owner=p8_login($base,$emails['owner'],$password);p8_check(curl_getinfo($owner,CURLINFO_RESPONSE_CODE)===200,'Owner remains denied from staff website login');curl_close($owner);
     foreach(['dashboard.php','establishments.php','grease-traps.php','devices.php','monitoring.php','alerts.php','oil-surrenders.php','incentives.php','incentive-rules.php','compliance-ledger.php','reports.php','settings.php','users.php'] as $route){$response=p8_http($admin,$base.'/admin/'.$route);p8_check($response['status']===200,'Authenticated release route works: '.$route);}
@@ -63,7 +64,7 @@ try {
     p8_check(str_contains((string)($plan['key']??''),'reading_assignment'),'Latest telemetry query uses the assignment/time index');
     $started=microtime(true);phase7_report_data($pdo,phase7_report_filters(['report'=>'overview','period'=>'last30']));p8_check(microtime(true)-$started<5,'Representative 30-day report completes within five seconds locally');
     $constraints=(int)$pdo->query('SELECT COUNT(*) FROM information_schema.referential_constraints WHERE constraint_schema=DATABASE()')->fetchColumn();p8_check($constraints>=25,'Foreign-key coverage is present across operational records');
-    $before=(int)$pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();$pdo->exec((string)file_get_contents(dirname(__DIR__).'/database/migrations/008-phase7-reporting.sql'));p8_check((int)$pdo->query('SELECT COUNT(*) FROM users')->fetchColumn()===$before,'Latest migration is safe to reapply without changing business rows');
+    $before=(int)$pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();$pdo->exec((string)file_get_contents(dirname(__DIR__).'/database/migrations/010-separate-odor-reading.sql'));p8_check((int)$pdo->query('SELECT COUNT(*) FROM users')->fetchColumn()===$before,'Latest migration is safe to reapply without changing business rows');
 
     $reference=(string)file_get_contents(dirname(__DIR__).'/database/reference-data.sql');$sample=(string)file_get_contents(dirname(__DIR__).'/database/sample-data.sql');
     p8_check(!str_contains($reference,'password_hash')&&!str_contains($reference,'@aquasense.test'),'Production reference data contains no accounts or passwords');

@@ -10,7 +10,7 @@ if($module==='alerts')redirect('admin/alerts.php');
 if($module==='oil-surrenders')redirect('admin/oil-surrenders.php');
 if($module==='reports')redirect('admin/reports.php');
 if($module==='settings')redirect('admin/settings.php');
-if(in_array($module,['users','settings'],true)&&$user['role_slug']!=='administrator'){http_response_code(403);redirect('admin/dashboard.php');}
+if(in_array($module,['users','settings'],true)&&!is_system_admin($user)){http_response_code(403);redirect('admin/dashboard.php');}
 [$pageTitle,$phase]=$modules[$module];$activeNav=$module;require dirname(__DIR__).'/includes/header.php';
 ?>
 <div class="page-heading"><div><div class="breadcrumb">Workspace <span>/</span> <?= e($pageTitle) ?></div><h1><?= e($pageTitle) ?></h1><p>This navigation destination is reserved and does not expose unfinished actions.</p></div></div>

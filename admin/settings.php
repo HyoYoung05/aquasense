@@ -3,7 +3,7 @@ declare(strict_types=1);
 require dirname(__DIR__).'/includes/bootstrap.php';
 require_once dirname(__DIR__).'/includes/alert-engine.php';
 require_once dirname(__DIR__).'/includes/oil-surrender.php';
-$user=require_administrator();$errors=[];
+$user=require_system_admin();$errors=[];
 if($_SERVER['REQUEST_METHOD']==='POST'){
     if(!valid_csrf()){$errors[]='The form expired. Reload and try again.';http_response_code(403);}
     else try{

@@ -89,7 +89,7 @@ function mobile_monitoring(int $ownerId): array
     $query = $pdo->prepare("SELECT e.id establishment_id,e.business_name,g.id grease_trap_id,g.name grease_trap_name,g.is_active trap_active,
         g.low_threshold,g.medium_threshold,g.high_threshold,g.critical_threshold,a.id assignment_id,
         d.id device_id,d.device_code,d.name device_name,d.firmware_version,d.is_active device_active,d.last_seen_at,
-        r.ultrasonic_distance_cm,r.waste_level_percent,r.temperature_c,r.turbidity_ntu,r.flow_rate_lpm,r.gas_value,
+        r.ultrasonic_distance_cm,r.waste_level_percent,r.temperature_c,r.turbidity_ntu,r.flow_rate_lpm,r.gas_value,r.odor_value,
         r.level_status,r.is_simulated,r.is_test,r.recorded_at
         FROM establishments e JOIN grease_traps g ON g.establishment_id=e.id AND g.is_active=1
         LEFT JOIN device_assignments a ON a.grease_trap_id=g.id AND a.ended_at IS NULL
@@ -115,6 +115,7 @@ function mobile_monitoring(int $ownerId): array
                 'turbidity_ntu' => $row['turbidity_ntu'] === null ? null : (float) $row['turbidity_ntu'],
                 'flow_rate_lpm' => $row['flow_rate_lpm'] === null ? null : (float) $row['flow_rate_lpm'],
                 'gas_value' => $row['gas_value'] === null ? null : (float) $row['gas_value'],
+                'odor_value' => $row['odor_value'] === null ? null : (float) $row['odor_value'],
                 'condition' => $sensorState,
                 'is_simulated' => (bool) $row['is_simulated'],
                 'is_test' => (bool) $row['is_test'],

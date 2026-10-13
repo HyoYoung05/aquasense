@@ -91,7 +91,7 @@ try {
     $q = $pdo->prepare('SELECT * FROM sensor_readings WHERE device_assignment_id=?');
     $q->execute([$assignment]); $row=$q->fetch();
     check((float)$row['ultrasonic_distance_cm'] === 12.4 && (float)$row['waste_level_percent'] === 70.4, 'Distance and derived percentage stored');
-    check($row['temperature_c'] === null && $row['turbidity_ntu'] === null && $row['gas_value'] === null, 'Absent sensors remain NULL');
+    check($row['temperature_c'] === null && $row['turbidity_ntu'] === null && $row['gas_value'] === null && $row['odor_value'] === null, 'Absent sensors remain NULL');
     check((int)$row['is_test'] === 1 && (int)$row['is_simulated'] === 0, 'Hardware contract marks bench test separately from simulation');
     $q=$pdo->prepare('SELECT api_key_hash,last_seen_at FROM devices WHERE id=?'); $q->execute([$device]); $d=$q->fetch();
     check($d['api_key_hash']===hash('sha256',$key) && $d['last_seen_at']!==null,'Only key hash stored; heartbeat updated on acceptance');

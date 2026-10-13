@@ -30,17 +30,17 @@ if (!is_string($password) || strlen($password) < 12
 $pdo = db();
 $pdo->beginTransaction();
 try {
-    $roleId = $pdo->query("SELECT id FROM roles WHERE slug='administrator' LIMIT 1")->fetchColumn();
-    if ($roleId === false) throw new RuntimeException('Import database/schema.sql before creating the administrator.');
-    $administratorCount = (int) $pdo->query("SELECT COUNT(*) FROM users u JOIN roles r ON r.id=u.role_id WHERE r.slug='administrator'")->fetchColumn();
-    if ($administratorCount !== 0) throw new RuntimeException('An administrator already exists; bootstrap provisioning is disabled.');
+    $roleId = $pdo->query("SELECT id FROM roles WHERE slug='system_admin' LIMIT 1")->fetchColumn();
+    if ($roleId === false) throw new RuntimeException('Apply database/migrations/009-system-admin-role.sql before creating the Admin account.');
+    $administratorCount = (int) $pdo->query("SELECT COUNT(*) FROM users u JOIN roles r ON r.id=u.role_id WHERE r.slug='system_admin'")->fetchColumn();
+    if ($administratorCount !== 0) throw new RuntimeException('An Admin account already exists; bootstrap provisioning is disabled.');
     $statement = $pdo->prepare('INSERT INTO users (role_id,full_name,email,password_hash,is_active) VALUES (?,?,?,?,1)');
     $statement->execute([(int) $roleId, $name, $email, password_hash($password, PASSWORD_DEFAULT)]);
     $id = (int) $pdo->lastInsertId();
     $statement = $pdo->prepare("INSERT INTO audit_logs (user_id,action,record_type,record_id,ip_address) VALUES (?,'BOOTSTRAP_ADMIN_CREATED','users',?,'127.0.0.1')");
     $statement->execute([$id, $id]);
     $pdo->commit();
-    fwrite(STDOUT, "Administrator account created. Remove the password environment variable from shell history and server configuration.\n");
+    fwrite(STDOUT, "Admin account created. Remove the password environment variable from shell history and server configuration.\n");
 } catch (Throwable $error) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     fwrite(STDERR, "Administrator was not created: " . $error->getMessage() . "\n");

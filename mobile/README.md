@@ -1,9 +1,11 @@
 # AQUASENSE+ Carinderia Owner App
 
-Flutter owner application for AQUASENSE+. Version **0.8.0+14** is the Mobile
-Phase 7 release candidate. It preserves all Phase 1 through 6 workflows and
-adds final production configuration, security, Android, branding, navigation,
-error-privacy, release-build, and documentation hardening.
+Flutter owner application for AQUASENSE+. Version **0.8.3+17** retains the
+Mobile Phase 7 release candidate foundation, presents Gas and Odor as two
+independent current and historical telemetry readings, and keeps every Quick
+Action at the top of the owner dashboard. The dashboard refreshes by swiping
+down; redundant dashboard refresh buttons have been removed. Android edge-back
+gestures return through previously visited tabs before exiting from Home.
 
 The app communicates only with the PHP API. It contains no SQL, MySQL package,
 or database credential.
@@ -33,6 +35,9 @@ flutter pub get
 flutter analyze
 flutter test
 ```
+
+The current dependency lock and Android debug build are verified with Flutter
+`3.41.6`.
 
 ## API configuration
 
@@ -152,8 +157,8 @@ The PHP backend remains authoritative for percentages, threshold conditions,
 online/offline state, alerts, surrender status, incentive values, and owner
 scope. Flutter performs formatting only.
 
-Pull-to-refresh and the refresh button request a new snapshot. A refresh failure
-keeps the last successful snapshot visible with a non-destructive warning.
+Pull-to-refresh requests a new snapshot. A refresh failure keeps the last
+successful snapshot visible with a non-destructive warning.
 The dashboard itself does not continuously poll or maintain a persistent
 offline cache.
 
@@ -170,7 +175,7 @@ the API and displays:
 - Temperature in degrees Celsius when connected
 - Calibrated turbidity in NTU when returned by the backend
 - Flow rate in L/min when returned by the backend
-- Gas sensor values labeled as raw readings rather than an invented ppm value
+- Gas and odor sensor values are displayed separately and labeled as raw readings rather than invented ppm units
 - Test and simulation disclosure for development records
 
 Missing readings, valid zeroes, unconnected optional sensors, stale readings,
@@ -191,7 +196,7 @@ unbounded lifetime dataset.
 
 `fl_chart` renders one selected sensor chart at a time. Available chart choices
 come from non-null backend history fields: waste level, ultrasonic distance,
-temperature, turbidity, flow, and raw gas. Null points remain chart gaps and
+temperature, turbidity, flow, raw gas, and raw odor. Null points remain chart gaps and
 are never changed to zero. A textual history list and latest/minimum/maximum/
 average presentation accompany the chart for accessibility.
 

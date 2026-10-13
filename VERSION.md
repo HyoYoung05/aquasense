@@ -1,6 +1,55 @@
 # AQUASENSE+ Version History
 
-1.0.5
+1.1.0
+
+## 1.1.0
+
+Date: 2026-10-12
+
+Development Phase: Role separation and independent odor telemetry
+
+### Added
+
+- Added the `system_admin` role for the new full-access Admin account.
+- Added migration `009-system-admin-role.sql` without creating production users
+  or passwords.
+- Added migration `010-separate-odor-reading.sql` and the nullable
+  `sensor_readings.odor_value` field.
+- Added separate Gas and Odor values to telemetry ingestion, monitoring,
+  history, reports, the development simulator, mobile API, and Flutter app.
+
+### Changed
+
+- Admin now receives Dashboard, Administrative Core, Operations, and
+  Administration navigation.
+- Barangay Administrator and Environmental Staff receive Dashboard and
+  Operations only, with the same restrictions enforced on direct routes.
+- Barangay Administrator retains operational review actions; Environmental
+  Staff remains read-only.
+- Production bootstrap provisioning now creates the full-access Admin role.
+- Development sample data and `credentials.txt` now include
+  `systemadmin@aquasense.test` as the third website account.
+- Backend version increased from `1.0.5` to `1.1.0`; mobile version increased
+  from `0.8.0+14` to `0.8.3+17`.
+- Moved all owner-dashboard Quick Actions above status and summary content so
+  Monitoring, Alerts, Oil Surrender, Incentives, and Profile are immediately
+  available.
+- Removed the owner dashboard refresh button and app-bar refresh icon because
+  the existing swipe-down gesture refreshes the dashboard.
+- Added owner-app tab history so Android back buttons and edge-back gestures
+  return to the previously visited tab before the app exits from Home.
+- Resolved the Flutter dependency lock with Flutter `3.41.6` so the current
+  Android debug build does not select transitive packages requiring Flutter
+  `3.44`.
+
+### Verification
+
+- Role tests cover complete Admin navigation and direct-route denial for
+  Barangay Administrator and Environmental Staff.
+- Telemetry tests verify that gas and odor are stored, returned, graphed, and
+  displayed independently while both remain nullable.
+- PHP syntax, fresh-install, website regression, Flutter analysis, and Flutter
+  tests pass.
 
 ## 1.0.5
 

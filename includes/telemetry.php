@@ -58,7 +58,7 @@ function phase3_recorded_at(mixed $value, DateTimeImmutable $received, array $co
 
 function phase3_telemetry_payload(array $body, array $config, DateTimeImmutable $received): array
 {
-    $allowed=['device_id','grease_trap_id','ultrasonic_distance','waste_level_percent','status','temperature','temperature_c','turbidity','flow_rate','gas_value','recorded_at','reading_uuid','sequence_number'];
+    $allowed=['device_id','grease_trap_id','ultrasonic_distance','waste_level_percent','status','temperature','temperature_c','turbidity','flow_rate','gas_value','odor_value','recorded_at','reading_uuid','sequence_number'];
     if(array_is_list($body) || array_diff(array_keys($body),$allowed)) throw new TelemetryException(422,'unknown_field','The telemetry payload contains an unsupported field.');
     if(!isset($body['device_id']) || !is_string($body['device_id']) || !preg_match('/^[A-Za-z0-9_-]{1,60}$/D',$body['device_id'])) throw new TelemetryException(422,'invalid_device_id','device_id is required and must be a registered device code.');
     if(!isset($body['grease_trap_id']) || !is_int($body['grease_trap_id']) || $body['grease_trap_id']<1) throw new TelemetryException(422,'invalid_trap_id','grease_trap_id must be a positive integer.');
@@ -76,6 +76,7 @@ function phase3_telemetry_payload(array $body, array $config, DateTimeImmutable 
         'turbidity_ntu'=>phase3_json_number($body['turbidity']??null,'turbidity',0,100000),
         'flow_rate_lpm'=>phase3_json_number($body['flow_rate']??null,'flow_rate',0,10000),
         'gas_value'=>phase3_json_number($body['gas_value']??null,'gas_value',0,1000000000),
+        'odor_value'=>phase3_json_number($body['odor_value']??null,'odor_value',0,1000000000),
         'recorded_at'=>phase3_recorded_at($body['recorded_at']??null,$received,$config),
         'reading_uuid'=>$uuid===null?null:strtolower($uuid),'sequence_number'=>$sequence,
     ];
@@ -109,8 +110,8 @@ function phase3_ingest_telemetry(PDO $pdo, array $body, string $deviceKey, bool 
         if($device['last_seen_at']!==null && $received->getTimestamp()-strtotime($device['last_seen_at'].' UTC')<$config['telemetry_min_interval_seconds']) throw new TelemetryException(429,'rate_limited','Wait before the next reading.');
         $overflow=$pdo->query("SELECT setting_value FROM system_settings WHERE setting_key='overflow_threshold'")->fetchColumn();if($overflow===false||!is_numeric($overflow))throw new RuntimeException('Missing overflow threshold.');
         $level=phase3_calculate_level($data['ultrasonic_distance'],$assignment,(float)$overflow);
-        $q=$pdo->prepare('INSERT INTO sensor_readings (device_assignment_id,ultrasonic_distance_cm,waste_level_percent,device_reported_percent,temperature_c,turbidity_ntu,flow_rate_lpm,gas_value,level_status,is_simulated,is_test,reading_uuid,sequence_number,payload_hash,recorded_at,received_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
-        $q->execute([$assignment['assignment_id'],round($data['ultrasonic_distance'],2),$level['waste_level_percent'],$data['device_reported_percent'],$data['temperature_c'],$data['turbidity_ntu'],$data['flow_rate_lpm'],$data['gas_value'],$level['status'],$simulated?1:0,str_contains((string)$device['device_type'],'TEST')?1:0,$data['reading_uuid'],$data['sequence_number'],$payloadHash,$data['recorded_at'],$received->format('Y-m-d H:i:s')]);
+        $q=$pdo->prepare('INSERT INTO sensor_readings (device_assignment_id,ultrasonic_distance_cm,waste_level_percent,device_reported_percent,temperature_c,turbidity_ntu,flow_rate_lpm,gas_value,odor_value,level_status,is_simulated,is_test,reading_uuid,sequence_number,payload_hash,recorded_at,received_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+        $q->execute([$assignment['assignment_id'],round($data['ultrasonic_distance'],2),$level['waste_level_percent'],$data['device_reported_percent'],$data['temperature_c'],$data['turbidity_ntu'],$data['flow_rate_lpm'],$data['gas_value'],$data['odor_value'],$level['status'],$simulated?1:0,str_contains((string)$device['device_type'],'TEST')?1:0,$data['reading_uuid'],$data['sequence_number'],$payloadHash,$data['recorded_at'],$received->format('Y-m-d H:i:s')]);
         $id=(int)$pdo->lastInsertId();$at=$received->format('Y-m-d H:i:s');$pdo->prepare('UPDATE devices SET last_seen_at=? WHERE id=?')->execute([$at,$device['id']]);
         $alertTypes=phase4_evaluate_telemetry($pdo,$assignment,$id,['waste_level_percent'=>$level['waste_level_percent'],'temperature_c'=>$data['temperature_c'],'turbidity_ntu'=>$data['turbidity_ntu'],'flow_rate_lpm'=>$data['flow_rate_lpm']],$at);$pdo->commit();
         return ['http_status'=>201,'duplicate'=>false,'reading_id'=>$id,'device_id'=>$device['device_code'],'grease_trap_id'=>$data['grease_trap_id'],'ultrasonic_distance'=>round($data['ultrasonic_distance'],2),'waste_level_percent'=>$level['waste_level_percent'],'status'=>$level['status'],'active_alert_types'=>$alertTypes,'received_at'=>$received->format(DATE_ATOM)];

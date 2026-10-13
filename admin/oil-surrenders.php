@@ -31,7 +31,7 @@ $query->execute($parameters);$rows=$query->fetchAll();
 $countRows=$pdo->query('SELECT status,COUNT(*) total FROM oil_surrenders GROUP BY status')->fetchAll(PDO::FETCH_KEY_PAIR);
 $counts=[];foreach($statuses as $value)$counts[$value]=(int)($countRows[$value]??0);
 $establishments=$pdo->query('SELECT id,business_name FROM establishments ORDER BY business_name')->fetchAll();
-$reviewers=$pdo->query("SELECT u.id,u.full_name FROM users u JOIN roles r ON r.id=u.role_id WHERE r.slug IN ('administrator','environmental_staff') ORDER BY u.full_name")->fetchAll();
+$reviewers=$pdo->query("SELECT u.id,u.full_name FROM users u JOIN roles r ON r.id=u.role_id WHERE r.slug IN ('system_admin','administrator','environmental_staff') ORDER BY u.full_name")->fetchAll();
 $pageTitle='Oil Surrenders';$activeNav='oil-surrenders';require dirname(__DIR__).'/includes/header.php';
 ?>
 <div class="page-heading"><div><div class="breadcrumb">Operations <span>/</span> Oil surrenders</div><h1>Oil surrender review queue</h1><p>Owner evidence awaiting Barangay Hybrid Verification.</p></div></div>

@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-require dirname(__DIR__).'/includes/bootstrap.php';require_once dirname(__DIR__).'/includes/admin-core.php';require_once dirname(__DIR__).'/includes/alert-engine.php';$user=require_staff();$canManage=$user['role_slug']==='administrator';$id=query_id();
+require dirname(__DIR__).'/includes/bootstrap.php';require_once dirname(__DIR__).'/includes/admin-core.php';require_once dirname(__DIR__).'/includes/alert-engine.php';$user=require_system_admin();$canManage=true;$id=query_id();
 $q=db()->prepare("SELECT d.*,a.id assignment_id,a.started_at,g.id trap_id,g.name trap_name,e.id establishment_id,e.business_name FROM devices d LEFT JOIN device_assignments a ON a.device_id=d.id AND a.ended_at IS NULL LEFT JOIN grease_traps g ON g.id=a.grease_trap_id LEFT JOIN establishments e ON e.id=g.establishment_id WHERE d.id=?");$q->execute([$id]);$device=$q->fetch();if(!$device)redirect('admin/devices.php');
 $q=db()->prepare("SELECT a.started_at,a.ended_at,g.name trap_name,e.business_name FROM device_assignments a JOIN grease_traps g ON g.id=a.grease_trap_id JOIN establishments e ON e.id=g.establishment_id WHERE a.device_id=? ORDER BY a.started_at DESC,a.id DESC");$q->execute([$id]);$history=$q->fetchAll();
 $q=db()->prepare('SELECT COUNT(*) FROM sensor_readings r JOIN device_assignments a ON a.id=r.device_assignment_id WHERE a.device_id=?');$q->execute([$id]);$readingCount=(int)$q->fetchColumn();

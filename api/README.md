@@ -102,7 +102,8 @@ POST `device/telemetry.php` works in development and production; production requ
 HTTPS. Prefer `X-Device-Key`; compatible Bearer credentials remain accepted. Required
 JSON fields are device_id, grease_trap_id, and ultrasonic_distance. Optional fields
 cover diagnostic device percentage, device timestamp, UUID/sequence idempotency, and
-future temperature/turbidity/flow/gas sensors. The server verifies the active assignment,
+future temperature/turbidity/flow/gas/odor sensors. Gas and odor use separate
+`gas_value` and `odor_value` fields. The server verifies the active assignment,
 calculates percentage/status from trap calibration, stores structured telemetry, updates
 last_seen_at, and prevents duplicate retries. See `../docs/ESP32_API.md`.
 

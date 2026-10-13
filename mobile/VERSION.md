@@ -2,7 +2,72 @@
 
 ## Current Version
 
-0.8.0+14
+0.8.3+17
+
+## 0.8.3+17 - 2026-10-12
+
+Development Phase: Android system-back navigation
+
+### Changed
+
+- Added tab-history handling for Android back buttons and edge-back gestures.
+- Back navigation now returns through previously visited owner-app tabs before
+  Android closes the app from the Home dashboard.
+- Existing detail routes continue to return to their parent screen normally.
+- Increased the application version from `0.8.2+16` to `0.8.3+17`.
+
+### Verification
+
+- Widget coverage navigates from Oil Surrender to Alerts to Profile, then
+  verifies system-back navigation returns through Alerts, Oil Surrender, and
+  Home in order.
+- Flutter analysis and the complete test suite pass.
+
+## 0.8.2+16 - 2026-10-12
+
+Development Phase: Dashboard Quick Actions placement
+
+### Changed
+
+- Moved Monitoring, Alerts, Oil Surrender, Incentives, and Profile Quick
+  Actions to the top of the authenticated owner dashboard.
+- Kept all actions together in the existing responsive wrapping layout.
+- Removed the dashboard refresh button and app-bar refresh icon; users refresh
+  the dashboard with the existing swipe-down gesture.
+- Increased the application version from `0.8.1+15` to `0.8.2+16`.
+
+### Verification
+
+- Dashboard widget coverage verifies that Quick Actions render above the
+  establishment and monitoring content.
+- Dashboard widget coverage refreshes through the swipe-down gesture and
+  verifies that no manual dashboard refresh control remains.
+- Flutter analysis and the complete test suite pass.
+
+## 0.8.1+15 - 2026-10-12
+
+Development Phase: Separate Gas and Odor telemetry
+
+### Added
+
+- Added an independent `odor_value` field to current monitoring and telemetry
+  history models.
+- Added separate Gas Sensor and Odor Sensor cards, chart metrics, and history
+  labels in Mobile Monitoring.
+
+### Changed
+
+- Gas is no longer presented as a combined gas/odor reading.
+- Increased the application version from `0.8.0+14` to `0.8.1+15`.
+- Resolved transitive packages to versions compatible with Flutter `3.41.6`;
+  this avoids selecting an Android image-picker plugin that requires Flutter
+  `3.44`.
+
+### Verification
+
+- Monitoring model and widget coverage verifies that independent gas and odor
+  values remain distinct and nullable.
+- `flutter analyze` and the complete Flutter test suite pass.
 
 ## 0.8.0+14 - 2026-10-07
 

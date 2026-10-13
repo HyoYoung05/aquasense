@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__).'/includes/bootstrap.php';require_once dirname(__DIR__).'/includes/admin-core.php';require_once dirname(__DIR__).'/includes/telemetry.php';
-$user=require_staff();$canManage=$user['role_slug']==='administrator';$pageTitle='Devices';$activeNav='devices';$pageScript='assets/js/admin-forms.js';$errors=[];$action=$_GET['action']??'list';$editId=query_id();
+$user=require_system_admin();$canManage=true;$pageTitle='Devices';$activeNav='devices';$pageScript='assets/js/admin-forms.js';$errors=[];$action=$_GET['action']??'list';$editId=query_id();
 if($_SERVER['REQUEST_METHOD']==='POST'){
- if(!$canManage){http_response_code(403);$errors[]='Only Barangay Administrators can change device records.';}
+ if(!$canManage){http_response_code(403);$errors[]='Only Admin can change device records.';}
  elseif(!valid_csrf()){http_response_code(403);$errors[]='The form expired. Reload and try again.';}
  else try{$post=post_string('action');$id=post_id('id');
   if($post==='create'){$id=phase2_create_device($_POST,(int)$user['id']);flash('success','Device registered.');redirect('admin/device-view.php?id='.$id);}

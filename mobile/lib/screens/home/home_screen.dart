@@ -62,6 +62,7 @@ const _destinations = [
 
 class _HomeScreenState extends State<HomeScreen> {
   int selectedIndex = 0;
+  final List<int> _destinationHistory = [0];
   DashboardSnapshot? snapshot;
   String? initialError;
   String? refreshError;
@@ -116,100 +117,114 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void selectDestination(int index) {
-    setState(() => selectedIndex = index);
+    if (index == selectedIndex || index < 0 || index >= _destinations.length) {
+      return;
+    }
+    setState(() {
+      selectedIndex = index;
+      _destinationHistory.add(index);
+    });
+  }
+
+  void _selectPreviousDestination() {
+    if (_destinationHistory.length <= 1) return;
+    setState(() {
+      _destinationHistory.removeLast();
+      selectedIndex = _destinationHistory.last;
+    });
   }
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final wide = constraints.maxWidth >= 760;
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(
-            _destinations[selectedIndex].label,
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-          actions: [
-            if (selectedIndex == 0)
+  Widget build(BuildContext context) => PopScope<void>(
+    canPop: _destinationHistory.length == 1,
+    onPopInvokedWithResult: (didPop, result) {
+      if (!didPop) _selectPreviousDestination();
+    },
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 760;
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              _destinations[selectedIndex].label,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            actions: [
               IconButton(
-                tooltip: 'Refresh dashboard',
-                onPressed: loading || refreshing ? null : loadDashboard,
-                icon: const Icon(Icons.refresh),
+                tooltip: 'About',
+                onPressed: () => showAboutDialog(
+                  context: context,
+                  applicationName: '$appName Owner App',
+                  applicationVersion: appVersion,
+                  children: const [
+                    Text(
+                      'Final release candidate with owner dashboard, monitoring, alerts, oil surrender, and read-only rice incentives.',
+                    ),
+                  ],
+                ),
+                icon: const Icon(Icons.info_outline),
               ),
-            IconButton(
-              tooltip: 'About',
-              onPressed: () => showAboutDialog(
-                context: context,
-                applicationName: '$appName Owner App',
-                applicationVersion: appVersion,
-                children: const [
-                  Text(
-                    'Final release candidate with owner dashboard, monitoring, alerts, oil surrender, and read-only rice incentives.',
-                  ),
-                ],
+              IconButton(
+                tooltip: 'Sign out',
+                onPressed: widget.onLogout,
+                icon: const Icon(Icons.logout),
               ),
-              icon: const Icon(Icons.info_outline),
-            ),
-            IconButton(
-              tooltip: 'Sign out',
-              onPressed: widget.onLogout,
-              icon: const Icon(Icons.logout),
-            ),
-          ],
-        ),
-        drawer: wide
-            ? null
-            : NavigationDrawer(
-                selectedIndex: selectedIndex,
-                onDestinationSelected: (index) {
-                  selectDestination(index);
-                  Navigator.of(context).pop();
-                },
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(28, 24, 16, 12),
-                    child: Text(
-                      appName,
-                      style: TextStyle(
-                        color: forest,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
+            ],
+          ),
+          drawer: wide
+              ? null
+              : NavigationDrawer(
+                  selectedIndex: selectedIndex,
+                  onDestinationSelected: (index) {
+                    selectDestination(index);
+                    Navigator.of(context).pop();
+                  },
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(28, 24, 16, 12),
+                      child: Text(
+                        appName,
+                        style: TextStyle(
+                          color: forest,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
-                  ),
-                  for (final item in _destinations)
-                    NavigationDrawerDestination(
-                      icon: Icon(item.icon),
-                      label: Text(item.label),
-                    ),
-                ],
-              ),
-        body: SafeArea(
-          child: Row(
-            children: [
-              if (wide)
-                NavigationRail(
-                  selectedIndex: selectedIndex,
-                  onDestinationSelected: selectDestination,
-                  extended: constraints.maxWidth >= 1100,
-                  labelType: constraints.maxWidth >= 1100
-                      ? NavigationRailLabelType.none
-                      : NavigationRailLabelType.selected,
-                  destinations: [
                     for (final item in _destinations)
-                      NavigationRailDestination(
+                      NavigationDrawerDestination(
                         icon: Icon(item.icon),
                         label: Text(item.label),
                       ),
                   ],
                 ),
-              if (wide) const VerticalDivider(width: 1),
-              Expanded(child: _selectedPage()),
-            ],
+          body: SafeArea(
+            child: Row(
+              children: [
+                if (wide)
+                  NavigationRail(
+                    selectedIndex: selectedIndex,
+                    onDestinationSelected: selectDestination,
+                    extended: constraints.maxWidth >= 1100,
+                    labelType: constraints.maxWidth >= 1100
+                        ? NavigationRailLabelType.none
+                        : NavigationRailLabelType.selected,
+                    destinations: [
+                      for (final item in _destinations)
+                        NavigationRailDestination(
+                          icon: Icon(item.icon),
+                          label: Text(item.label),
+                        ),
+                    ],
+                  ),
+                if (wide) const VerticalDivider(width: 1),
+                Expanded(child: _selectedPage()),
+              ],
+            ),
           ),
-        ),
-      );
-    },
+        );
+      },
+    ),
   );
 
   Widget _selectedPage() {

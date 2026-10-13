@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__) . '/includes/bootstrap.php';
-$user = require_administrator();
+$user = require_system_admin();
 $activeNav = 'users';
 $pageTitle = 'User accounts';
 $search = trim((string) ($_GET['search'] ?? ''));
 $role = trim((string) ($_GET['role'] ?? ''));
 $status = trim((string) ($_GET['status'] ?? ''));
-if (!in_array($role, ['', 'administrator', 'environmental_staff', 'owner'], true)) $role = '';
+if (!in_array($role, ['', 'system_admin', 'administrator', 'environmental_staff', 'owner'], true)) $role = '';
 if (!in_array($status, ['', 'active', 'inactive'], true)) $status = '';
 $where = [];
 $parameters = [];
@@ -30,10 +30,10 @@ $rows = $query->fetchAll();
 require dirname(__DIR__) . '/includes/header.php';
 ?>
 <div class="page-heading"><div><div class="breadcrumb">Administration <span>/</span> User accounts</div><h1>User accounts</h1><p>Read-only account directory for role, activation, and owner-link review.</p></div></div>
-<div class="notice notice-info" role="status"><strong>Account provisioning is server-managed.</strong> Use the protected <code>scripts/create-admin.php</code> command for the first administrator. Retain approval and audit records for later account changes.</div>
+<div class="notice notice-info" role="status"><strong>Account provisioning is server-managed.</strong> Use the protected <code>scripts/create-admin.php</code> command for the first full-access Admin. Retain approval and audit records for later account changes.</div>
 <form class="filter-bar" method="get">
     <label><span class="sr-only">Search user accounts</span><input type="search" name="search" value="<?= e($search) ?>" placeholder="Search name or email"></label>
-    <label><span class="sr-only">Role</span><select name="role"><option value="">All roles</option><option value="administrator"<?= selected($role,'administrator') ?>>Administrator</option><option value="environmental_staff"<?= selected($role,'environmental_staff') ?>>Environmental staff</option><option value="owner"<?= selected($role,'owner') ?>>Owner</option></select></label>
+    <label><span class="sr-only">Role</span><select name="role"><option value="">All roles</option><option value="system_admin"<?= selected($role,'system_admin') ?>>Admin</option><option value="administrator"<?= selected($role,'administrator') ?>>Barangay Administrator</option><option value="environmental_staff"<?= selected($role,'environmental_staff') ?>>Environmental staff</option><option value="owner"<?= selected($role,'owner') ?>>Owner</option></select></label>
     <label><span class="sr-only">Account status</span><select name="status"><option value="">All statuses</option><option value="active"<?= selected($status,'active') ?>>Active</option><option value="inactive"<?= selected($status,'inactive') ?>>Inactive</option></select></label>
     <button class="button button-secondary" type="submit"><?= icon('search') ?> Filter</button>
 </form>

@@ -96,11 +96,13 @@ try {
     $sample = $pdo->prepare('SELECT password_hash FROM users WHERE email = ?');
     $sample->execute(['admin@aquasense.test']);
     check(password_verify('AquaSense!2026', (string) $sample->fetchColumn()), 'Development administrator hash verifies');
-    check((int) $pdo->query("SELECT COUNT(*) FROM roles WHERE slug IN ('administrator','environmental_staff','owner')")->fetchColumn() === 3, 'All three roles exist');
+    $sample->execute(['systemadmin@aquasense.test']);
+    check(password_verify('AquaSense!2026', (string) $sample->fetchColumn()), 'Development Admin hash verifies');
+    check((int) $pdo->query("SELECT COUNT(*) FROM roles WHERE slug IN ('system_admin','administrator','environmental_staff','owner')")->fetchColumn() === 4, 'All four roles exist');
     check((float) $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'emulsion_temperature_threshold'")->fetchColumn() === 40.0, 'Initial emulsion threshold is stored as 40 degrees Celsius');
 
     $roles = $pdo->query('SELECT slug, id FROM roles')->fetchAll(PDO::FETCH_KEY_PAIR);
-    foreach (['administrator', 'environmental_staff', 'owner'] as $role) {
+    foreach (['system_admin', 'administrator', 'environmental_staff', 'owner'] as $role) {
         $email = 'foundation-' . $role . '-' . bin2hex(random_bytes(5)) . '@example.test';
         $fixtureEmails[$role] = $email;
         $statement = $pdo->prepare('INSERT INTO users (role_id, full_name, email, password_hash) VALUES (?, ?, ?, ?)');
@@ -128,14 +130,14 @@ try {
     check(str_contains($response['body'], 'Unable to sign in.'), 'Invalid credentials receive a generic error');
 
     $beforeCookies = curl_getinfo($anonymous, CURLINFO_COOKIELIST);
-    $response = login($anonymous, $fixtureEmails['administrator'], $password);
-    check($response['status'] === 303 && str_contains($response['headers'], '/admin/dashboard.php'), 'Administrator login succeeds');
+    $response = login($anonymous, $fixtureEmails['system_admin'], $password);
+    check($response['status'] === 303 && str_contains($response['headers'], '/admin/dashboard.php'), 'Admin login succeeds');
     check($beforeCookies !== curl_getinfo($anonymous, CURLINFO_COOKIELIST), 'Session identifier regenerates after login');
     $dashboard = request($anonymous, '/admin/dashboard.php');
     check($dashboard['status'] === 200 && str_contains($dashboard['body'], 'AQUASENSE+ v' . APP_VERSION), 'Protected dashboard renders the single version constant');
     check(str_contains($dashboard['body'], '&lt;script&gt;alert(1)&lt;/script&gt;') && !str_contains($dashboard['body'], '<script>alert(1)</script>'), 'Stored account names are escaped');
     check(str_contains($dashboard['body'], 'Signed in to workspace'), 'Login audit is visible in account activity');
-    check(str_contains($dashboard['body'], 'ADMINISTRATION'), 'Administrator sees administration navigation');
+    check(str_contains($dashboard['body'], 'ADMINISTRATIVE CORE') && str_contains($dashboard['body'], 'ADMINISTRATION'), 'Admin sees the complete navigation');
     check(request($anonymous, '/public/logout.php')['status'] === 405, 'GET cannot log a user out');
     check(request($anonymous, '/public/logout.php', ['csrf_token' => 'forged'])['status'] === 403, 'Forged logout token is rejected');
     check(request($anonymous, '/admin/dashboard.php')['status'] === 200, 'Rejected logout leaves the valid session intact');
@@ -149,10 +151,21 @@ try {
     }
     check(request($replay, '/admin/dashboard.php')['status'] === 303, 'A replayed logged-out session cannot access the dashboard');
 
+    $barangayClient = client();
+    check(login($barangayClient, $fixtureEmails['administrator'], $password)['status'] === 303, 'Barangay Administrator login succeeds');
+    $barangayPage = request($barangayClient, '/admin/dashboard.php');
+    check($barangayPage['status'] === 200 && str_contains($barangayPage['body'], 'OPERATIONS')
+        && !str_contains($barangayPage['body'], 'ADMINISTRATIVE CORE') && !str_contains($barangayPage['body'], 'ADMINISTRATION'),
+        'Barangay Administrator sees Dashboard and Operations only');
+    check(request($barangayClient, '/admin/establishments.php')['status'] === 303,
+        'Barangay Administrator cannot open Administrative Core directly');
+
     $staffClient = client();
     check(login($staffClient, $fixtureEmails['environmental_staff'], $password)['status'] === 303, 'Environmental staff login succeeds');
     $staffPage = request($staffClient, '/admin/dashboard.php');
-    check($staffPage['status'] === 200 && !str_contains($staffPage['body'], 'ADMINISTRATION'), 'Staff have dashboard access with administration navigation hidden');
+    check($staffPage['status'] === 200 && str_contains($staffPage['body'], 'OPERATIONS')
+        && !str_contains($staffPage['body'], 'ADMINISTRATIVE CORE') && !str_contains($staffPage['body'], 'ADMINISTRATION'),
+        'Environmental Staff sees Dashboard and Operations only');
     $pdo->prepare('UPDATE users SET role_id = ? WHERE id = ?')->execute([$roles['owner'], $fixtureIds['environmental_staff']]);
     check(request($staffClient, '/admin/dashboard.php')['status'] === 303, 'A role change revokes existing administrative access');
     $ownerClient = client();

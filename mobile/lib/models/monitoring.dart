@@ -19,7 +19,8 @@ enum SensorMetric {
   temperature('Temperature', '°C'),
   turbidity('Turbidity', 'NTU'),
   flowRate('Flow', 'L/min'),
-  gas('Gas Sensor', 'raw');
+  gas('Gas Sensor', 'raw'),
+  odor('Odor Sensor', 'raw');
 
   final String label;
   final String unit;
@@ -32,6 +33,7 @@ enum SensorMetric {
     SensorMetric.turbidity => point.turbidity,
     SensorMetric.flowRate => point.flowRate,
     SensorMetric.gas => point.gasValue,
+    SensorMetric.odor => point.odorValue,
   };
 }
 
@@ -42,6 +44,7 @@ class MonitoringReading {
   final double? turbidity;
   final double? flowRate;
   final double? gasValue;
+  final double? odorValue;
   final String condition;
   final bool isSimulated;
   final bool isTest;
@@ -54,6 +57,7 @@ class MonitoringReading {
     required this.turbidity,
     required this.flowRate,
     required this.gasValue,
+    this.odorValue,
     required this.condition,
     required this.isSimulated,
     required this.isTest,
@@ -75,6 +79,7 @@ class MonitoringReading {
       turbidity: _number(json['turbidity_ntu']),
       flowRate: _number(json['flow_rate_lpm']),
       gasValue: _number(json['gas_value']),
+      odorValue: _number(json['odor_value']),
       condition: (json['condition'] as String).trim(),
       isSimulated: json['is_simulated'] as bool,
       isTest: json['is_test'] as bool,
@@ -196,6 +201,7 @@ class TelemetryPoint {
   final double? turbidity;
   final double? flowRate;
   final double? gasValue;
+  final double? odorValue;
   final String condition;
   final bool isSimulated;
   final bool isTest;
@@ -209,6 +215,7 @@ class TelemetryPoint {
     required this.turbidity,
     required this.flowRate,
     required this.gasValue,
+    this.odorValue,
     required this.condition,
     required this.isSimulated,
     required this.isTest,
@@ -232,6 +239,7 @@ class TelemetryPoint {
       turbidity: _number(json['turbidity_ntu']),
       flowRate: _number(json['flow_rate_lpm']),
       gasValue: _number(json['gas_value']),
+      odorValue: _number(json['odor_value']),
       condition: condition,
       isSimulated: json['is_simulated'] as bool,
       isTest: json['is_test'] as bool,

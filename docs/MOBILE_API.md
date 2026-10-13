@@ -1,6 +1,6 @@
 # AQUASENSE+ Owner Mobile API
 
-Backend version: **1.0.2**
+Backend version: **1.1.0**
 
 The API root is deployment-configured. Production clients must use HTTPS. Every
 oil-surrender route requires the existing owner Bearer token:
@@ -24,9 +24,10 @@ and the latest reading when one exists.
 
 Latest readings may contain `waste_level_percent`,
 `ultrasonic_distance_cm`, `temperature_c`, `turbidity_ntu`,
-`flow_rate_lpm`, and `gas_value`. Optional uninstalled sensors remain `null`.
-Gas values are raw sensor values unless a later calibrated backend contract
-states otherwise. Status and percentage rules remain server-side.
+`flow_rate_lpm`, `gas_value`, and `odor_value`. Optional uninstalled sensors
+remain `null`. Gas and odor are separate raw sensor values unless a later
+calibrated backend contract defines units. Status and percentage rules remain
+server-side.
 
 ## Telemetry history
 

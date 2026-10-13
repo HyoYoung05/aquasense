@@ -1,6 +1,6 @@
 # AQUASENSE+ Owner App Security
 
-Version: `0.8.0+14` (Mobile Phase 7 release candidate)
+Version: `0.8.3+17` (Android back navigation and top dashboard actions)
 
 ## Authentication and token storage
 

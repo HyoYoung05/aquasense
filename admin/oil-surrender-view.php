@@ -2,7 +2,7 @@
 declare(strict_types=1);
 require dirname(__DIR__).'/includes/bootstrap.php';
 require_once dirname(__DIR__).'/includes/oil-surrender.php';
-$user=require_staff();$canReview=$user['role_slug']==='administrator';$id=query_id();if(!$id)redirect('admin/oil-surrenders.php');
+$user=require_staff();$canReview=can_manage_operations($user);$id=query_id();if(!$id)redirect('admin/oil-surrenders.php');
 $errors=[];
 if($_SERVER['REQUEST_METHOD']==='POST'){
     if(!$canReview){http_response_code(403);$errors[]='Administrator access is required to change review status.';}

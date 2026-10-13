@@ -1,6 +1,6 @@
 # AQUASENSE+ Owner App Deployment
 
-Version: `0.8.0+14` (Mobile Phase 7 release candidate)
+Version: `0.8.3+17` (Android back navigation and top dashboard actions)
 
 This guide contains no real password, signing secret, token, or private key.
 

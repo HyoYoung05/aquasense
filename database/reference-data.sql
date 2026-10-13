@@ -3,6 +3,7 @@
 SET time_zone = '+00:00';
 
 INSERT INTO roles (slug, name) VALUES
+    ('system_admin', 'Admin'),
     ('administrator', 'Barangay Administrator'),
     ('environmental_staff', 'Barangay Environmental Staff'),
     ('owner', 'Carinderia Owner')

@@ -66,6 +66,7 @@ MonitoringReading _reading({double? waste = 58}) => MonitoringReading(
   turbidity: 410,
   flowRate: 1.8,
   gasValue: 725,
+  odorValue: 240,
   condition: 'MEDIUM',
   isSimulated: false,
   isTest: true,
@@ -122,6 +123,7 @@ TelemetryPoint _point(
   turbidity: waste == null ? null : 410,
   flowRate: waste == null ? null : 1.8,
   gasValue: waste == null ? null : 725,
+  odorValue: waste == null ? null : 240,
   condition: 'MEDIUM',
   isSimulated: false,
   isTest: true,
@@ -231,6 +233,7 @@ void main() {
               'turbidity_ntu': 410,
               'flow_rate_lpm': 1.8,
               'gas_value': 725,
+              'odor_value': 240,
               'level_status': 'MEDIUM',
               'is_simulated': false,
               'is_test': true,
@@ -242,6 +245,7 @@ void main() {
         expect(parsed.hasMore, isTrue);
         expect(parsed.readings.single.wasteLevel, isNull);
         expect(parsed.readings.single.gasValue, 725);
+        expect(parsed.readings.single.odorValue, 240);
       }
     },
   );
@@ -421,7 +425,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Awaiting Sensor Data'), findsWidgets);
     expect(find.text('No data'), findsWidgets);
-    expect(find.text('Not connected'), findsNWidgets(4));
+    expect(find.text('Not connected'), findsNWidgets(5));
     await tester.scrollUntilVisible(
       find.text('No telemetry history'),
       300,
