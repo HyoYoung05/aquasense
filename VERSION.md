@@ -4,7 +4,7 @@
 
 ## Website/backend 1.3.0 and ESP32 Hardware Phase 7 firmware 0.7.0
 
-Date: 2026-10-17
+Date: 2026-10-18
 
 - Added an eight-record fixed RAM FIFO with FIFO recovery, drop-oldest overflow,
   high-water/drop diagnostics, and retry-stable backend UUID idempotency.
@@ -20,6 +20,10 @@ Date: 2026-10-17
   or backup-battery design was added.
 - Phase 7 remains PARTIAL pending real sensors, router/server outages, latency,
   concurrent load, final-power restart, and several-hour testing.
+- Firmware 0.7.0 was hash-verified and uploaded to COM6. A 206.243-second
+  sensor-absent diagnostic observed no reset, two controlled disconnects, two
+  automatic reconnects, and stable free heap; the measured reconnect case took
+  31.2 seconds while rotating past an unavailable configured network.
 
 ## Website/backend 1.3.0 and ESP32 Hardware Phase 6 firmware 0.6.0
 

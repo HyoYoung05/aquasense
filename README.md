@@ -629,6 +629,14 @@ stress, power-cycle, and multi-hour tests remain pending, so Phase 7 is
 **PARTIAL**. Phase 8 is final physical assembly, enclosure, installation, and
 end-to-end field testing after those blockers clear.
 
+On 2026-10-18, firmware 0.7.0 was hash-verified and uploaded to the authorized
+COM6 ESP32. A sensor-absent diagnostic reached 206.243 seconds with no observed
+reset, automatically recovered from two controlled Wi-Fi disconnects, and kept
+free heap stable. One measured reconnect took 31.2 seconds because the manager
+first exhausted the timeout for an unavailable configured network. Physical
+sensor, final-power, queue-drain, latency, stress, and long-run acceptance tests
+remain pending.
+
 The administrator simulator is available only in development and requires a device credential. Device keys can be generated or rotated from Device Details, appear once, and are never stored as plaintext. The simulator calls the HTTP endpoint and does not insert into MySQL directly.
 
 Validation includes the retained Phase 1–7, mobile, CORS, session, production configuration, and ultrasonic suites plus `php tests/phase8.php --allow-local-fixtures` and `php tests/fresh-install.php --allow-temporary-database`. See [TEST_REPORT.md](docs/TEST_REPORT.md) for the exact release run. Test credentials remain excluded from Git.

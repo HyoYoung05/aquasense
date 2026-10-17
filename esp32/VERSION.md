@@ -4,7 +4,7 @@
 
 0.7.0
 
-## 0.7.0 - Hardware Phase 7 reliability and recovery - 2026-10-17
+## 0.7.0 - Hardware Phase 7 reliability and recovery - 2026-10-18
 
 - Added an eight-record, fixed-allocation, RAM-only FIFO with a drop-oldest
   overflow policy, high-water/drop counters, and an on-device algorithm test.
@@ -19,6 +19,9 @@
   loss of unsent RAM records on reset/power failure.
 - Physical outage, sensor-fault, latency, load, final-power, and extended-run
   verification remains PARTIAL until the full hardware is available.
+- Hash-verified firmware was uploaded to COM6. The sensor-absent run reached
+  206.243 seconds with no observed reset, recovered from two controlled Wi-Fi
+  disconnects, and held free heap between 219,128 and 219,140 bytes.
 
 ## 0.6.0 - Hardware Phase 6 calibration gates - 2026-10-17
 

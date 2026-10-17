@@ -1,6 +1,6 @@
 # ESP32 Hardware Phase 7 completion report
 
-Date: 2026-10-17  
+Date: 2026-10-18
 Authorized hardware port: COM6 only  
 Status: **PARTIAL**
 
@@ -19,11 +19,14 @@ telemetry. No unavailable result is presented as a pass.
 
 ## Network
 
-5. **Wi-Fi disconnect result:** software state machine implemented; COM6
-   forced-disconnect runtime result recorded below after upload. Full-array
-   acquisition during outage remains pending.
-6. **Wi-Fi reconnect time:** pending measured COM6 result; code uses 5/10/30
-   second retry backoff plus a maximum 15-second connection attempt.
+5. **Wi-Fi disconnect result:** PASS for the sensor-absent COM6 diagnostic. Two
+   forced disconnects entered `RETRY_WAIT`; one-second HC-SR04 acquisition
+   continued throughout, the board remained responsive, and no reboot occurred.
+   Full-array acquisition during an outage remains pending.
+6. **Wi-Fi reconnect time:** 31.2 seconds in the measured COM6 diagnostic. The
+   first configured network was unavailable, timed out after 15 seconds, and
+   the state machine rotated to the available network after controlled 5/10
+   second backoff. It connected without manual reset.
 7. **Router outage result:** NOT TESTED; physical router interruption with the
    complete sensor system is required.
 8. **Local server outage result:** NOT TESTED with valid ESP32 telemetry because
@@ -94,17 +97,19 @@ telemetry. No unavailable result is presented as a pass.
 
 ## Long test
 
-34. **Total continuous runtime:** short sensor-absent COM6 observation recorded
-    below; the required several-hour/overnight full system run is pending.
-35. **Unexpected reset count:** recorded below for the short run; extended count pending.
-36. **Brownout count:** recorded below for the short USB run; final-power count pending.
-37. **Wi-Fi disconnect count:** recorded below.
-38. **Wi-Fi reconnect count:** recorded below.
-39. **API failure count:** recorded below; invalid HC-SR04 prevents requests.
-40. **Sensor error count:** recorded below; absent HC-SR04 failures are honest.
-41. **I2C error count:** recorded below; I2C modules remain disabled.
-42. **Starting free heap:** recorded below.
-43. **Ending free heap:** recorded below.
+34. **Total continuous runtime:** 206.243 seconds in the captured sensor-absent
+    COM6 run; the required several-hour/overnight full system run is pending.
+35. **Unexpected reset count:** 0 during the short captured run; extended count pending.
+36. **Brownout count:** 0 during the short USB run; final-power count pending.
+37. **Wi-Fi disconnect count:** 2 controlled diagnostic disconnects.
+38. **Wi-Fi reconnect count:** 2 automatic reconnects.
+39. **API failure count:** 0; the invalid HC-SR04 correctly prevented requests.
+40. **Sensor error count:** 205 HC-SR04 timeout samples caused by the absent
+    sensor; each remained `INVALID / UNKNOWN / ERROR`.
+41. **I2C error count:** 0; I2C modules remain disabled pending hardware.
+42. **Starting free heap:** 219,128 bytes at the first captured diagnostic.
+43. **Ending free heap:** 219,140 bytes at 206.243 seconds; minimum observed
+    heap was 219,128 bytes, with no downward trend in this short run.
 
 ## Software
 
@@ -140,5 +145,20 @@ telemetry. No unavailable result is presented as a pass.
 
 ## Verification evidence
 
-Build, COM6 upload/runtime measurements, database baseline, and regression
-counts are added here after the software verification run completes.
+- Arduino CLI compiled the private Phase 7 sketch for `esp32:esp32:esp32`.
+  Reported usage was 977,808 bytes (74%) of flash and 51,088 bytes (15%) of
+  static RAM, leaving 276,592 bytes for local variables. The flashable binary
+  image was 977,952 bytes.
+- The image was uploaded only to the authorized CH340 device on COM6. All flash
+  regions passed esptool hash verification.
+- The controlled reconnect sample measured 31.2 seconds from forced disconnect
+  to the `Connected` event after one unavailable configured network timed out.
+  Sampling continued every second.
+- The longer captured uptime reached 206.243 seconds with zero observed resets,
+  two controlled disconnects, two automatic reconnects, and stable heap.
+- The absent HC-SR04 consistently produced `Distance: INVALID`, `Fill: UNKNOWN`,
+  and `Sensor: ERROR`; no fake reading was queued or posted.
+- Phase 3, Phase 4, mobile API, fresh-install, and Phase 8 backend suites passed
+  195 checks. Flutter analysis passed and 49 focused tests passed.
+- AQS-001 remained at its pre-test database baseline because invalid physical
+  readings are intentionally not transmitted.

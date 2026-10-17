@@ -163,3 +163,10 @@ physical router/server outage, sensor disconnect, latency/load, power-cycle,
 and long-duration tests remain pending. Hardware Phase 7 is **PARTIAL**. Phase
 8 is final physical assembly, enclosure, installation, and end-to-end field
 testing after those blockers clear.
+
+The 2026-10-18 COM6 sensor-absent diagnostic reached 206.243 seconds with no
+observed reset or brownout. Two controlled Wi-Fi disconnects both recovered
+automatically; the measured reconnect case took 31.2 seconds while rotating
+past an unavailable configured network. Free heap stayed between 219,128 and
+219,140 bytes during the captured run. These results do not replace the pending
+full-sensor, final-power, latency, stress, and several-hour tests.
