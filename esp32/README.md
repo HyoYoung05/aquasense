@@ -1,311 +1,134 @@
-# AQUASENSE+ ESP32 ultrasonic bench test
+# AQUASENSE+ ESP32 Hardware Phase 6
 
-Version **0.1.1** — Arduino IDE, classic ESP32 DevKit, one trigger/echo ultrasonic sensor.
-This is a temporary experiment. Retain the project and private settings until the user explicitly requests removal.
-No other sensors, battery system, pumps, valves, buzzer, or grease-trap automation are implemented.
-
-## Setup after cloning this repository
-
-This `esp32/` folder contains shareable test source; the PHP backend is in the
-repository root. The original local testing workspace is `aquasense-esp32` alongside
-`aquasense-web`. Sections describing trap 12, local configuration, or APK paths below
-record that original computer's setup, not accounts or files supplied by a clone.
-
-1. Set up the PHP application and existing database using the root README and apply
-   both database migrations. This telemetry endpoint currently requires development mode.
-2. Prepare the demo owner using the backend development setup instructions.
-3. From the repository root, provision the test device using the command below.
-   Use the returned trap ID and device key; do not assume trap 12 on another database.
-4. Copy `UltrasonicTest/config.example.h` to `UltrasonicTest/config.local.h` and set
-   your Wi-Fi, reachable API URL, device key, and returned trap ID. Set matching calibration.
-5. Open `UltrasonicTest/UltrasonicTest.ino` in Arduino IDE and select ESP32 Dev Module.
-6. For VS Code, open this `esp32` folder and follow the IntelliSense section to generate
-   your own local compiler database. The clone does not include the original parent workspace settings.
-
-The local header, device metadata, generated compiler database, and firmware binaries
-are deliberately excluded. A clone does not inherit the original computer's credentials.
-
-## Hardware assumption and wiring
-
-The user identified an **HC-SR04** and a 38-pin ESP32 board, with GPIO5 and GPIO18.
-This configuration interprets that order as **TRIG = GPIO5, ECHO = GPIO18**.
-Match the physical wiring to those assignments. The board's exact model/pinout still needs checking;
-the pin count alone does not identify its supply pins.
-Use a USB cable to power the ESP32. Keep the sensor/electronics dry and above a stable test surface.
-
-| HC-SR04 | ESP32 DevKit |
-| --- | --- |
-| VCC | Verified board 5V supply pin (USB-powered board; check board pinout) |
-| GND | GND |
-| TRIG | GPIO5 |
-| ECHO | GPIO18 through the divider below |
-
-Never connect the HC-SR04's 5V Echo directly to an ESP32 GPIO.
+Firmware **0.6.0** preserves the Phase 1–5 sensor, telemetry, and power
+implementation and adds explicit calibration and threshold gates. Physical
+verification remains on hold until sensors are available.
 
 ```text
-HC-SR04 ECHO --- 1 kOhm ---+--- GPIO18
-                          |
-                        2 kOhm
-                          |
-                         GND
+HC-SR04 -> ESP32 -> Wi-Fi -> PHP API -> MySQL/MariaDB -> website / Flutter
 ```
 
-The nominal GPIO voltage is 5 x 2/(1+2) = 3.33V. Use a common ground.
-Wire with power disconnected. GPIO numbers refer to the board's IO5/IO18 labels, not header position numbers.
-Do not add a second external power supply while the board is USB powered.
+The ESP32 never accesses MySQL. All unverified physical sensor gates remain
+disabled because the sensors are not currently available. The software is
+ready for one-at-a-time physical verification in required 4A-4E order.
 
-## Troubleshooting: Raw echo 0 us / INVALID
+## Six physical modules
 
-`pulseIn(ECHO_PIN, HIGH, 30000UL)` returning zero means no complete echo pulse
-was measured within the 30ms timeout. The printed `0.00 cm` is not a measured
-zero distance. Five invalid attempts produce UNKNOWN and skip telemetry;
-this prevents an unavailable sensor from reporting a falsely empty or full trap.
-This log occurs during sensor measurement, before a telemetry POST is attempted.
+1. HC-SR04 on TRIG GPIO5 and divided ECHO GPIO18.
+2. DS18B20 wastewater probe on GPIO4 with the documented pull-up.
+3. SEN0189 analog turbidity module on divided GPIO34.
+4. YF-S201 flow module on protected GPIO19.
+5. ENS160+AHT2x combination module on SDA GPIO21/SCL GPIO22; optional ENS160
+   INT is GPIO26.
+6. MQ-135 analog gas/odor module on divided GPIO35.
 
-1. Confirm the actual sensor model and board model. This wiring and timing assume
-   an HC-SR04 and classic ESP32 DevKit; other modules can have different interfaces.
-2. Disconnect USB power before changing wiring. The current private and example
-   configurations both use TRIG GPIO5 and ECHO GPIO18. Read the board's GPIO labels,
-   not physical header positions, and check for swapped TRIG/ECHO wires.
-3. For an HC-SR04, use its required 5V supply from the verified USB-powered board
-   supply pin and connect sensor GND, ESP32 GND, and divider GND together.
-   Do not connect its 5V Echo directly to GPIO18; use the divider shown above.
-4. Check jumper continuity and breadboard rows, including any split power rails.
-   If a meter is available, measure sensor VCC relative to sensor GND; it should
-   be approximately 5V for an HC-SR04. Avoid bridging adjacent pins with probes.
-5. Aim the dry sensor straight at a large, flat, hard surface about 20cm away.
-   Start with a solid target before testing liquid. At 20cm, expect approximately
-   1,166us of echo using the sketch's formula; small variations are normal.
-6. Reconnect power and watch Serial Monitor at 115200 baud. If every reading stays
-   zero, record the module label and actual connections before changing firmware.
-   A stuck Echo signal, missing power/ground, incompatible module mode, bad cable,
-   damaged sensor, or damaged GPIO can all require further hardware checks.
+ENS160 and AHT2x are separate ICs on one physical module. DS18B20 never
+supplies humidity, and AHT2x ambient temperature never overwrites DS18B20
+wastewater temperature. There is no microSD, OLED, buzzer, or DHT22.
 
-The existing 10us trigger and 65ms spacing follow the linked HC-SR04 datasheet.
-Changing API settings or fill thresholds cannot restore a missing echo.
-If pins are intentionally changed in `config.local.h`, recompile and upload the sketch.
-Version 0.1.1 corrects the previous GPIO25/GPIO26 configuration for the reported
-GPIO5/GPIO18 wiring. Upload the updated sketch, then look for `v0.1.1` and
-`Ultrasonic pins: TRIG=GPIO5, ECHO=GPIO18` at startup to verify the board is running it.
-The configured 0.1.1 sketch compiled successfully for `esp32:esp32:esp32` with
-Espressif core 3.3.12 (1,027,984 bytes flash; 48,824 bytes static RAM).
+## Firmware structure
 
-## Calculation and test thresholds
+- `temperature_sensor`: asynchronous OneWire/DallasTemperature conversion,
+  disconnect/sentinel/range validation, and controlled reinitialization.
+- `turbidity_sensor`: latest/averaged ADC, divider/source voltage diagnostics,
+  and raw data only until an approved NTU calibration exists.
+- `flow_sensor`: minimal ISR, atomic pulse snapshots, and frequency. The
+  provisional 450-pulse/L reference cannot produce L/min until known-volume
+  calibration is approved.
+- `i2c_bus` and `environment_sensor`: repeated stable address detection,
+  bounded I2C timeout, independent ENS160/AHT2x states, optional AHT2x
+  compensation, and paced retries.
+- `gas_sensor`: ADC filtering, a minimum three-minute development warm-up gate,
+  raw data only, and no fabricated ppm.
+- `sensor_data`: independent `DISABLED`, `UNAVAILABLE`, `WARMING_UP`,
+  `NOT_CALIBRATED`, `VALID`, and `ERROR` states.
+- `telemetry`: retry-stable snapshots that include only valid optional fields.
 
-```text
-distance_cm = echo_duration_us x 0.0343 / 2
-fill_percent = clamp(100 x (empty_distance_cm - distance_cm)
-                         / (empty_distance_cm - full_distance_cm), 0, 100)
-```
+All schedules use `millis()`. One failed sensor does not stop the others,
+Wi-Fi recovery, or the main loop.
 
-Distances are measured vertically from the sensor face. Empty and full references are calibration values for your actual test container.
-Example defaults: empty = 30cm, full = 5cm; a 12.4cm reading gives 70.4%.
-Full means the chosen maximum liquid level with sensor clearance; do not let liquid reach the module.
-This estimates fill HEIGHT. It estimates volume only for a constant-cross-section container.
-It cannot distinguish oil, water, or foam, and it is not a safety-certified overflow alarm.
+## Private configuration and activation
 
-Default test classification:
+Copy `secrets.example.h` to ignored `secrets.h` for Wi-Fi, endpoint, device
+key, and optional trusted CA. Never commit it.
 
-| Percentage | Status |
-| --- | --- |
-| Below 75% | NORMAL |
-| 75% to below 90% | WARNING |
-| 90% and above | CRITICAL |
+Before enabling each Phase 4 sensor in `config.h`:
 
-Both alert thresholds are below 100%. Serial output and stored status are the test warning mechanism.
-No physical alarm or automatic shutoff is included.
-The server recalculates the percentage and status instead of trusting client fields.
+1. Wire only that module using [the pinout](../docs/PINOUT.md).
+2. Confirm the actual board supply requirement.
+3. Measure protected signals and keep the ESP32 pin at or below 3.3 V.
+4. For ENS160+AHT2x, run `I2CScanner` for three stable scans, then enter the
+   actual addresses.
+5. Enable only that module and repeat sensor, HC-SR04, Wi-Fi, API, database,
+   website, Flutter, and reset checks.
 
-## Current local setup
+## Telemetry semantics
 
-- Device code: AQS-001.
-- Dedicated temporary trap ID: **12**, named Ultrasonic bench test (temporary), under the existing Demo Kusina owner.
-- Existing demo trap/device and their historical readings are unchanged.
-- Local URL is in the ignored config.local.h; the sketch does not repeat an IP address.
-- Authoritative empty/full calibration is stored on the assigned grease trap; the older test-config row is retained for compatibility.
-- The Phase 3 endpoint works in development and on an HTTPS production deployment.
-- Temperature and other absent sensors remain NULL. Hardware samples have is_test=1 and is_simulated=0.
-- Software regression fixtures are deleted after tests. No real physical reading has been claimed or inserted for AQS-001.
+Valid optional fields are `temperature`, `turbidity_raw`,
+`flow_pulse_count`, `flow_rate`, `ambient_temperature`, `humidity`, `aqi`,
+`tvoc_ppb`, `eco2_ppm`, and `gas_raw`. PHP stores raw ADC values in dedicated
+nullable columns. It never labels SEN0189 raw ADC as NTU or MQ-135 raw ADC as
+gas ppm.
 
-The ESP32 must be on a network that can reach the configured Apache address. For this local test, use the API computer's LAN.
-The phone may use the existing Tailscale test connection. Installing Tailscale on the phone does not route an ESP32 on a different network to the API.
-Production requires a reachable HTTPS API. The administrator simulator remains development-only.
+## Phase 4 verification on 2026-10-16
 
-## Open, configure, and upload
+- I2C scanner compiled at 293,848 bytes flash and 23,508 bytes RAM.
+- Uploaded scanner only to COM6; seven stable scans reported zero devices
+  because the combo module was absent.
+- Full private firmware compiled with all warnings enabled at 972,644 bytes
+  flash and 50,160 bytes static RAM. Warnings came only from installed
+  DFRobot ENS160 and OneWire libraries.
+- Uploaded firmware 0.4.0 only to COM6 with verified hashes.
+- The ESP32 reported `POWER_ON`, passed its calculation self-test, connected at
+  `192.168.50.165`, and ran beyond 26 seconds without reboot or heap decline.
+- HC-SR04 remained honest `NO_ECHO`/`INVALID`; unavailable Phase 4 subsystems
+  printed `N/A` and `DISABLED`; no request was sent.
+- AQS-001 remained at 335 readings, latest ID 409, and `last_seen_at`
+  `2026-09-30 12:17:26`.
+- 35 backend checks, 53 mobile API checks, and Flutter analysis passed.
 
-1. In Arduino IDE, install **esp32 by Espressif Systems** in Boards Manager if needed.
-2. Open UltrasonicTest/UltrasonicTest.ino; keep the matching folder name.
-3. Select **ESP32 Dev Module** for a classic ESP32 DevKit and select its USB serial port.
-4. Open UltrasonicTest/config.local.h. On this computer it contains both supplied test Wi-Fi networks, the local endpoint, device key, and trap 12.
-   The nonsecret config.example.h is the template for another checkout.
-5. Verify EMPTY_DISTANCE_CM, FULL_DISTANCE_CM, WARNING_PERCENT and CRITICAL_PERCENT against your physical test container and saved server calibration.
-6. Click Verify, then Upload. Open Serial Monitor at **115200 baud**.
-7. Move a flat target or change clean-water level gradually. Keep the sensor face dry.
-8. Watch raw echo duration/distance, filtered distance, percentage, status, HTTP code, and the JSON response.
-9. HTTP 201 with success=true confirms the backend stored a reading. Refresh the Flutter dashboard to retrieve it.
+The approved Phase 5 primary architecture is an enclosed regulated AC-to-DC
+adapter feeding safe low-voltage 5 V and 3.3 V rails with one common ground.
+See [the power specification](../docs/POWER.md). MT3608, TP4056, arbitrary
+battery wiring, microSD, OLED, and buzzer are excluded. The backup-battery
+architecture is not finalized in the current schematic.
 
-The sketch takes five samples with at least 65ms spacing, requires three valid samples, and uses the median.
-Each echo wait is bounded to 30ms. No echo or distances outside 2–400cm are invalid; no fabricated zero-fill value is sent.
-The test cycle waits five seconds after a sample/upload attempt, so slow networking lengthens the interval.
-Wi-Fi attempts alternate configured networks every 15 seconds while disconnected. No password or device key is printed.
-HTTP connect/read timeouts are five seconds; failures are printed and the next cycle uses a fresh reading.
-There is no reboot loop and no persistent offline queue. Data collected while offline is not backfilled as fresh telemetry.
+Firmware reports its declared power mode, reset reason, minimum heap, Wi-Fi
+connection transitions, and telemetry counts. It explicitly reports that no
+rail-voltage monitor exists; multimeter values belong in the physical report.
 
-## Endpoint contract
+Physical readings, rail/divider voltages, per-sensor progressive loading, ten
+power cycles, interruption recovery, and multi-hour stability remain blocked
+by absent hardware. Hardware Phases 4 and 5 are therefore **PARTIAL**. See the
+[Phase 4 report](PHASE4-TEST-REPORT.md) and
+[Phase 5 report](PHASE5-TEST-REPORT.md).
 
-```text
-POST /AQUASENSE+/aquasense-web/api/device/telemetry.php
-Content-Type: application/json
-Authorization: Bearer <64-hex private device key>
-```
+## Phase 5 software verification on 2026-10-17
 
-New firmware may prefer `X-Device-Key: <64-hex private device key>`. The existing Bearer header remains supported.
+- Firmware 0.5.0 compiled at 973,492 bytes flash and 50,192 bytes static RAM.
+- Uploaded only to COM6 with verified hashes.
+- USB-powered ESP32 reported `POWER_ON`, connected at `192.168.50.173`, and
+  reached 51 seconds without brownout, reboot, or heap decline; minimum free
+  heap stabilized at 219,892 bytes.
+- Sensor-absent HC-SR04 remained invalid, every Phase 4 module remained
+  disabled/N/A, and the firmware sent no fake request.
+- AQS-001 stayed at 335 readings, latest ID 409, and its prior `last_seen_at`.
+- 35 backend checks, 53 mobile API checks, and 32 focused Flutter tests passed.
 
-```json
-{
-  "device_id": "AQS-001",
-  "grease_trap_id": 12,
-  "ultrasonic_distance": 12.4,
-  "waste_level_percent": 70.4,
-  "status": "NORMAL"
-}
-```
+## Phase 6 software verification on 2026-10-17
 
-The key is separate from owner login tokens and database passwords. PHP stores only its hash.
-Only the active assigned device can write to the active trap/establishment.
-The existing five-field sketch remains compatible. Phase 3 requires device_id, grease_trap_id, and raw distance; firmware percentage/status are diagnostic inputs and the server calculates authoritative values from trap calibration. The configured body limit defaults to 4096 bytes. Future temperature, turbidity, flow, gas, odor, timestamp, UUID, and sequence fields are optional. Gas uses `gas_value` and odor uses the separate `odor_value` field. The server rejects invalid ranges, assignments, timestamps, duplicate conflicts, and samples inside the configured minimum interval. Timestamps are stored in UTC.
+- Central calibration state is in `calibration.h`; all physical approval flags
+  remain false.
+- Backend trap geometry and thresholds remain authoritative. Firmware sends
+  distance and cannot override the server's fill/state result.
+- SEN0189 raw ADC remains distinct from NTU; YF-S201 pulse counts remain
+  distinct from calibrated L/min; MQ-135 remains raw-only with no ppm claim.
+- Migration 012 disables turbidity and flow alerts until an administrator has
+  physical calibration evidence and deliberately enables each gate.
+- Firmware 0.6.0 compiled at 973,988 bytes flash and 50,208 bytes RAM, uploaded
+  only to COM6, passed its calculation self-test, connected to Wi-Fi, and ran
+  sensor-absent without reboot or fake telemetry.
+- See [the calibration register](../docs/CALIBRATION.md) and
+  [Phase 6 report](PHASE6-TEST-REPORT.md).
 
-| HTTP | Meaning |
-| --- | --- |
-| 200 / 201 | Duplicate retry recognized / new reading stored |
-| 400 / 415 / 422 | JSON/type/range or calibration problem |
-| 401 / 403 | Device key, active status, or trap assignment problem |
-| 404 | Unknown device or grease trap |
-| 409 | Missing calibration or idempotency conflict |
-| 405 | POST required |
-| 413 | Body too large |
-| 429 | Device is posting too frequently |
-| 503 | Server/database unavailable; sketch keeps running |
-
-HTTP errors never trigger ESP.restart(). Do not use setInsecure() for HTTPS.
-For an HTTPS test server, configure TLS_ROOT_CA and allow clock synchronization; certificate validation is retained.
-
-## Existing backend setup on another development checkout
-
-Back up the existing database. Apply migrations in order after the original schema:
-
-- 001-mobile-tokens.sql, if not already applied.
-- 002-ultrasonic-test.sql, once only.
-
-Migration 002 makes temperature nullable, adds the test flag and WARNING enum value, and creates the calibration table in the SAME database.
-It does not delete or overwrite readings. Fresh installs also need both migrations.
-Prepare the existing demo owner using the documented mobile development helper if absent.
-Then run from the repository root:
-
-```powershell
-php database/ultrasonic-test-setup.php --allow-test-fixture --output=esp32/device.local.json
-```
-
-This creates a dedicated trap and AQS-001 and writes its private key/calibration metadata.
-It refuses to overwrite an existing device or credential file. Do not run it again on this configured computer.
-Copy the resulting device code, trap ID, and device_api_key into your ignored config.local.h.
-Use config.example.h for the remaining settings. Never put a real key in the example file.
-
-## Changing calibration
-
-Change the constants in config.local.h and update the matching database row before uploading.
-For example, to retain the documented defaults, run on the configured development database:
-
-```sql
-UPDATE device_ultrasonic_test_config c
-JOIN devices d ON d.id = c.device_id
-SET c.empty_distance_cm = 30, c.full_distance_cm = 5,
-    c.warning_percent = 75, c.critical_percent = 90
-WHERE d.device_code = 'AQS-001';
-```
-
-The firmware and server must use the same calibration. Full distance must be at least 2cm, empty must exceed full and be at most 400cm,
-and 0 < warning < critical < 100. A calibration mismatch returns HTTP 422.
-The private device.local.json contains the initial provisioning values, not a live synchronization mechanism.
-
-## Verify stored data
-
-```sql
-SELECT r.id, d.device_code, a.grease_trap_id, r.ultrasonic_distance_cm,
-       r.waste_level_percent, r.level_status, r.temperature_c,
-       r.is_test, r.is_simulated, r.recorded_at
-FROM sensor_readings r
-JOIN device_assignments a ON a.id = r.device_assignment_id
-JOIN devices d ON d.id = a.device_id
-WHERE d.device_code = 'AQS-001'
-ORDER BY r.id DESC LIMIT 20;
-```
-
-The Flutter owner API already returns these readings. The client needs the updated nullable-temperature model (0.1.6+7);
-an older installed APK should be rebuilt before testing. Refresh retrieves the latest snapshot; there is no new automatic polling.
-The administrative website can use the shared PHP reader later; no administrative monitoring UI is added in this experiment.
-
-## VS Code IntelliSense (missing WiFi.h / HTTPClient.h / WiFiClientSecure.h)
-
-These headers come with the Espressif Arduino ESP32 board package. Do not install
-an unrelated WiFi library to fix editor error 1696. Arduino IDE compilation and
-VS Code IntelliSense have separate configuration.
-
-The `.vscode` configuration associates `.ino` files with C++ and reads a local
-compilation database mapped to the original `UltrasonicTest.ino`. It uses the
-installed compiler, board definitions, Arduino core, networking libraries, and
-ESP-IDF headers from the successful Arduino build. It also includes `Arduino.h`,
-which Arduino normally adds to its generated C++ source. No diagnostics are disabled.
-
-Open this `esp32/` folder in VS Code to load the supplied configuration.
-The original local workspace also has parent-folder settings; those are not part of this clone.
-After this change, run **Developer: Reload Window** from the Command Palette.
-If old errors remain, run **C/C++: Reset IntelliSense Database**, then reopen the sketch.
-Arduino IDE **Verify** remains the authoritative ESP32 build check.
-
-After moving the project, changing the board package, or adding a library, compile
-the sketch and regenerate the editor database. From `esp32`, with Python 3 installed:
-
-```powershell
-$arduinoCli = Join-Path $env:ProgramFiles 'Arduino IDE\resources\app\lib\backend\resources\arduino-cli.exe'
-$esp32Build = Join-Path $env:TEMP 'aquasense-esp32-build'
-& $arduinoCli compile --fqbn esp32:esp32:esp32 --build-path $esp32Build .\UltrasonicTest
-if ($LASTEXITCODE -eq 0) { python .\tools\refresh_intellisense.py $esp32Build }
-```
-
-The generated `.vscode/compile_commands.local.json` contains this computer's paths
-and is ignored by Git. It embeds build flags rather than depending on temporary
-Arduino response files, and it does not copy Wi-Fi passwords or device keys.
-Python is only needed to refresh editor settings; Arduino IDE can still build and upload normally.
-See [Microsoft's IntelliSense configuration documentation](https://code.visualstudio.com/docs/cpp/configure-intellisense).
-
-## Temporary files and cleanup
-
-- Keep this whole `esp32/` folder until removal is explicitly requested.
-- Private files: device.local.json and UltrasonicTest/config.local.h.
-- Generated firmware belongs outside this web-served folder; compiled firmware can contain test Wi-Fi passwords and the device key.
-- .gitignore excludes private configuration; .htaccess denies HTTP access to the entire firmware directory.
-- Device AQS-001, its calibration, test trap 12, its assignment, and future readings are database records, not files.
-  Review and remove only those test records when cleanup is requested. Retain unrelated data and backups.
-- Previously created mobile temporary folders are unchanged by this test.
-- Editor support is also temporary: `.vscode/settings.json`, `.vscode/c_cpp_properties.json`,
-  `.vscode/compile_commands.local.json`, and `tools/refresh_intellisense.py` inside this folder.
-  In the parent folder, remove the ESP32 `compileCommands` configuration from
-  `.vscode/c_cpp_properties.json` and the `*.ino` association from `.vscode/settings.json`
-  when retiring this test. Preserve the Flutter CMake setting and any later unrelated settings.
-
-## References
-
-- [HC-SR04 datasheet](https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf)
-- [ESP32 DevKitC board reference](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp32-devkitc/user_guide.html)
-- [Arduino ESP32 Wi-Fi API](https://docs.espressif.com/projects/arduino-esp32/en/latest/api/wifi.html)
-## Software validation (2026-09-21)
-
-- Sketch compiled with both the example configuration and the generated private local configuration for `esp32:esp32:esp32`, using Espressif Arduino core 3.3.12. The configured build uses 1,027,932 bytes of flash (78%) and 48,824 bytes of static RAM (14%).
-- PHP device integration passed 51 checks; all existing PHP suites and session expiry passed.
-- Flutter analysis and all 28 tests passed.
-- Updated optional phone APK: `../aquasense_mobile/temporary-network-testing/aquasense-owner-ultrasonic-v0.1.6+7.apk` (uses existing Tailscale test API configuration).
-- AQS-001 has no readings until actual hardware sends them; test-fixture data was removed.
-- During the initial software validation, COM3 was unidentified and no upload was performed by Codex.
-  The user subsequently reported serial readings and identified an HC-SR04 on a 38-pin ESP32.
-  Version 0.1.1 must be uploaded to apply the GPIO5/GPIO18 correction; a valid physical reading remains unverified.
+Physical calibration is still required; Phase 6 status is **PARTIAL**.

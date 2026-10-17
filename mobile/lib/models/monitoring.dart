@@ -16,11 +16,19 @@ enum HistoryRange {
 enum SensorMetric {
   wasteLevel('Waste Level', '%'),
   ultrasonicDistance('Distance', 'cm'),
-  temperature('Temperature', '°C'),
+  temperature('Wastewater Temperature', '°C'),
   turbidity('Turbidity', 'NTU'),
+  turbidityRaw('Turbidity Raw', 'ADC'),
   flowRate('Flow', 'L/min'),
+  flowPulseCount('Flow Pulses', 'pulses'),
   gas('Gas Sensor', 'raw'),
-  odor('Odor Sensor', 'raw');
+  odor('Odor Sensor', 'raw'),
+  gasRaw('MQ-135 Raw', 'ADC'),
+  ambientTemperature('Ambient Temperature', '°C'),
+  humidity('Humidity', '% RH'),
+  airQualityIndex('ENS160 AQI', 'AQI'),
+  tvoc('ENS160 TVOC', 'ppb'),
+  eco2('ENS160 eCO2', 'ppm');
 
   final String label;
   final String unit;
@@ -31,9 +39,17 @@ enum SensorMetric {
     SensorMetric.ultrasonicDistance => point.ultrasonicDistance,
     SensorMetric.temperature => point.temperature,
     SensorMetric.turbidity => point.turbidity,
+    SensorMetric.turbidityRaw => point.turbidityRawAdc,
     SensorMetric.flowRate => point.flowRate,
+    SensorMetric.flowPulseCount => point.flowPulseCount,
     SensorMetric.gas => point.gasValue,
     SensorMetric.odor => point.odorValue,
+    SensorMetric.gasRaw => point.gasRawAdc,
+    SensorMetric.ambientTemperature => point.ambientTemperature,
+    SensorMetric.humidity => point.humidity,
+    SensorMetric.airQualityIndex => point.ens160Aqi,
+    SensorMetric.tvoc => point.tvocPpb,
+    SensorMetric.eco2 => point.eco2Ppm,
   };
 }
 
@@ -42,9 +58,17 @@ class MonitoringReading {
   final double? ultrasonicDistance;
   final double? temperature;
   final double? turbidity;
+  final double? turbidityRawAdc;
   final double? flowRate;
+  final double? flowPulseCount;
   final double? gasValue;
   final double? odorValue;
+  final double? gasRawAdc;
+  final double? ambientTemperature;
+  final double? humidity;
+  final double? ens160Aqi;
+  final double? tvocPpb;
+  final double? eco2Ppm;
   final String condition;
   final bool isSimulated;
   final bool isTest;
@@ -55,9 +79,17 @@ class MonitoringReading {
     required this.ultrasonicDistance,
     required this.temperature,
     required this.turbidity,
+    this.turbidityRawAdc,
     required this.flowRate,
+    this.flowPulseCount,
     required this.gasValue,
     this.odorValue,
+    this.gasRawAdc,
+    this.ambientTemperature,
+    this.humidity,
+    this.ens160Aqi,
+    this.tvocPpb,
+    this.eco2Ppm,
     required this.condition,
     required this.isSimulated,
     required this.isTest,
@@ -77,9 +109,17 @@ class MonitoringReading {
       ultrasonicDistance: _number(json['ultrasonic_distance_cm']),
       temperature: _number(json['temperature_c']),
       turbidity: _number(json['turbidity_ntu']),
+      turbidityRawAdc: _number(json['turbidity_raw_adc']),
       flowRate: _number(json['flow_rate_lpm']),
+      flowPulseCount: _number(json['flow_pulse_count']),
       gasValue: _number(json['gas_value']),
       odorValue: _number(json['odor_value']),
+      gasRawAdc: _number(json['gas_raw_adc']),
+      ambientTemperature: _number(json['ambient_temperature_c']),
+      humidity: _number(json['humidity_percent']),
+      ens160Aqi: _number(json['ens160_aqi']),
+      tvocPpb: _number(json['tvoc_ppb']),
+      eco2Ppm: _number(json['eco2_ppm']),
       condition: (json['condition'] as String).trim(),
       isSimulated: json['is_simulated'] as bool,
       isTest: json['is_test'] as bool,
@@ -199,9 +239,17 @@ class TelemetryPoint {
   final double? ultrasonicDistance;
   final double? temperature;
   final double? turbidity;
+  final double? turbidityRawAdc;
   final double? flowRate;
+  final double? flowPulseCount;
   final double? gasValue;
   final double? odorValue;
+  final double? gasRawAdc;
+  final double? ambientTemperature;
+  final double? humidity;
+  final double? ens160Aqi;
+  final double? tvocPpb;
+  final double? eco2Ppm;
   final String condition;
   final bool isSimulated;
   final bool isTest;
@@ -213,9 +261,17 @@ class TelemetryPoint {
     required this.ultrasonicDistance,
     required this.temperature,
     required this.turbidity,
+    this.turbidityRawAdc,
     required this.flowRate,
+    this.flowPulseCount,
     required this.gasValue,
     this.odorValue,
+    this.gasRawAdc,
+    this.ambientTemperature,
+    this.humidity,
+    this.ens160Aqi,
+    this.tvocPpb,
+    this.eco2Ppm,
     required this.condition,
     required this.isSimulated,
     required this.isTest,
@@ -237,9 +293,17 @@ class TelemetryPoint {
       ultrasonicDistance: _number(json['ultrasonic_distance_cm']),
       temperature: _number(json['temperature_c']),
       turbidity: _number(json['turbidity_ntu']),
+      turbidityRawAdc: _number(json['turbidity_raw_adc']),
       flowRate: _number(json['flow_rate_lpm']),
+      flowPulseCount: _number(json['flow_pulse_count']),
       gasValue: _number(json['gas_value']),
       odorValue: _number(json['odor_value']),
+      gasRawAdc: _number(json['gas_raw_adc']),
+      ambientTemperature: _number(json['ambient_temperature_c']),
+      humidity: _number(json['humidity_percent']),
+      ens160Aqi: _number(json['ens160_aqi']),
+      tvocPpb: _number(json['tvoc_ppb']),
+      eco2Ppm: _number(json['eco2_ppm']),
       condition: condition,
       isSimulated: json['is_simulated'] as bool,
       isTest: json['is_test'] as bool,

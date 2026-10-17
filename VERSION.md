@@ -1,6 +1,181 @@
 # AQUASENSE+ Version History
 
-1.1.0
+1.3.0
+
+## Website/backend 1.3.0 and ESP32 Hardware Phase 6 firmware 0.6.0
+
+Date: 2026-10-17
+
+- Centralized firmware calibration state and prevented provisional SEN0189,
+  YF-S201, and MQ-135 values from being presented as calibrated units.
+- Added migration 012 and administrator-controlled turbidity/flow alert gates;
+  both default off pending physical calibration and threshold approval.
+- Preserved backend-authoritative grease-trap geometry/state and the configured
+  40 °C Emulsion Warning.
+- Added the calibration register and Phase 6 report. Physical calibration
+  remains PARTIAL because the sensors and reference equipment are unavailable.
+- COM6 firmware build/upload/runtime and 195 PHP/integration checks passed
+  without changing the AQS-001 telemetry baseline.
+- Flutter analysis and 32 focused monitoring/navigation tests passed.
+
+## ESP32 Hardware Phase 5 firmware 0.5.0
+
+Date: 2026-10-17
+
+- Added power-mode/reset/heap/network/telemetry diagnostics without claiming
+  firmware can measure rail voltage.
+- Documented the paper-aligned enclosed AC-to-DC, low-voltage rail, and common
+  ground architecture plus the required progressive physical test sequence.
+- Recorded the backup-battery schematic gap and excluded MT3608, TP4056,
+  microSD, OLED, and buzzer.
+- Phase 5 remains PARTIAL because the final supply and sensors are unavailable.
+
+## Website/backend 1.2.0 and ESP32 Hardware Phase 4 firmware 0.4.0
+
+Date: 2026-10-16
+
+- Implemented the complete six-module firmware architecture with ENS160+AHT2x
+  treated as one combination module and separate sensing ICs.
+- Added migration 011 and strict PHP ingestion for raw turbidity, flow pulses,
+  MQ-135 raw ADC, AHT2x ambient/humidity, and ENS160 AQI/TVOC/eCO2.
+- Updated website and Flutter monitoring to expose the authoritative fields
+  while labeling raw and calibrated values correctly.
+- COM6 build/runtime, 35 backend checks, 53 mobile API checks, and Flutter
+  analysis passed. Physical Phase 4 remains PARTIAL because sensors are absent.
+
+## ESP32 Revised Hardware Phase 3 firmware 0.3.1
+
+Date: 2026-10-16
+
+- Aligned Phase 3 with the revised paper's local Wi-Fi router and local
+  PHP/MariaDB acceptance architecture.
+- Classified HTTP 400 as a paced request/configuration problem, separate from
+  transient network and server failures.
+- Rebuilt public and private firmware, restored it only to COM6 with verified
+  hashes, connected to local Wi-Fi, and confirmed absent-sensor readings send
+  no request.
+- Local API health returned HTTP 200; all 32 backend and 50 mobile checks
+  passed. Physical end-to-end Phase 3 remains PARTIAL until HC-SR04 is present.
+
+## ESP32 Revised Hardware Phase 3 firmware 0.3.0
+
+Date: 2026-10-15
+
+- Preserved the Phase 2 HC-SR04 pipeline and connected it to the existing PHP
+  telemetry contract using AQS-001, grease trap 12, `X-Device-Key`, and UUIDv4
+  idempotency.
+- Kept Wi-Fi credentials, endpoint, device key, and optional CA in ignored
+  `secrets.h`; the public placeholder build contains no real secrets.
+- Added bounded Wi-Fi attempts/reconnection, five-second HTTP timeout,
+  controlled 5/10/30-second retry, HTTP 429 handling, and no-reboot failures.
+- Invalid ultrasonic data cannot send telemetry. During sensor-absent COM6
+  verification there were no POST attempts and AQS-001 remained at 335 readings,
+  latest ID 409, with its prior `last_seen_at`.
+- Public build passed at 942,088 bytes flash and 48,440 bytes RAM; private build
+  passed at 942,648 bytes flash and 48,440 bytes RAM and uploaded only to COM6.
+- Wi-Fi connected, a forced disconnect exercised the alternate-network timeout,
+  and the primary network recovered without reboot.
+- All 32 device telemetry checks and 50 mobile API checks passed. Physical
+  insert, website refresh, and Flutter refresh remain deferred until the sensor
+  is available.
+
+## ESP32 Revised Hardware Phase 2 firmware 0.2.0
+
+Date: 2026-10-15
+
+- Added HC-SR04 acquisition on revised TRIG GPIO5 and divided ECHO GPIO18.
+- Added five raw samples, a 30 ms timeout, range validation, minimum valid
+  sample count, median filtering, and explicit diagnostics.
+- Added temporary 30 cm empty / 5 cm full test calculation with clamping;
+  final physical calibration remains Phase 6 work.
+- Failed Echo always reports INVALID / UNKNOWN / ERROR and never substitutes a
+  zero, full, safe, or NORMAL reading.
+- The on-device median/fill/invalid self-test passed. A warning-free build used
+  275,372 bytes flash and 22,124 bytes static RAM and uploaded only to COM6 with
+  verified hashes.
+- A sensor-absent 45-second observation produced 45 controlled `NO_ECHO`
+  cycles, no unsafe values, no unexpected reset, and stable heap through 81
+  seconds uptime.
+- Physical 10/20/30 cm and electrical tests are deferred until hardware is
+  available. No Wi-Fi, PHP, MySQL, battery, or additional sensor was added.
+
+## ESP32 Revised Hardware Phase 1 firmware 0.1.0
+
+Date: 2026-10-15
+
+- Reset the ESP32 target to the revised paper's USB-only Hardware Phase 1.
+- Froze the official GPIO map for HC-SR04, DS18B20, YF-S201, SEN0189, MQ-135,
+  and ENS160. Older proposed maps are obsolete.
+- Selected DS18B20 on GPIO4 and documented the conflicting DHT22 label in
+  Figure 14 without adding a seventh sensor.
+- Removed unfinished later-phase networking, telemetry, sensor, OLED, LED,
+  buzzer, and microSD modules. The revised design has no microSD, OLED, or
+  buzzer.
+- Added USB-only chip, CPU, flash, heap, reset-reason, and uptime diagnostics.
+- Firmware compiled warning-free at 270,572 bytes flash and 22,116 bytes static
+  RAM, uploaded only to COM6 at 115200 with verified hashes, and passed Serial,
+  EN-reset, port-reopen, and short no-reboot checks.
+- Physical USB unplug/replug and physical EN-button presses remain documented
+  manual confirmations; no sensors or battery were connected.
+
+The earlier ESP32 Phase 3 and Phase 4 entries below are retained as historical
+records only. Their proposed hardware details are superseded by the revised
+paper and must not be used for current wiring or firmware work.
+
+## ESP32 Hardware Phase 4 firmware 0.4.0
+
+Date: 2026-10-15
+
+- Added a central per-sensor data/validity model and modular DS18B20,
+  SEN0189, YF-S201, ENS160/AHT2x, and MQ-135 firmware paths.
+- Added disabled-by-default feature flags, ADC1 assignments, electrical-safety
+  gates, configurable sensor intervals, interrupt-only flow pulse counting,
+  bounded I2C discovery, and MQ-135 warm-up handling.
+- The final review added an explicit 50 ms I2C timeout, DS18B20 `85 C` sentinel
+  rejection, and allocation-free periodic sensor value formatting.
+- Expanded firmware telemetry to omit invalid optional values and map only
+  fields supported by the existing API. Raw turbidity and unsupported ENS/AHT
+  readings are retained locally without misleading field names.
+- Preserved the validated HC-SR04 GPIO5/GPIO18 baseline. Firmware 0.4.0 uploaded
+  to COM6 at 115200 with verified flash hashes; COM3 was not accessed.
+- Added Phase 4 pinout, sensor, and completion documentation. The exact
+  credential-free ESP32 build passes at 1,065,436 bytes flash and 50,432 bytes
+  static RAM.
+- A 51-second sensor-absent COM6 run recovered from forced Wi-Fi loss without
+  rebooting, reported every optional sensor unavailable, skipped invalid
+  telemetry, and held approximately 222-223 KB free heap.
+- Phase 4 is PARTIAL: all physical sensor, voltage, calibration, end-to-end UI,
+  power, and stability gates remain deferred until hardware is connected one at
+  a time.
+
+## ESP32 Hardware Phase 3 firmware 0.3.0
+
+Date: 2026-10-15
+
+- Upgraded the existing `esp32/UltrasonicTest` target from firmware 0.1.1 to
+  modular firmware 0.3.0 while retaining HC-SR04 TRIG GPIO5 and ECHO GPIO18.
+- Established COM6 as the only authorized AQUASENSE+ hardware port. COM6 was
+  identified as an ESP32-D0WD-V3 revision 3.1 and uploaded at 115200 with verified
+  flash hashes. COM3 is excluded from current and future hardware phases.
+- Added ignored `secrets.h`, committed `secrets.example.h`, separate public
+  configuration and pin maps, filtered ultrasonic acquisition, bounded Wi-Fi
+  reconnection, ArduinoJson telemetry, UUID idempotency, `X-Device-Key`, trusted
+  HTTPS preparation, and 5/10/30-second controlled retry.
+- Removed the obsolete monolithic ESP32 `config.example.h` and `level_math.h`
+  files so the Phase 3 firmware has one documented configuration path.
+- Verified both private and placeholder builds, Wi-Fi connection at
+  `192.168.50.165`, forced disconnect/reconnection without reboot, stable observed
+  heap, the AQS-001/trap 12 database assignment, matching device credential hash,
+  and all 32 backend Phase 3 checks.
+- Verified the wider read path with 52 ultrasonic API checks, 50 mobile API
+  checks, clean Flutter analysis, and all 113 Flutter tests.
+- Sensor-absent protection passed: zero-duration Echo remains unknown and sends
+  no fake telemetry. Under the user's revised no-sensor scope, firmware/network/
+  API validation passes. Real AQS-001 storage, website/Flutter physical display,
+  backend-down recovery with pending telemetry, and valid-data stability are
+  deferred until the HC-SR04 is installed.
+- Updated the ESP32 README, firmware history, API documentation, and Phase 3 test
+  report. No additional physical sensors were added.
 
 ## 1.1.0
 

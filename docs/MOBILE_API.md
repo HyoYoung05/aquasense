@@ -1,6 +1,6 @@
-# AQUASENSE+ Owner Mobile API
+﻿# AQUASENSE+ Owner Mobile API
 
-Backend version: **1.1.0**
+Backend version: **1.2.0**
 
 The API root is deployment-configured. Production clients must use HTTPS. Every
 oil-surrender route requires the existing owner Bearer token:

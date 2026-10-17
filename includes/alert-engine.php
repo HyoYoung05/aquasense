@@ -24,7 +24,7 @@ function phase4_alert_label(string $type): string
 
 function phase4_numeric_settings(PDO $pdo): array
 {
-    $keys=['overflow_threshold','emulsion_temperature_threshold','high_temperature_threshold','high_turbidity_threshold','flow_rate_min','flow_rate_max','device_offline_timeout_minutes'];
+    $keys=['overflow_threshold','emulsion_temperature_threshold','high_temperature_threshold','high_turbidity_threshold','turbidity_alert_enabled','flow_rate_min','flow_rate_max','flow_alert_enabled','device_offline_timeout_minutes'];
     $in=implode(',',array_fill(0,count($keys),'?'));
     $q=$pdo->prepare("SELECT setting_key,setting_value FROM system_settings WHERE setting_key IN ($in)");$q->execute($keys);$values=$q->fetchAll(PDO::FETCH_KEY_PAIR);
     foreach($keys as $key)if(!isset($values[$key])||!is_numeric($values[$key]))throw new RuntimeException('Missing alert setting: '.$key);
@@ -64,9 +64,9 @@ function phase4_evaluate_telemetry(PDO $pdo,array $assignment,int $readingId,arr
     $temperature=$reading['temperature_c'];$temperatureTypes=[];
     if($temperature!==null){$temperature=(float)$temperature;if($temperature >= $settings['emulsion_temperature_threshold'])$temperatureTypes['EMULSION_WARNING']=$settings['emulsion_temperature_threshold'];if($temperature >= $settings['high_temperature_threshold'])$temperatureTypes['HIGH_TEMPERATURE']=$settings['high_temperature_threshold'];phase4_resolve_recovered($pdo,$assignmentId,array_values(array_diff(['HIGH_TEMPERATURE','EMULSION_WARNING'],array_keys($temperatureTypes))),$at);foreach($temperatureTypes as $type=>$threshold)phase4_upsert_alert($pdo,$assignmentId,$readingId,$type,$temperature,$threshold,$at);}
 
-    $turbidity=$reading['turbidity_ntu'];$turbidityActive=$turbidity!==null&&(float)$turbidity >= $settings['high_turbidity_threshold'];
+    $turbidity=$reading['turbidity_ntu'];$turbidityEnabled=$settings['turbidity_alert_enabled']===1.0;$turbidityActive=$turbidityEnabled&&$turbidity!==null&&(float)$turbidity >= $settings['high_turbidity_threshold'];
     if($turbidity!==null){if($turbidityActive)phase4_upsert_alert($pdo,$assignmentId,$readingId,'HIGH_TURBIDITY',(float)$turbidity,$settings['high_turbidity_threshold'],$at);else phase4_resolve_recovered($pdo,$assignmentId,['HIGH_TURBIDITY'],$at);}
-    $flow=$reading['flow_rate_lpm'];$flowActive=$flow!==null&&((float)$flow<$settings['flow_rate_min']||(float)$flow>$settings['flow_rate_max']);
+    $flow=$reading['flow_rate_lpm'];$flowEnabled=$settings['flow_alert_enabled']===1.0;$flowActive=$flowEnabled&&$flow!==null&&((float)$flow<$settings['flow_rate_min']||(float)$flow>$settings['flow_rate_max']);
     if($flow!==null){if($flowActive){$threshold=(float)$flow<$settings['flow_rate_min']?$settings['flow_rate_min']:$settings['flow_rate_max'];phase4_upsert_alert($pdo,$assignmentId,$readingId,'ABNORMAL_FLOW',(float)$flow,$threshold,$at);}else phase4_resolve_recovered($pdo,$assignmentId,['ABNORMAL_FLOW'],$at);}
     phase4_resolve_recovered($pdo,$assignmentId,['DEVICE_OFFLINE'],$at,'Telemetry resumed; device recovered automatically.');
     return array_keys($active+$temperatureTypes+($turbidityActive?['HIGH_TURBIDITY'=>0]:[])+($flowActive?['ABNORMAL_FLOW'=>0]:[]));
@@ -95,6 +95,7 @@ function phase4_validate_settings(array $input): array
 {
     $fields=['emulsion_temperature_threshold','high_temperature_threshold','high_turbidity_threshold','flow_rate_min','flow_rate_max','overflow_threshold','device_offline_timeout_minutes'];$data=[];$errors=[];
     foreach($fields as $field){$value=filter_var($input[$field]??null,FILTER_VALIDATE_FLOAT);if($value===false)$errors[]='Enter a numeric value for '.str_replace('_',' ',$field).'.';else$data[$field]=(float)$value;}
+    foreach(['turbidity_alert_enabled','flow_alert_enabled'] as $field){$value=$input[$field]??'0';if(!in_array((string)$value,['0','1'],true))$errors[]='Invalid calibration alert gate.';else$data[$field]=(float)$value;}
     if(!$errors){if($data['emulsion_temperature_threshold']<-20||$data['high_temperature_threshold']>125||$data['emulsion_temperature_threshold']>$data['high_temperature_threshold'])$errors[]='Temperature thresholds must increase from Emulsion to High and remain between -20 and 125 °C.';if($data['high_turbidity_threshold']<=0)$errors[]='Turbidity threshold must be greater than zero.';if($data['flow_rate_min']<0||$data['flow_rate_min']>=$data['flow_rate_max'])$errors[]='Flow thresholds require a non-negative minimum below the maximum.';if($data['overflow_threshold']<=0||$data['overflow_threshold']>100)$errors[]='Overflow threshold must be between 0 and 100.';if($data['device_offline_timeout_minutes']<1||$data['device_offline_timeout_minutes']>1440)$errors[]='Offline timeout must be between 1 and 1440 minutes.';}
     if($errors)throw new InvalidArgumentException(implode(' ',$errors));return $data;
 }

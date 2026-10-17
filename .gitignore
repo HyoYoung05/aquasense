@@ -21,4 +21,7 @@ Thumbs.db
 config/*.local.php
 /esp32/**/*.local.h
 /esp32/**/*.local.json
+/esp32/**/secrets.h
 /esp32/build/
+/esp32/**/build/
+/.build-*/

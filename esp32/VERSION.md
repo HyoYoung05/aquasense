@@ -1,55 +1,107 @@
-# AQUASENSE+ ESP32 test version history
+# AQUASENSE+ ESP32 firmware version history
 
 ## Current version
 
-0.1.1
+0.6.0
 
-## 0.1.1 - 2026-09-21
+## 0.6.0 - Hardware Phase 6 calibration gates - 2026-10-17
 
-- User identified the sensor as HC-SR04 on a 38-pin ESP32 using GPIO5 and GPIO18.
-- Changed both local and example settings from TRIG GPIO25 / ECHO GPIO26 to
-  TRIG GPIO5 / ECHO GPIO18, interpreting the supplied pins in TRIG/ECHO order.
-- Added configured pin numbers to Serial startup output and bumped the firmware banner.
-- Updated wiring, divider diagram, and troubleshooting instructions in README.md.
-- Arduino CLI build passed for `esp32:esp32:esp32` (Espressif core 3.3.12):
-  1,027,984 bytes flash (78%) and 48,824 bytes static RAM (14%).
-- Upload is required to apply these changes. A valid hardware echo remains unverified.
-- Prepared a credential-free GitHub source copy under the existing PHP repository's
-  `esp32/` folder, with clone setup instructions and the IntelliSense refresh tool.
+- Centralized all firmware calibration state in `calibration.h`.
+- Separated raw SEN0189 ADC and YF-S201 pulse evidence from calibrated NTU and
+  L/min, and retained MQ-135 as raw-only.
+- Documented backend-authoritative level thresholds and the configured 40 °C
+  Emulsion Warning.
+- Added disabled-by-default calibrated turbidity and flow alert gates.
+- Compiled at 973,988 bytes flash and 50,208 bytes RAM, uploaded only to COM6,
+  and verified sensor-absent behavior without fake telemetry.
+- Backend/API/alert/fresh-install/hardening regression suites passed.
+- Physical calibration remains PARTIAL until sensors and references exist.
 
-## Sensor troubleshooting documentation - 2026-09-21
+## 0.5.0 - Hardware Phase 5 power diagnostics - 2026-10-17
 
-- Documented repeated zero-duration echo timeouts, configured GPIO25/GPIO26 wiring,
-  HC-SR04 power and voltage-divider checks, and a solid-target bench test.
-- Confirmed the existing sketch uses a 10us trigger, 30ms echo timeout, and 65ms spacing.
-- Clarified that UNKNOWN skips telemetry and that a printed zero is not a valid distance.
-- Firmware remains 0.1.0. Actual sensor model and wiring still need confirmation;
-  no hardware repair or successful physical reading is claimed.
+- Aligned the documented primary architecture to an enclosed regulated
+  AC-to-DC adapter feeding low-voltage 5 V and 3.3 V rails with common ground.
+- Added honest startup/runtime power diagnostics: declared power mode, reset
+  warning, minimum heap, Wi-Fi transition counts, and telemetry counts.
+- Explicitly reports that rail voltage is not monitored by firmware and must
+  be measured with a multimeter.
+- Did not introduce MT3608, TP4056, battery wiring, microSD, OLED, or buzzer.
+- Physical Phase 5 remains PARTIAL until the actual supply and sensors permit
+  progressive-load, power-cycle, interruption, and long-duration tests.
 
-## Editor configuration update — 2026-09-21
+## 0.4.0 - Revised Hardware Phase 4 software integration - 2026-10-16
 
-- Added VS Code C++ configuration for both the parent workspace and standalone ESP32 folder.
-- Associated Arduino sketches with C++ and mapped the original `.ino` to the installed Espressif compiler and headers from the successful build.
-- Added `tools/refresh_intellisense.py` to regenerate the ignored local compilation database after toolchain, library, or path changes; private configuration values are not copied.
-- Verified all three reported headers resolve and the original sketch passes an ESP32 compiler syntax check with the generated settings. All editor JSON files parse successfully.
-- Documented editor reload, regeneration, and temporary file cleanup in README.md.
-- Firmware behavior and version remain 0.1.0; this change configures the editor only.
+- Added independently scheduled DS18B20, SEN0189, YF-S201, ENS160+AHT2x, and
+  MQ-135 drivers using the authoritative revised GPIO map.
+- Added independent sensor validity states, raw/calibrated boundaries, minimal
+  flow ISR, I2C scan/stability gates, AHT2x compensation, and MQ-135 warm-up.
+- Extended retry-stable telemetry without fabricating missing readings or
+  labeling uncalibrated ADC data as NTU or ppm.
+- Compiled at 972,644 bytes flash and 50,160 bytes RAM and uploaded only to
+  COM6. The sensor-absent runtime stayed online without reboot or fake writes.
+- Physical Phase 4 remains PARTIAL until all modules and voltage measurements
+  are available.
 
-## 0.1.0 — 2026-09-21
+## 0.3.1 - Revised Hardware Phase 3 alignment - 2026-10-16
 
-- Added an Arduino IDE sketch for a classic ESP32 DevKit and one HC-SR04-style ultrasonic sensor.
-- Centralized network, endpoint, device identity, private key, pins, calibration, thresholds, and interval in a private configuration header.
-- Added bounded echo measurement, median filtering, raw Serial output, percentage conversion, and Normal/Warning/Critical statuses.
-- Added JSON POST, bounded HTTP/TLS timeouts, network reconnection, and continued operation after failures.
-- Paired the test with backend 0.3.0 and nullable-temperature support in Flutter 0.1.6+7.
-- No additional sensors, battery system, or actuators.
-- Actual sensor model, wiring, calibration, flashing, and physical end-to-end operation remain to be verified.
-- Temporary project and credentials remain until the user explicitly requests removal.
-## Software validation (2026-09-21)
+- Aligned the completion record with the revised paper's local-router and local
+  PHP/MariaDB acceptance architecture; public hosting and Tailscale are not
+  Phase 3 requirements.
+- Classified malformed-payload HTTP 400 with other paced configuration errors
+  instead of transient network/server retry behavior.
+- Rebuilt public and ignored private firmware, restored it only to COM6 with
+  verified hashes, connected to local Wi-Fi, and observed stable uptime with
+  sensor-absent readings explicitly skipped.
+- Local health returned HTTP 200; 32 backend and 50 mobile checks passed. Real
+  sensor-to-database/UI proof remains deferred, so physical Phase 3 status is
+  PARTIAL.
 
-- Sketch compiled with both the example configuration and the generated private local configuration for `esp32:esp32:esp32`, using Espressif Arduino core 3.3.12. The configured build uses 1,027,932 bytes of flash (78%) and 48,824 bytes of static RAM (14%).
-- PHP device integration passed 51 checks; all existing PHP suites and session expiry passed.
-- Flutter analysis and all 28 tests passed.
-- Updated optional phone APK: `../aquasense_mobile/temporary-network-testing/aquasense-owner-ultrasonic-v0.1.6+7.apk` (uses existing Tailscale test API configuration).
-- AQS-001 has no readings until actual hardware sends them; test-fixture data was removed.
-- COM3 is an unidentified USB serial port. No sketch has been uploaded, and the sensor model is still unconfirmed.
+## 0.3.0 - Revised Hardware Phase 3 - 2026-10-15
+
+- Preserved Phase 2 HC-SR04 acquisition and added the existing PHP telemetry
+  contract without adding a duplicate endpoint.
+- Added ignored Wi-Fi/API/device secrets, a committed placeholder, validation,
+  AQS-001 and grease trap 12 identity, `X-Device-Key`, and retry-stable UUIDv4.
+- Added bounded Wi-Fi connection attempts, alternate-network reconnection,
+  five-second HTTP timeout, 5/10/30-second retry backoff, HTTP 429 handling, and
+  configuration-error pacing without reboot.
+- Sends only `device_id`, `grease_trap_id`, `ultrasonic_distance`, and
+  `reading_uuid`; PHP remains authoritative for fill/status and MySQL writes.
+- Invalid ultrasonic readings cannot create or send telemetry.
+- Public all-warnings build passed at 942,088 bytes flash and 48,440 bytes RAM;
+  ignored private build passed at 942,648 bytes flash and 48,440 bytes RAM.
+- Uploaded the private build only to COM6 with verified hashes. Wi-Fi connected,
+  a forced disconnect exercised the secondary timeout, and the primary network
+  recovered without reboot.
+- The AQS-001 database baseline remained unchanged during the sensor-absent run:
+  335 readings, latest ID 409, and the previous `last_seen_at`.
+- All 32 device telemetry checks and all 50 mobile API checks passed.
+- Physical AQS-001 insertion and website/Flutter physical refresh remain
+  deferred until the HC-SR04 is available.
+
+## 0.2.0 - Revised Hardware Phase 2 - 2026-10-15
+
+- Added HC-SR04 TRIG GPIO5 and divided ECHO GPIO18 acquisition using the
+  revised-paper pin map.
+- Added five raw Echo samples, a 30 ms pulse timeout, 2-400 cm validation, a
+  minimum of three valid samples, median filtering, and raw diagnostics.
+- Added temporary 30 cm empty / 5 cm full development calculation with 0-100%
+  clamping. Final grease-trap calibration remains Phase 6 work.
+- Enforced invalid results as `Distance: INVALID`, `Fill: UNKNOWN`, and
+  `Sensor: ERROR`; no failed Echo becomes a zero/full/safe value.
+- Added an on-device algorithm self-test for median selection, temporary
+  10/20/30 cm calculation references, and invalid-input propagation.
+- Warning-free build uses 275,372 bytes flash and 22,124 bytes static RAM.
+- Uploaded only to COM6 at 115200 with verified hashes. Reset passed, and a
+  sensor-absent 45-second observation produced 45 controlled `NO_ECHO` cycles,
+  no unsafe values, no unexpected reboot, and stable 331,096-byte free heap.
+- Physical distance and electrical tests remain deferred until the sensor is
+  available. No Wi-Fi, PHP, MySQL, battery, or other sensor work was added.
+
+## 0.1.0 - Revised Hardware Phase 1 - 2026-10-15
+
+- Established the USB-only ESP32 DevKit V1 diagnostic foundation.
+- Froze the revised paper's six-sensor GPIO plan and documented the DHT22 label
+  discrepancy while reserving GPIO4 for DS18B20.
+- Verified the ESP32 Dev Module profile, COM6 upload, Serial at 115200, EN reset,
+  port reopening, and stable short-duration uptime.

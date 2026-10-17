@@ -1,4 +1,6 @@
 # Local test credentials and generated firmware
 **/*.local.h
 **/*.local.json
+**/secrets.h
 /build/
+/**/build/

@@ -89,7 +89,7 @@ function mobile_monitoring(int $ownerId): array
     $query = $pdo->prepare("SELECT e.id establishment_id,e.business_name,g.id grease_trap_id,g.name grease_trap_name,g.is_active trap_active,
         g.low_threshold,g.medium_threshold,g.high_threshold,g.critical_threshold,a.id assignment_id,
         d.id device_id,d.device_code,d.name device_name,d.firmware_version,d.is_active device_active,d.last_seen_at,
-        r.ultrasonic_distance_cm,r.waste_level_percent,r.temperature_c,r.turbidity_ntu,r.flow_rate_lpm,r.gas_value,r.odor_value,
+        r.ultrasonic_distance_cm,r.waste_level_percent,r.temperature_c,r.turbidity_ntu,r.turbidity_raw_adc,r.flow_rate_lpm,r.flow_pulse_count,r.gas_value,r.odor_value,r.gas_raw_adc,r.ambient_temperature_c,r.humidity_percent,r.ens160_aqi,r.tvoc_ppb,r.eco2_ppm,
         r.level_status,r.is_simulated,r.is_test,r.recorded_at
         FROM establishments e JOIN grease_traps g ON g.establishment_id=e.id AND g.is_active=1
         LEFT JOIN device_assignments a ON a.grease_trap_id=g.id AND a.ended_at IS NULL
@@ -113,9 +113,17 @@ function mobile_monitoring(int $ownerId): array
                 'ultrasonic_distance_cm' => $row['ultrasonic_distance_cm'] === null ? null : (float) $row['ultrasonic_distance_cm'],
                 'temperature_c' => $row['temperature_c'] === null ? null : (float) $row['temperature_c'],
                 'turbidity_ntu' => $row['turbidity_ntu'] === null ? null : (float) $row['turbidity_ntu'],
+                'turbidity_raw_adc' => $row['turbidity_raw_adc'] === null ? null : (int) $row['turbidity_raw_adc'],
                 'flow_rate_lpm' => $row['flow_rate_lpm'] === null ? null : (float) $row['flow_rate_lpm'],
+                'flow_pulse_count' => $row['flow_pulse_count'] === null ? null : (int) $row['flow_pulse_count'],
                 'gas_value' => $row['gas_value'] === null ? null : (float) $row['gas_value'],
                 'odor_value' => $row['odor_value'] === null ? null : (float) $row['odor_value'],
+                'gas_raw_adc' => $row['gas_raw_adc'] === null ? null : (int) $row['gas_raw_adc'],
+                'ambient_temperature_c' => $row['ambient_temperature_c'] === null ? null : (float) $row['ambient_temperature_c'],
+                'humidity_percent' => $row['humidity_percent'] === null ? null : (float) $row['humidity_percent'],
+                'ens160_aqi' => $row['ens160_aqi'] === null ? null : (int) $row['ens160_aqi'],
+                'tvoc_ppb' => $row['tvoc_ppb'] === null ? null : (int) $row['tvoc_ppb'],
+                'eco2_ppm' => $row['eco2_ppm'] === null ? null : (int) $row['eco2_ppm'],
                 'condition' => $sensorState,
                 'is_simulated' => (bool) $row['is_simulated'],
                 'is_test' => (bool) $row['is_test'],

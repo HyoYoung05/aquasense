@@ -64,9 +64,17 @@ MonitoringReading _reading({double? waste = 58}) => MonitoringReading(
   ultrasonicDistance: 12.4,
   temperature: 31.5,
   turbidity: 410,
+  turbidityRawAdc: 1820,
   flowRate: 1.8,
+  flowPulseCount: 450,
   gasValue: 725,
   odorValue: 240,
+  gasRawAdc: 1450,
+  ambientTemperature: 29.8,
+  humidity: 68.2,
+  ens160Aqi: 2,
+  tvocPpb: 120,
+  eco2Ppm: 510,
   condition: 'MEDIUM',
   isSimulated: false,
   isTest: true,
@@ -121,9 +129,17 @@ TelemetryPoint _point(
   ultrasonicDistance: waste == null ? null : 12.4,
   temperature: temperature,
   turbidity: waste == null ? null : 410,
+  turbidityRawAdc: waste == null ? null : 1820,
   flowRate: waste == null ? null : 1.8,
+  flowPulseCount: waste == null ? null : 450,
   gasValue: waste == null ? null : 725,
   odorValue: waste == null ? null : 240,
+  gasRawAdc: waste == null ? null : 1450,
+  ambientTemperature: waste == null ? null : 29.8,
+  humidity: waste == null ? null : 68.2,
+  ens160Aqi: waste == null ? null : 2,
+  tvocPpb: waste == null ? null : 120,
+  eco2Ppm: waste == null ? null : 510,
   condition: 'MEDIUM',
   isSimulated: false,
   isTest: true,
@@ -190,8 +206,16 @@ void main() {
               'ultrasonic_distance_cm': 0,
               'temperature_c': null,
               'turbidity_ntu': null,
+              'turbidity_raw_adc': null,
               'flow_rate_lpm': null,
+              'flow_pulse_count': null,
               'gas_value': null,
+              'gas_raw_adc': null,
+              'ambient_temperature_c': null,
+              'humidity_percent': null,
+              'ens160_aqi': null,
+              'tvoc_ppb': null,
+              'eco2_ppm': null,
               'condition': 'NORMAL',
               'is_simulated': false,
               'is_test': false,
@@ -231,9 +255,17 @@ void main() {
               'ultrasonic_distance_cm': 12.4,
               'temperature_c': 31.5,
               'turbidity_ntu': 410,
+              'turbidity_raw_adc': 1820,
               'flow_rate_lpm': 1.8,
+              'flow_pulse_count': 450,
               'gas_value': 725,
               'odor_value': 240,
+              'gas_raw_adc': 1450,
+              'ambient_temperature_c': 29.8,
+              'humidity_percent': 68.2,
+              'ens160_aqi': 2,
+              'tvoc_ppb': 120,
+              'eco2_ppm': 510,
               'level_status': 'MEDIUM',
               'is_simulated': false,
               'is_test': true,
@@ -246,6 +278,10 @@ void main() {
         expect(parsed.readings.single.wasteLevel, isNull);
         expect(parsed.readings.single.gasValue, 725);
         expect(parsed.readings.single.odorValue, 240);
+        expect(parsed.readings.single.turbidityRawAdc, 1820);
+        expect(parsed.readings.single.gasRawAdc, 1450);
+        expect(parsed.readings.single.humidity, 68.2);
+        expect(parsed.readings.single.ens160Aqi, 2);
       }
     },
   );
@@ -358,7 +394,13 @@ void main() {
       expect(find.text('31.5 °C'), findsWidgets);
       expect(find.text('410 NTU'), findsWidgets);
       expect(find.text('1.8 L/min'), findsWidgets);
-      expect(find.text('725 raw'), findsWidgets);
+      expect(find.text('725 calibrated'), findsWidgets);
+      expect(find.text('1820 ADC'), findsWidgets);
+      expect(find.text('29.8 °C'), findsWidgets);
+      expect(find.text('68.2 % RH'), findsWidgets);
+      expect(find.text('2 AQI'), findsWidgets);
+      expect(find.text('120 ppb'), findsWidgets);
+      expect(find.text('510 ppm'), findsWidgets);
       expect(find.text('AQS-001'), findsWidgets);
       expect(find.text('ONLINE'), findsWidgets);
       expect(find.textContaining('Oct 4, 2026'), findsWidgets);
@@ -425,7 +467,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Awaiting Sensor Data'), findsWidgets);
     expect(find.text('No data'), findsWidgets);
-    expect(find.text('Not connected'), findsNWidgets(5));
+    expect(find.text('Not connected'), findsNWidgets(11));
+    expect(find.text('Not calibrated'), findsNWidgets(2));
     await tester.scrollUntilVisible(
       find.text('No telemetry history'),
       300,
@@ -460,7 +503,10 @@ void main() {
       HistoryRange.last30Days,
       HistoryRange.today,
     ]) {
-      await tester.tap(find.byKey(Key('range-${range.apiValue}')));
+      final rangeChip = find.byKey(Key('range-${range.apiValue}'));
+      await tester.ensureVisible(rangeChip);
+      await tester.pumpAndSettle();
+      await tester.tap(rangeChip);
       await tester.pumpAndSettle();
       expect(repository.historyCalls.last.$2, range);
     }

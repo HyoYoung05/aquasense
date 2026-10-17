@@ -15,6 +15,7 @@ if (($config['environment'] ?? '') !== 'development') {
 $pdo = db();
 $pdo->exec((string) file_get_contents(__DIR__ . '/migrations/009-system-admin-role.sql'));
 $pdo->exec((string) file_get_contents(__DIR__ . '/migrations/010-separate-odor-reading.sql'));
+$pdo->exec((string) file_get_contents(__DIR__ . '/migrations/011-phase4-sensor-fields.sql'));
 
 $roleId = (int) $pdo->query("SELECT id FROM roles WHERE slug='system_admin' LIMIT 1")->fetchColumn();
 $email = 'systemadmin@aquasense.test';
@@ -33,4 +34,4 @@ if ($userId > 0) {
 }
 
 audit('DEVELOPMENT_ADMIN_PROVISIONED', $userId, 'users', $userId);
-fwrite(STDOUT, "Development Admin and migrations 009-010 are ready.\n");
+fwrite(STDOUT, "Development Admin and migrations 009-012 are ready.\n");

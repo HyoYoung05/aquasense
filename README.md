@@ -4,21 +4,31 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 test firmware.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.1.0 adds a dedicated full-access Admin role and limits Barangay Administrator and Environmental Staff navigation to Dashboard and Operations.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.3.0 adds calibrated-only sensor and alert gates while preserving the full-access Admin role and limited Barangay Administrator/Environmental Staff navigation.
 
 ## Current Version
 
-The repository also includes the temporary [ESP32 ultrasonic test](esp32/README.md),
-firmware **0.1.1**, configured for HC-SR04 TRIG GPIO5 and ECHO GPIO18 through a voltage
-divider. Open `esp32/UltrasonicTest/UltrasonicTest.ino` in Arduino IDE. Copy
-`config.example.h` to an ignored `config.local.h` and supply your own network,
-API endpoint, and provisioned device credentials. Local Wi-Fi passwords, device keys,
-compiler databases, and firmware binaries are excluded from GitHub. The Flutter source is
-tracked under [`mobile/`](mobile/README.md) at version **0.8.3+17**. Generated APKs,
+The repository includes revised [ESP32 Hardware Phase 6](esp32/README.md)
+firmware **0.6.0** in `esp32/UltrasonicTest`. It preserves HC-SR04, Wi-Fi, and
+retry-safe PHP telemetry, then adds independently valid drivers for DS18B20,
+SEN0189, YF-S201, the ENS160+AHT2x combination module, and MQ-135. Raw ADC
+values use dedicated database fields and are never mislabeled as NTU or gas
+ppm. The sensor-absent COM6 run connected to Wi-Fi without rebooting and left
+the AQS-001 baseline unchanged. Phase 6 centralizes calibration state, keeps
+uncalibrated NTU/L/min/ppm unavailable, and gates turbidity/flow alerts until
+physical calibration and threshold approval. Physical measurements remain
+deferred until the hardware is available, so Hardware Phases 4–6 are PARTIAL.
+COM3 must not be used. There is no microSD, OLED,
+buzzer, or DHT22. The Flutter source is tracked under
+[`mobile/`](mobile/README.md) at version **0.8.4+18**. Generated APKs,
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 The current Android development build is verified with Flutter **3.41.6**.
 
-**Version: 1.1.0**
+Hardware Phase 6 keeps the revised paper's local acceptance path: ESP32 to a
+local Wi-Fi router, then Apache/PHP, MariaDB, website, and Flutter APIs. The
+same configurable endpoint supports the separate production HTTPS target.
+
+**Version: 1.3.0**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -209,7 +219,7 @@ Open [credentials.txt](credentials.txt) locally in your editor for the developme
 
 `sample-data.sql` contains only PHP `password_hash()` output, not plaintext passwords in user records. Login uses `password_verify()` and rehashes passwords when the configured PHP default changes. The optional mobile development helper creates `owner@aquasense.test` with password `AquaSense!2026` and links fictional Demo Kusina. Owners cannot access the administrative website.
 
-For an existing development database, apply migrations 009-010 and provision or
+For an existing development database, apply migrations 009-012 and provision or
 repair the demo Admin account with:
 
 ```powershell
@@ -402,7 +412,7 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 
 - The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
 - PDF detail is limited to 500 rows and CSV detail to 10,000 rows; narrower filters are required for complete exports beyond those limits.
-- The Flutter Owner app is version `0.8.3+17`. Dashboard Quick Actions appear
+- The Flutter Owner app is version `0.8.4+18`. Dashboard Quick Actions appear
   at the top of the owner dashboard, and swiping down refreshes its data.
   Android back gestures return through previously visited tabs before exiting
   from Home.
@@ -412,7 +422,13 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 
 ## Sensor Integration
 
-The original sample-data import creates a fictional device assignment without telemetry. Phase 3 provides one production-capable device route, two session-protected administrative monitoring routes, and the existing four owner routes. Ultrasonic distance is stored as the raw source; fill percentage and status are derived by PHP from per-trap calibration and thresholds. Optional future sensors remain nullable. Monitoring, history, and alert persistence are operational; external notification delivery remains outside Phase 4.
+The sample-data import creates a fictional device assignment without telemetry.
+The device API accepts HC-SR04 distance plus independently valid Phase 4 fields
+for DS18B20, SEN0189, YF-S201, ENS160+AHT2x, and MQ-135. Ultrasonic distance is
+the authoritative source for PHP-derived fill and status. Raw ADC, calibrated
+engineering units, wastewater temperature, ambient temperature, and humidity
+remain distinct nullable values. Monitoring/history expose the same database
+record to the website and owner API.
 
 ## Security
 
@@ -562,15 +578,31 @@ Production ignores the local-preview switch and accepts only explicitly configur
 Mobile 0.1.5+6 requires an explicit `API_BASE_URL` for every target. A Flutter Web debug build now identifies likely API URL or CORS/OPTIONS failures without showing server internals; release builds keep a generic connection message.
 
 Verification: `php tests/mobile-cors.php` passed 36 policy and integration checks; the mobile API suite passed 30 checks. Manual preflight from `http://localhost:49840` returned HTTP 204 with the exact required headers, owner login/logout succeeded through the same browser origin, and Flutter Web compiled and launched in headless Chrome on port 49840 with the configured LAN API root. See `api/README.md` for the endpoint contract.
-## Phase 3 ESP32 telemetry (0.5.0)
+## ESP32 Hardware Phase 6 calibration and thresholds (0.6.0)
 
-The separate `../aquasense-esp32/` project still contains the Arduino IDE HC-SR04 sketch and private configuration. Firmware sends distance to PHP; it never receives database credentials and never connects directly to MySQL. The complete contract is in [docs/ESP32_API.md](docs/ESP32_API.md).
+The tracked `esp32/UltrasonicTest` Arduino IDE sketch is mirrored to the
+ignored private build directory without copying its secrets into Git. Firmware
+sends valid sensor snapshots to PHP; it never receives database credentials or
+connects directly to MySQL. The contract is in
+[the ESP32 API guide](docs/ESP32_API.md).
 
 `POST api/device/telemetry.php` is available in development and production. Production HTTPS enforcement applies. Send `Content-Type: application/json`, `X-Device-Key`, device code, assigned trap ID, and ultrasonic distance. Existing Bearer-header firmware remains compatible. PHP validates the credential, active assignment, configurable range, optional fields, timestamp window, and rate limit. It calculates fill and state from grease-trap calibration, records UTC device/server timestamps, and updates `devices.last_seen_at` transactionally.
 
-Migration 004 copies existing ultrasonic test calibration to the assigned grease trap and adds diagnostic percentage, UUID/sequence idempotency, payload fingerprint, received time, and indexes. Migration 010 adds a separate nullable odor reading while preserving existing gas data. Temperature, turbidity, flow, gas, and odor remain nullable until hardware exists. History requests are bounded to 100 rows per page and at most 31 custom days; no automatic retention deletion is enabled.
+Migration 011 adds nullable turbidity raw ADC, flow pulses, MQ-135 raw ADC,
+AHT2x ambient temperature/humidity, and ENS160 AQI/TVOC/eCO2 fields. Raw ADC is
+never stored as calibrated NTU or gas ppm. Migration 012 keeps turbidity and
+flow alerts disabled until calibration and threshold approval. History requests remain bounded to
+100 rows per page and at most 31 custom days.
 
-On this computer, AQS-001 remains assigned to test trap 12 under fictional Demo Kusina with 30 cm empty / 5 cm full calibration. The Phase 3 manual test sent 12.4 cm through the real endpoint with the development simulator marker. The backend stored 70.4% MEDIUM and exposed it across authenticated monitoring surfaces. This confirms the data path without presenting the value as a physical sensor measurement.
+On this computer, AQS-001 remains assigned to test trap 12. Sensor-absent Phase
+6 verification preserved its baseline and sent no
+fake reading. The external-supply and full-array physical tests remain pending.
+
+Firmware 0.6.0 declares USB development mode until external DC is verified. It
+reports reset reason, minimum heap, Wi-Fi transitions, and telemetry outcomes,
+but does not pretend to measure rail voltage. The approved primary architecture
+and blocked test record are in [POWER.md](docs/POWER.md). Calibration status,
+procedures, and blank evidence tables are in [CALIBRATION.md](docs/CALIBRATION.md).
 
 The administrator simulator is available only in development and requires a device credential. Device keys can be generated or rotated from Device Details, appear once, and are never stored as plaintext. The simulator calls the HTTP endpoint and does not insert into MySQL directly.
 

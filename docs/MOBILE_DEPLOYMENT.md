@@ -1,6 +1,6 @@
-# AQUASENSE+ Owner App Deployment
+﻿# AQUASENSE+ Owner App Deployment
 
-Version: `0.8.3+17` (Android back navigation and top dashboard actions)
+Version: `0.8.4+18` (Phase 4 sensor telemetry and Android navigation)
 
 This guide contains no real password, signing secret, token, or private key.
 

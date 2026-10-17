@@ -1,6 +1,6 @@
-# AQUASENSE+ Owner App Security
+﻿# AQUASENSE+ Owner App Security
 
-Version: `0.8.3+17` (Android back navigation and top dashboard actions)
+Version: `0.8.4+18` (Phase 4 sensor telemetry and Android navigation)
 
 ## Authentication and token storage
 

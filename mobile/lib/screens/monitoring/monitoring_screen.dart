@@ -518,15 +518,96 @@ class _MonitoringScreenState extends State<MonitoringScreen>
     final width = MediaQuery.sizeOf(context).width;
     final columns = width >= 720 ? 4 : (width < 420 ? 1 : 2);
     final sensors = [
-      ('Temperature', reading?.temperature, '°C', Icons.thermostat_outlined),
-      ('Turbidity', reading?.turbidity, 'NTU', Icons.opacity_outlined),
-      ('Flow Rate', reading?.flowRate, 'L/min', Icons.air_outlined),
-      ('Gas Sensor Reading', reading?.gasValue, 'raw', Icons.co2_outlined),
+      (
+        'Wastewater Temperature',
+        reading?.temperature,
+        '°C',
+        Icons.thermostat_outlined,
+        'Not connected',
+      ),
+      (
+        'Turbidity',
+        reading?.turbidity,
+        'NTU',
+        Icons.opacity_outlined,
+        'Not calibrated',
+      ),
+      (
+        'Turbidity Raw',
+        reading?.turbidityRawAdc,
+        'ADC',
+        Icons.opacity_outlined,
+        'Not connected',
+      ),
+      (
+        'Flow Rate',
+        reading?.flowRate,
+        'L/min',
+        Icons.air_outlined,
+        'Not connected',
+      ),
+      (
+        'Flow Pulses',
+        reading?.flowPulseCount,
+        'pulses',
+        Icons.speed_outlined,
+        'Not connected',
+      ),
+      (
+        'Ambient Temperature',
+        reading?.ambientTemperature,
+        '°C',
+        Icons.device_thermostat_outlined,
+        'Not connected',
+      ),
+      (
+        'Humidity',
+        reading?.humidity,
+        '% RH',
+        Icons.water_drop_outlined,
+        'Not connected',
+      ),
+      (
+        'ENS160 AQI',
+        reading?.ens160Aqi,
+        'AQI',
+        Icons.air_outlined,
+        'Not connected',
+      ),
+      (
+        'ENS160 TVOC',
+        reading?.tvocPpb,
+        'ppb',
+        Icons.air_outlined,
+        'Not connected',
+      ),
+      (
+        'ENS160 eCO2',
+        reading?.eco2Ppm,
+        'ppm',
+        Icons.co2_outlined,
+        'Not connected',
+      ),
+      (
+        'MQ-135 Calibrated Gas',
+        reading?.gasValue,
+        'calibrated',
+        Icons.co2_outlined,
+        'Not calibrated',
+      ),
+      (
+        'MQ-135 Raw',
+        reading?.gasRawAdc,
+        'ADC',
+        Icons.co2_outlined,
+        'Not connected',
+      ),
       (
         'Odor Sensor Reading',
         reading?.odorValue,
         'raw',
         Icons.sensors_outlined,
+        'Not connected',
       ),
     ];
     return Column(
@@ -564,7 +645,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                     const SizedBox(height: 3),
                     Text(
                       sensor.$2 == null
-                          ? 'Not connected'
+                          ? sensor.$5
                           : '${cleanNumber(sensor.$2!)} ${sensor.$3}',
                       style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
@@ -826,9 +907,22 @@ class _HistoryTile extends StatelessWidget {
         '${cleanNumber(point.ultrasonicDistance!)} cm',
       if (point.temperature != null) '${cleanNumber(point.temperature!)} °C',
       if (point.turbidity != null) '${cleanNumber(point.turbidity!)} NTU',
+      if (point.turbidityRawAdc != null)
+        'Turbidity ${cleanNumber(point.turbidityRawAdc!)} ADC',
       if (point.flowRate != null) '${cleanNumber(point.flowRate!)} L/min',
-      if (point.gasValue != null) 'Gas ${cleanNumber(point.gasValue!)} raw',
+      if (point.flowPulseCount != null)
+        '${cleanNumber(point.flowPulseCount!)} pulses',
+      if (point.gasValue != null)
+        'Gas ${cleanNumber(point.gasValue!)} calibrated',
       if (point.odorValue != null) 'Odor ${cleanNumber(point.odorValue!)} raw',
+      if (point.gasRawAdc != null)
+        'MQ-135 ${cleanNumber(point.gasRawAdc!)} ADC',
+      if (point.ambientTemperature != null)
+        'Ambient ${cleanNumber(point.ambientTemperature!)} °C',
+      if (point.humidity != null) '${cleanNumber(point.humidity!)}% RH',
+      if (point.ens160Aqi != null) 'AQI ${cleanNumber(point.ens160Aqi!)}',
+      if (point.tvocPpb != null) 'TVOC ${cleanNumber(point.tvocPpb!)} ppb',
+      if (point.eco2Ppm != null) 'eCO2 ${cleanNumber(point.eco2Ppm!)} ppm',
     ];
     return ListTile(
       contentPadding: EdgeInsets.zero,

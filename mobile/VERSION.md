@@ -2,7 +2,26 @@
 
 ## Current Version
 
-0.8.3+17
+0.8.4+18
+
+## 0.8.4+18 - 2026-10-16
+
+Development Phase: ESP32 Hardware Phase 4 telemetry display
+
+### Changed
+
+- Added owner monitoring and history mappings for turbidity raw ADC, flow
+  pulses, MQ-135 raw ADC, AHT2x ambient temperature/humidity, and ENS160
+  AQI/TVOC/eCO2.
+- Kept DS18B20 wastewater temperature separate from AHT2x ambient temperature.
+- Labeled raw ADC values explicitly and shows uncalibrated fields as such.
+- Increased the application version from `0.8.3+17` to `0.8.4+18`.
+
+### Verification
+
+- Flutter analysis passed.
+- The owner API suite passed 53 checks, including current and historical Phase
+  4 fields.
 
 ## 0.8.3+17 - 2026-10-12
 

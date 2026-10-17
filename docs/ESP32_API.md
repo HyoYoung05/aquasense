@@ -1,6 +1,6 @@
 # AQUASENSE+ ESP32 Telemetry API
 
-Phase 3 accepts structured ESP32 telemetry through PHP. The ESP32 never connects to MySQL.
+Firmware 0.6.0 sends structured sensor telemetry through PHP. The ESP32 never connects to MySQL.
 
 ## Endpoint
 
@@ -11,6 +11,11 @@ Phase 3 accepts structured ESP32 telemetry through PHP. The ESP32 never connects
 
 Configure the complete URL once in the firmware's private configuration. Do not hardcode a developer LAN address throughout the sketch. Production must use HTTPS.
 
+Firmware 0.6.0 stores the URL, Wi-Fi credentials, AQS-001 device key, and
+optional trusted CA in ignored `esp32/UltrasonicTest/secrets.h`. The committed
+`secrets.example.h` contains placeholders. It rejects loopback endpoint URLs,
+never prints secrets, and never uses insecure TLS.
+
 ## Headers
 
 ```http
@@ -20,6 +25,8 @@ X-Device-Key: <64-character device credential>
 ```
 
 `Authorization: Bearer <device credential>` remains supported for existing test firmware. `X-Device-Key` is preferred. Generate or rotate a credential from the administrator Device Details page. AQUASENSE+ displays a new credential once and stores only its SHA-256 hash.
+
+Firmware 0.6.0 uses `X-Device-Key`.
 
 ## Request
 
@@ -32,10 +39,18 @@ Required fields:
 Optional fields:
 
 - `waste_level_percent`: device-calculated value from 0–100, stored only for diagnostics
-- `temperature`: degrees Celsius
-- `turbidity`: NTU
-- `flow_rate`: liters per minute
-- `gas_value`: gas sensor reading
+- `temperature`: DS18B20 wastewater temperature in degrees Celsius
+- `turbidity`: calibrated SEN0189 NTU; Phase 6 only
+- `turbidity_raw`: uncalibrated SEN0189 ADC integer from 0–4095
+- `flow_rate`: calibrated YF-S201 liters per minute; omitted until known-volume calibration
+- `flow_pulse_count`: YF-S201 pulse count for the current sampling interval
+- `ambient_temperature`: AHT2x ambient degrees Celsius
+- `humidity`: AHT2x relative humidity percent
+- `aqi`: ENS160 AQI from 1–5
+- `tvoc_ppb`: ENS160 TVOC
+- `eco2_ppm`: ENS160 equivalent CO2
+- `gas_value`: calibrated gas value; Phase 6 only
+- `gas_raw`: uncalibrated MQ-135 ADC integer from 0–4095
 - `odor_value`: separate odor sensor reading
 - `recorded_at`: ISO 8601 device timestamp; omit until device time is trustworthy
 - `reading_uuid`: standard UUID for retry-safe duplicate protection
@@ -108,6 +123,28 @@ Error responses contain `success: false` and a safe message. They never expose S
 - On timeout or HTTP 500, retry with exponential backoff.
 - On HTTP 429, wait at least the `Retry-After` duration.
 - Do not reboot continuously because the server is unavailable.
-- Treat HTTP 401/403/404/409/422 as configuration or payload problems that need correction.
+- Treat HTTP 400/401/403/404/409/413/415/422 as configuration or payload problems that need correction.
 
-Telemetry retention must be finalized before high-frequency large-scale deployment. Phase 3 adds indexes and bounded website history queries but does not delete readings automatically.
+Raw SEN0189 ADC is never stored as NTU, raw MQ-135 ADC is never stored as gas
+ppm/value, and AHT2x ambient temperature never overwrites DS18B20 wastewater
+temperature. Invalid optional subsystems are omitted instead of sent as zero.
+
+Telemetry retention must be finalized before high-frequency large-scale deployment. Bounded website history queries do not delete readings automatically.
+
+## Firmware 0.6.0 reliability, power, and calibration diagnostics
+
+The ESP32 samples the HC-SR04 independently of the 15-second telemetry schedule.
+It creates a request only from a valid filtered physical distance. No Echo,
+out-of-range data, insufficient samples, or invalid calibration skips the
+request without substituting zero, full, or safe values.
+
+Wi-Fi attempts time out after 15 seconds and retry after five seconds. HTTP
+connect/read operations time out after five seconds. A failed pending request
+retains its UUID and distance and retries after 5, 10, then 30 seconds; HTTP 429
+honors `Retry-After`. Authentication, assignment, calibration, and validation
+responses, including malformed-payload HTTP 400, are paced rather than causing
+a reboot or tight loop.
+
+Phase 6 also reports the declared power mode, reset reason, minimum free heap,
+Wi-Fi transition counts, and telemetry counts. Firmware has no rail-voltage
+monitor and never prints invented 5 V or 3.3 V measurements.
