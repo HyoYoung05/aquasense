@@ -1,7 +1,7 @@
-# AQUASENSE+ ESP32 Hardware Phase 6
+# AQUASENSE+ ESP32 Hardware Phase 7
 
-Firmware **0.6.0** preserves the Phase 1–5 sensor, telemetry, and power
-implementation and adds explicit calibration and threshold gates. Physical
+Firmware **0.7.0** preserves the Phase 1–6 sensor, telemetry, power, and
+calibration implementation and adds bounded outage recovery. Physical
 verification remains on hold until sensors are available.
 
 ```text
@@ -132,3 +132,34 @@ by absent hardware. Hardware Phases 4 and 5 are therefore **PARTIAL**. See the
   [Phase 6 report](PHASE6-TEST-REPORT.md).
 
 Physical calibration is still required; Phase 6 status is **PARTIAL**.
+
+## Phase 7 reliability implementation
+
+- Wi-Fi uses explicit disconnected/connecting/retry-wait/connected states,
+  15-second attempt limits, and 5/10/30-second backoff.
+- A fixed eight-record RAM FIFO captures a new valid snapshot every 15 seconds
+  while older records wait for the API. It drains oldest first every 2.5
+  seconds after recovery and drops the oldest record if full.
+- Each record keeps one UUID across retries. PHP's existing UUID/payload-hash
+  check returns the existing row when a response is lost and retried.
+- Network failure, read timeout, 4xx, 5xx, 429, and success are counted and
+  handled separately. A permanent 4xx is discarded after one attempt; 429,
+  network failures, timeouts, and 5xx retain the record.
+- ENS160/AHT2x errors are independent and trigger paced I2C recovery. Analog
+  rail faults invalidate SEN0189/MQ-135 rather than generating zero units.
+- Startup/runtime diagnostics report queue memory/depth/high-water/drops,
+  network transitions, API outcomes, sensor errors, ultrasonic timeouts, I2C
+  errors, I2C recoveries, uptime, and minimum heap.
+
+The queue is volatile. Eight 15-second records are about two minutes of
+temporary buffering before drop-oldest overflow, and reset/power loss clears
+everything unsent. There is still no persistent offline storage, microSD,
+OLED, buzzer, or approved backup-battery circuit.
+
+Software/build/runtime and regression evidence is in the
+[Phase 7 report](PHASE7-TEST-REPORT.md); design details are in
+[RELIABILITY.md](../docs/RELIABILITY.md). With sensors and final power absent,
+physical router/server outage, sensor disconnect, latency/load, power-cycle,
+and long-duration tests remain pending. Hardware Phase 7 is **PARTIAL**. Phase
+8 is final physical assembly, enclosure, installation, and end-to-end field
+testing after those blockers clear.

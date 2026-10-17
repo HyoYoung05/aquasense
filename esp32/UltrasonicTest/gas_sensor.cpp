@@ -42,6 +42,15 @@ void gasSensorUpdate(const uint32_t nowMs, SensorData& data) {
   if (nowMs - lastReadMs < AquaSenseConfig::MQ135_INTERVAL_MS) return;
   lastReadMs = nowMs;
   data.mq135RawAdc = averagedAdc(data.mq135LatestAdc);
+  if (data.mq135RawAdc <= AquaSenseConfig::ANALOG_RAIL_FAULT_MARGIN ||
+      data.mq135RawAdc >= AquaSenseConfig::ADC_MAX_COUNT -
+                               AquaSenseConfig::ANALOG_RAIL_FAULT_MARGIN) {
+    data.mq135RawValid = false;
+    data.mq135AdcVoltage = NAN;
+    data.mq135SourceVoltage = NAN;
+    data.mq135State = SensorState::kError;
+    return;
+  }
   data.mq135AdcVoltage = static_cast<float>(data.mq135RawAdc) *
                          AquaSenseConfig::ADC_REFERENCE_V /
                          static_cast<float>(AquaSenseConfig::ADC_MAX_COUNT);

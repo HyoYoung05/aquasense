@@ -5,6 +5,8 @@
 
 struct PendingTelemetry {
   bool active = false;
+  uint32_t queueSequence = 0;
+  uint32_t capturedUptimeMs = 0;
   char readingUuid[37]{};
   float ultrasonicDistanceCm = NAN;
   bool hasWastewaterTemperature = false;
@@ -31,17 +33,23 @@ struct PendingTelemetry {
 enum class TelemetryOutcome : uint8_t {
   kAccepted,
   kOffline,
-  kRetryableFailure,
-  kConfigurationFailure,
+  kNetworkFailure,
+  kTimeout,
+  kHttp4xx,
+  kHttp5xx,
+  kOtherHttpFailure,
+  kLocalConfigurationFailure,
   kRateLimited,
 };
 
 struct TelemetryResult {
-  TelemetryOutcome outcome = TelemetryOutcome::kRetryableFailure;
+  TelemetryOutcome outcome = TelemetryOutcome::kNetworkFailure;
   int httpStatus = 0;
   uint32_t retryAfterMs = 0;
 };
 
 void createPendingTelemetry(float distanceCm, const SensorData& sensors,
+                            uint32_t queueSequence, uint32_t capturedUptimeMs,
                             PendingTelemetry& pending);
 TelemetryResult sendPendingTelemetry(const PendingTelemetry& pending);
+const char* telemetryOutcomeName(TelemetryOutcome outcome);

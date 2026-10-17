@@ -33,6 +33,7 @@ bool tryBeginEns160(SensorData& data) {
       !i2cAddressStable(AquaSenseConfig::ENS160_I2C_ADDRESS,
                         AquaSenseConfig::I2C_STABLE_SCAN_COUNT)) return false;
   if (ens160.begin() != NO_ERR) {
+    i2cRecordError();
     data.ens160State = SensorState::kError;
     return false;
   }
@@ -61,6 +62,7 @@ bool tryBeginAht2x(SensorData& data) {
       !i2cAddressStable(AquaSenseConfig::AHT2X_I2C_ADDRESS,
                         AquaSenseConfig::I2C_STABLE_SCAN_COUNT)) return false;
   if (!aht2x.begin(&Wire, 0, AquaSenseConfig::AHT2X_I2C_ADDRESS)) {
+    i2cRecordError();
     data.aht2xState = SensorState::kError;
     return false;
   }
@@ -93,6 +95,7 @@ void environmentSensorsUpdate(const uint32_t nowMs, SensorData& data) {
   if (AquaSenseConfig::ENABLE_AHT2X && !aht2xInitialized &&
       nowMs - lastAhtInitMs >= AquaSenseConfig::I2C_RETRY_MS) {
     lastAhtInitMs = nowMs;
+    i2cRecover(nowMs);
     aht2xInitialized = tryBeginAht2x(data);
   }
 #if AQUASENSE_ENABLE_AHT2X_LIBRARY
@@ -111,10 +114,13 @@ void environmentSensorsUpdate(const uint32_t nowMs, SensorData& data) {
       data.aht2xValid = true;
       data.aht2xState = SensorState::kValid;
     } else {
+      i2cRecordError();
       data.aht2xValid = false;
       data.ambientTemperatureC = NAN;
       data.humidityPercent = NAN;
       data.aht2xState = SensorState::kError;
+      aht2xInitialized = false;
+      lastAhtInitMs = nowMs;
     }
   }
 #endif
@@ -122,6 +128,7 @@ void environmentSensorsUpdate(const uint32_t nowMs, SensorData& data) {
   if (AquaSenseConfig::ENABLE_ENS160 && !ens160Initialized &&
       nowMs - lastEnsInitMs >= AquaSenseConfig::I2C_RETRY_MS) {
     lastEnsInitMs = nowMs;
+    i2cRecover(nowMs);
     ens160Initialized = tryBeginEns160(data);
   }
 #if AQUASENSE_ENABLE_ENS160_LIBRARY
@@ -142,16 +149,22 @@ void environmentSensorsUpdate(const uint32_t nowMs, SensorData& data) {
     return;
   }
   if (status != ens160.eNormalOperation) {
+    i2cRecordError();
     data.ens160Valid = false;
     data.ens160State = SensorState::kError;
+    ens160Initialized = false;
+    lastEnsInitMs = nowMs;
     return;
   }
   const uint8_t aqi = ens160.getAQI();
   const uint16_t tvoc = ens160.getTVOC();
   const uint16_t eco2 = ens160.getECO2();
   if (aqi < 1U || aqi > 5U || eco2 < 400U) {
+    i2cRecordError();
     data.ens160Valid = false;
     data.ens160State = SensorState::kError;
+    ens160Initialized = false;
+    lastEnsInitMs = nowMs;
     return;
   }
   data.ens160Aqi = aqi;

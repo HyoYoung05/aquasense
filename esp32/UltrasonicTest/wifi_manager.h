@@ -10,3 +10,5 @@ void networkForceDisconnectForTest();
 uint32_t networkConnectionCount();
 uint32_t networkReconnectCount();
 uint32_t networkDisconnectCount();
+uint32_t networkAttemptCount();
+const char* networkStateName();

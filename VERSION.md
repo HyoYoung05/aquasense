@@ -2,6 +2,25 @@
 
 1.3.0
 
+## Website/backend 1.3.0 and ESP32 Hardware Phase 7 firmware 0.7.0
+
+Date: 2026-10-17
+
+- Added an eight-record fixed RAM FIFO with FIFO recovery, drop-oldest overflow,
+  high-water/drop diagnostics, and retry-stable backend UUID idempotency.
+- Added explicit network, timeout, HTTP 4xx, HTTP 5xx, 429, and local
+  configuration outcomes; permanent 4xx records cannot enter a tight retry.
+- Added state-based Wi-Fi 5/10/30-second backoff, I2C error/recovery counters,
+  controlled ENS160/AHT2x reinitialization, sensor error counters, and analog
+  rail-fault rejection.
+- Preserved Phase 6 calibration and backend-authoritative alerts, website
+  `last_seen_at` status, and Flutter API stale-data semantics.
+- Documented that the queue is volatile, roughly two minutes at the current
+  interval, and cannot survive reset or power loss. No microSD, OLED, buzzer,
+  or backup-battery design was added.
+- Phase 7 remains PARTIAL pending real sensors, router/server outages, latency,
+  concurrent load, final-power restart, and several-hour testing.
+
 ## Website/backend 1.3.0 and ESP32 Hardware Phase 6 firmware 0.6.0
 
 Date: 2026-10-17

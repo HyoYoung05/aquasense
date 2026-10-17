@@ -8,8 +8,8 @@ The administrative website and PHP backend have completed **Phase 8 Final System
 
 ## Current Version
 
-The repository includes revised [ESP32 Hardware Phase 6](esp32/README.md)
-firmware **0.6.0** in `esp32/UltrasonicTest`. It preserves HC-SR04, Wi-Fi, and
+The repository includes revised [ESP32 Hardware Phase 7](esp32/README.md)
+firmware **0.7.0** in `esp32/UltrasonicTest`. It preserves HC-SR04, Wi-Fi, and
 retry-safe PHP telemetry, then adds independently valid drivers for DS18B20,
 SEN0189, YF-S201, the ENS160+AHT2x combination module, and MQ-135. Raw ADC
 values use dedicated database fields and are never mislabeled as NTU or gas
@@ -17,14 +17,20 @@ ppm. The sensor-absent COM6 run connected to Wi-Fi without rebooting and left
 the AQS-001 baseline unchanged. Phase 6 centralizes calibration state, keeps
 uncalibrated NTU/L/min/ppm unavailable, and gates turbidity/flow alerts until
 physical calibration and threshold approval. Physical measurements remain
-deferred until the hardware is available, so Hardware Phases 4–6 are PARTIAL.
+deferred until the hardware is available, so Hardware Phases 4–7 are PARTIAL.
+Phase 7 adds nonblocking Wi-Fi backoff, an eight-record bounded RAM FIFO,
+explicit HTTP failure classes, retry-stable UUIDs, I2C recovery, fault
+counters, and analog rail-fault rejection. The queue covers only brief powered
+outages; it is cleared by reset or power loss and drops the oldest record when
+full.
 COM3 must not be used. There is no microSD, OLED,
 buzzer, or DHT22. The Flutter source is tracked under
 [`mobile/`](mobile/README.md) at version **0.8.4+18**. Generated APKs,
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 The current Android development build is verified with Flutter **3.41.6**.
 
-Hardware Phase 6 keeps the revised paper's local acceptance path: ESP32 to a
+Hardware Phase 7 keeps the revised paper's local acceptance path: sensors to
+ESP32, then a
 local Wi-Fi router, then Apache/PHP, MariaDB, website, and Flutter APIs. The
 same configurable endpoint supports the separate production HTTPS target.
 
@@ -578,7 +584,7 @@ Production ignores the local-preview switch and accepts only explicitly configur
 Mobile 0.1.5+6 requires an explicit `API_BASE_URL` for every target. A Flutter Web debug build now identifies likely API URL or CORS/OPTIONS failures without showing server internals; release builds keep a generic connection message.
 
 Verification: `php tests/mobile-cors.php` passed 36 policy and integration checks; the mobile API suite passed 30 checks. Manual preflight from `http://localhost:49840` returned HTTP 204 with the exact required headers, owner login/logout succeeded through the same browser origin, and Flutter Web compiled and launched in headless Chrome on port 49840 with the configured LAN API root. See `api/README.md` for the endpoint contract.
-## ESP32 Hardware Phase 6 calibration and thresholds (0.6.0)
+## ESP32 Hardware Phase 7 reliability and fault recovery (0.7.0)
 
 The tracked `esp32/UltrasonicTest` Arduino IDE sketch is mirrored to the
 ignored private build directory without copying its secrets into Git. Firmware
@@ -598,11 +604,30 @@ On this computer, AQS-001 remains assigned to test trap 12. Sensor-absent Phase
 6 verification preserved its baseline and sent no
 fake reading. The external-supply and full-array physical tests remain pending.
 
-Firmware 0.6.0 declares USB development mode until external DC is verified. It
+Firmware 0.7.0 declares USB development mode until external DC is verified. It
 reports reset reason, minimum heap, Wi-Fi transitions, and telemetry outcomes,
 but does not pretend to measure rail voltage. The approved primary architecture
 and blocked test record are in [POWER.md](docs/POWER.md). Calibration status,
 procedures, and blank evidence tables are in [CALIBRATION.md](docs/CALIBRATION.md).
+
+Wi-Fi connection attempts are state-based, time-limited, and backed off at
+5/10/30 seconds while sensor tasks continue. Valid snapshots enter a fixed
+eight-record RAM queue. The oldest queued UUID is retried first; 429 and
+temporary network/5xx failures retain it, while a permanent 4xx rejection is
+discarded after one attempt and paced before another upload. PHP's existing
+`reading_uuid` and payload-hash logic prevents duplicate database inserts after
+a lost response.
+
+The queue is not persistent storage. At the 15-second capture interval it holds
+about two minutes before its drop-oldest policy begins, and any reset or power
+loss clears it. No microSD, OLED, buzzer, or unspecified battery circuit was
+introduced. Individual sensor validity remains isolated, I2C recovery is
+paced, and invalid readings never become fake zero telemetry or alerts. See
+[RELIABILITY.md](docs/RELIABILITY.md) and the
+[Phase 7 report](esp32/PHASE7-TEST-REPORT.md). Physical outage, latency,
+stress, power-cycle, and multi-hour tests remain pending, so Phase 7 is
+**PARTIAL**. Phase 8 is final physical assembly, enclosure, installation, and
+end-to-end field testing after those blockers clear.
 
 The administrator simulator is available only in development and requires a device credential. Device keys can be generated or rotated from Device Details, appear once, and are never stored as plaintext. The simulator calls the HTTP endpoint and does not insert into MySQL directly.
 

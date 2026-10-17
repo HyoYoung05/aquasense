@@ -4,7 +4,7 @@
 
 namespace AquaSenseConfig {
 
-inline constexpr char FIRMWARE_VERSION[] = "0.6.0";
+inline constexpr char FIRMWARE_VERSION[] = "0.7.0";
 inline constexpr char POWER_MODE[] =
     "USB DEVELOPMENT - EXTERNAL DC NOT VERIFIED";
 inline constexpr bool EXTERNAL_DC_POWER_VERIFIED = false;
@@ -15,12 +15,16 @@ inline constexpr uint32_t STATUS_INTERVAL_MS = 5000;
 inline constexpr uint32_t SENSOR_INTERVAL_MS = 1000;
 inline constexpr uint32_t TELEMETRY_INTERVAL_MS = 15000;
 inline constexpr uint32_t INITIAL_TELEMETRY_DELAY_MS = 5000;
+inline constexpr uint32_t QUEUE_DRAIN_INTERVAL_MS = 2500;
+inline constexpr size_t TELEMETRY_QUEUE_CAPACITY = 8;
 
 inline constexpr char DEVICE_CODE[] = "AQS-001";
 inline constexpr uint32_t GREASE_TRAP_ID = 12;
 
 inline constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 15000;
-inline constexpr uint32_t WIFI_RETRY_INTERVAL_MS = 5000;
+inline constexpr uint32_t WIFI_RETRY_BACKOFF_MS[] = {5000, 10000, 30000};
+inline constexpr size_t WIFI_RETRY_BACKOFF_COUNT =
+    sizeof(WIFI_RETRY_BACKOFF_MS) / sizeof(WIFI_RETRY_BACKOFF_MS[0]);
 inline constexpr uint32_t HTTP_TIMEOUT_MS = 5000;
 inline constexpr uint32_t CONFIGURATION_RETRY_MS = 30000;
 inline constexpr uint32_t RETRY_BACKOFF_MS[] = {5000, 10000, 30000};
@@ -67,6 +71,9 @@ inline constexpr uint32_t MQ135_INTERVAL_MS = 5000;
 inline constexpr uint32_t MQ135_WARMUP_MS = 180000;
 
 inline constexpr uint16_t ADC_MAX_COUNT = 4095;
+// Counts at either ADC rail usually indicate a short, open/divider fault, or
+// unusable input. The margin is an electrical-validity gate, not calibration.
+inline constexpr uint16_t ANALOG_RAIL_FAULT_MARGIN = 4;
 inline constexpr float ADC_REFERENCE_V = 3.3F;
 // Revised schematic: 10k series and 20k to ground => source = ADC * 1.5.
 inline constexpr float ANALOG_SOURCE_MULTIPLIER = 1.5F;

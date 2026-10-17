@@ -45,13 +45,17 @@ TelemetryResult classifyResponse(const int status, HTTPClient& http) {
     }
     return {TelemetryOutcome::kRateLimited, status, delayMs};
   }
-  if (status == 400 || status == 401 || status == 403 || status == 404 ||
-      status == 409 ||
-      status == 413 || status == 415 || status == 422 || status == 426) {
-    return {TelemetryOutcome::kConfigurationFailure, status,
+  if (status == 408) {
+    return {TelemetryOutcome::kTimeout, status, 0};
+  }
+  if (status >= 400 && status <= 499) {
+    return {TelemetryOutcome::kHttp4xx, status,
             AquaSenseConfig::CONFIGURATION_RETRY_MS};
   }
-  return {TelemetryOutcome::kRetryableFailure, status, 0};
+  if (status >= 500 && status <= 599) {
+    return {TelemetryOutcome::kHttp5xx, status, 0};
+  }
+  return {TelemetryOutcome::kOtherHttpFailure, status, 0};
 }
 
 TelemetryResult performRequest(HTTPClient& http, char* json) {
@@ -68,7 +72,10 @@ TelemetryResult performRequest(HTTPClient& http, char* json) {
   if (status <= 0) {
     Serial.print(F("[API] Network/timeout error: "));
     Serial.println(HTTPClient::errorToString(status));
-    return {TelemetryOutcome::kRetryableFailure, status, 0};
+    const bool timeout = status == HTTPC_ERROR_READ_TIMEOUT;
+    return {timeout ? TelemetryOutcome::kTimeout
+                    : TelemetryOutcome::kNetworkFailure,
+            status, 0};
   }
   String response = http.getString();
   if (response.length() > AquaSenseConfig::MAX_RESPONSE_LOG_CHARS) {
@@ -81,8 +88,12 @@ TelemetryResult performRequest(HTTPClient& http, char* json) {
 }  // namespace
 
 void createPendingTelemetry(const float distanceCm, const SensorData& sensors,
+                            const uint32_t queueSequence,
+                            const uint32_t capturedUptimeMs,
                             PendingTelemetry& pending) {
   pending.active = true;
+  pending.queueSequence = queueSequence;
+  pending.capturedUptimeMs = capturedUptimeMs;
   pending.ultrasonicDistanceCm = distanceCm;
   pending.hasWastewaterTemperature = sensors.wastewaterTemperatureValid &&
                                      isfinite(sensors.wastewaterTemperatureC);
@@ -112,7 +123,7 @@ void createPendingTelemetry(const float distanceCm, const SensorData& sensors,
 
 TelemetryResult sendPendingTelemetry(const PendingTelemetry& pending) {
   if (!pending.active || !isfinite(pending.ultrasonicDistanceCm)) {
-    return {TelemetryOutcome::kConfigurationFailure, 0,
+    return {TelemetryOutcome::kLocalConfigurationFailure, 0,
             AquaSenseConfig::CONFIGURATION_RETRY_MS};
   }
   if (!networkConnected()) {
@@ -186,11 +197,12 @@ TelemetryResult sendPendingTelemetry(const PendingTelemetry& pending) {
   }
   if (jsonLength < 0 || jsonLength >= static_cast<int>(sizeof(json))) {
     Serial.println(F("[API] JSON buffer error"));
-    return {TelemetryOutcome::kConfigurationFailure, 0,
+    return {TelemetryOutcome::kLocalConfigurationFailure, 0,
             AquaSenseConfig::CONFIGURATION_RETRY_MS};
   }
-  Serial.printf("[API] POST %s | distance=%.2f cm | uuid=%s\n",
+  Serial.printf("[API] POST %s | queue sequence=%lu | distance=%.2f cm | uuid=%s\n",
                 AquaSenseConfig::DEVICE_CODE,
+                static_cast<unsigned long>(pending.queueSequence),
                 pending.ultrasonicDistanceCm, pending.readingUuid);
 
   const String url(AquaSenseSecrets::API_URL);
@@ -198,7 +210,7 @@ TelemetryResult sendPendingTelemetry(const PendingTelemetry& pending) {
   if (url.startsWith("https://")) {
     if (strlen(AquaSenseSecrets::TLS_ROOT_CA) == 0 || !secureClockReady()) {
       Serial.println(F("[API] HTTPS trust/clock is not ready"));
-      return {TelemetryOutcome::kConfigurationFailure, 0,
+      return {TelemetryOutcome::kLocalConfigurationFailure, 0,
               AquaSenseConfig::CONFIGURATION_RETRY_MS};
     }
     WiFiClientSecure client;
@@ -206,7 +218,7 @@ TelemetryResult sendPendingTelemetry(const PendingTelemetry& pending) {
     client.setHandshakeTimeout(AquaSenseConfig::HTTP_TIMEOUT_MS / 1000U);
     HTTPClient http;
     if (!http.begin(client, AquaSenseSecrets::API_URL)) {
-      return {TelemetryOutcome::kRetryableFailure, 0, 0};
+      return {TelemetryOutcome::kNetworkFailure, 0, 0};
     }
     result = performRequest(http, json);
     http.end();
@@ -214,10 +226,26 @@ TelemetryResult sendPendingTelemetry(const PendingTelemetry& pending) {
     WiFiClient client;
     HTTPClient http;
     if (!http.begin(client, AquaSenseSecrets::API_URL)) {
-      return {TelemetryOutcome::kRetryableFailure, 0, 0};
+      return {TelemetryOutcome::kNetworkFailure, 0, 0};
     }
     result = performRequest(http, json);
     http.end();
   }
   return result;
+}
+
+const char* telemetryOutcomeName(const TelemetryOutcome outcome) {
+  switch (outcome) {
+    case TelemetryOutcome::kAccepted: return "SUCCESS";
+    case TelemetryOutcome::kOffline: return "NETWORK OFFLINE";
+    case TelemetryOutcome::kNetworkFailure: return "NETWORK FAILURE";
+    case TelemetryOutcome::kTimeout: return "TIMEOUT";
+    case TelemetryOutcome::kHttp4xx: return "HTTP 4XX";
+    case TelemetryOutcome::kHttp5xx: return "HTTP 5XX";
+    case TelemetryOutcome::kOtherHttpFailure: return "HTTP OTHER";
+    case TelemetryOutcome::kLocalConfigurationFailure:
+      return "LOCAL CONFIGURATION";
+    case TelemetryOutcome::kRateLimited: return "HTTP 429";
+  }
+  return "UNKNOWN";
 }

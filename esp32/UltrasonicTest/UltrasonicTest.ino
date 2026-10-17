@@ -12,6 +12,7 @@
 #include "private_config.h"
 #include "sensor_data.h"
 #include "telemetry.h"
+#include "telemetry_queue.h"
 #include "temperature_sensor.h"
 #include "turbidity_sensor.h"
 #include "ultrasonic.h"
@@ -22,15 +23,30 @@ namespace {
 uint32_t lastStatusMs = 0;
 uint32_t lastSensorStartMs = 0;
 uint32_t sensorSequence = 0;
-uint32_t nextTelemetryActionMs = 0;
+uint32_t telemetryQueueSequence = 0;
+uint32_t nextTelemetryCaptureMs = 0;
+uint32_t nextUploadAttemptMs = 0;
 uint8_t retryBackoffIndex = 0;
 bool networkConfigurationValid = false;
 UltrasonicReading latestReading{};
-PendingTelemetry pendingTelemetry{};
+TelemetryQueue telemetryQueue{};
 SensorData sensorData{};
 uint32_t telemetryAcceptedCount = 0;
 uint32_t telemetryFailureCount = 0;
+uint32_t telemetryPermanentDiscardCount = 0;
+uint32_t networkFailureCount = 0;
+uint32_t timeoutCount = 0;
+uint32_t http4xxCount = 0;
+uint32_t http5xxCount = 0;
+uint32_t sensorErrorCount = 0;
+uint32_t ultrasonicTimeoutCount = 0;
 uint32_t minimumFreeHeap = UINT32_MAX;
+SensorState previousDs18b20State = SensorState::kDisabled;
+SensorState previousTurbidityState = SensorState::kDisabled;
+SensorState previousFlowState = SensorState::kDisabled;
+SensorState previousEns160State = SensorState::kDisabled;
+SensorState previousAht2xState = SensorState::kDisabled;
+SensorState previousMq135State = SensorState::kDisabled;
 
 bool timeReached(const uint32_t nowMs, const uint32_t targetMs) {
   return static_cast<int32_t>(nowMs - targetMs) >= 0;
@@ -78,41 +94,101 @@ void handleSerialDiagnostics() {
   }
 }
 
-void handleTelemetry(const uint32_t nowMs) {
+void captureTelemetry(const uint32_t nowMs) {
   if (!networkConfigurationValid ||
-      !timeReached(nowMs, nextTelemetryActionMs)) return;
-
-  if (!pendingTelemetry.active) {
-    if (latestReading.status != UltrasonicStatus::kOk ||
-        !isfinite(latestReading.medianDistanceCm)) {
-      Serial.println(F("[API] Not sent: ultrasonic reading is invalid"));
-      Serial.println(F("[API] No fake zero, fill, or safe state was submitted"));
-      nextTelemetryActionMs = nowMs +
-                              AquaSenseConfig::TELEMETRY_INTERVAL_MS;
-      return;
-    }
-    createPendingTelemetry(latestReading.medianDistanceCm, sensorData,
-                           pendingTelemetry);
-    retryBackoffIndex = 0;
+      !timeReached(nowMs, nextTelemetryCaptureMs)) return;
+  nextTelemetryCaptureMs = nowMs + AquaSenseConfig::TELEMETRY_INTERVAL_MS;
+  if (latestReading.status != UltrasonicStatus::kOk ||
+      !isfinite(latestReading.medianDistanceCm)) {
+    Serial.println(F("[QUEUE] Not enqueued: ultrasonic reading is invalid"));
+    Serial.println(F("[QUEUE] No fake zero, fill, or safe state was stored"));
+    return;
   }
+  PendingTelemetry pending{};
+  createPendingTelemetry(latestReading.medianDistanceCm, sensorData,
+                         ++telemetryQueueSequence, nowMs, pending);
+  const bool droppedOldest = telemetryQueue.enqueue(pending);
+  if (droppedOldest) {
+    Serial.println(F("[QUEUE] Full: dropped oldest unsent record to preserve recent data"));
+  }
+  Serial.printf("[QUEUE] Enqueued sequence=%lu | depth=%u/%u | uuid=%s\n",
+                static_cast<unsigned long>(pending.queueSequence),
+                static_cast<unsigned int>(telemetryQueue.size()),
+                static_cast<unsigned int>(telemetryQueue.capacity()),
+                pending.readingUuid);
+  if (telemetryQueue.size() == 1U) nextUploadAttemptMs = nowMs;
+}
 
-  const TelemetryResult result = sendPendingTelemetry(pendingTelemetry);
+void handleTelemetryUpload(const uint32_t nowMs) {
+  if (!networkConfigurationValid || telemetryQueue.size() == 0U ||
+      !timeReached(nowMs, nextUploadAttemptMs)) return;
+  PendingTelemetry* pending = telemetryQueue.front();
+  if (pending == nullptr) return;
+  const TelemetryResult result = sendPendingTelemetry(*pending);
+  Serial.printf("[API] Outcome: %s | HTTP/result=%d\n",
+                telemetryOutcomeName(result.outcome), result.httpStatus);
   if (result.outcome == TelemetryOutcome::kAccepted) {
     ++telemetryAcceptedCount;
-    pendingTelemetry.active = false;
+    telemetryQueue.pop();
     retryBackoffIndex = 0;
-    nextTelemetryActionMs = millis() +
-                            AquaSenseConfig::TELEMETRY_INTERVAL_MS;
-    Serial.println(F("[API] Telemetry accepted; next fresh reading scheduled"));
+    nextUploadAttemptMs = millis() +
+                          AquaSenseConfig::QUEUE_DRAIN_INTERVAL_MS;
+    Serial.printf("[QUEUE] Accepted oldest record | remaining=%u\n",
+                  static_cast<unsigned int>(telemetryQueue.size()));
     return;
   }
 
   ++telemetryFailureCount;
-
+  switch (result.outcome) {
+    case TelemetryOutcome::kNetworkFailure: ++networkFailureCount; break;
+    case TelemetryOutcome::kTimeout: ++timeoutCount; break;
+    case TelemetryOutcome::kHttp4xx:
+      ++http4xxCount;
+      ++telemetryPermanentDiscardCount;
+      telemetryQueue.pop();
+      Serial.println(F("[QUEUE] Permanent 4xx: rejected record discarded; no tight retry"));
+      break;
+    case TelemetryOutcome::kHttp5xx: ++http5xxCount; break;
+    default: break;
+  }
   const uint32_t delayMs = nextRetryDelay(result);
-  nextTelemetryActionMs = millis() + delayMs;
-  Serial.printf("[API] Retry scheduled in %lu ms; ESP32 continues running\n",
+  nextUploadAttemptMs = millis() + delayMs;
+  Serial.printf("[API] Next upload attempt in %lu ms; sensing continues\n",
                 static_cast<unsigned long>(delayMs));
+}
+
+void updateSensorFailureCounters(const UltrasonicReading& reading) {
+  if (reading.status != UltrasonicStatus::kOk) {
+    ++sensorErrorCount;
+    if (reading.status == UltrasonicStatus::kNoEcho) ++ultrasonicTimeoutCount;
+  }
+}
+
+void trackSensorFaultTransition(const bool enabled, const SensorState current,
+                                SensorState& previous) {
+  if (enabled && current != previous &&
+      (current == SensorState::kError ||
+       current == SensorState::kUnavailable)) {
+    ++sensorErrorCount;
+  }
+  previous = current;
+}
+
+void updateOptionalSensorFailureCounters() {
+  trackSensorFaultTransition(AquaSenseConfig::ENABLE_DS18B20,
+                             sensorData.ds18b20State,
+                             previousDs18b20State);
+  trackSensorFaultTransition(AquaSenseConfig::ENABLE_TURBIDITY,
+                             sensorData.turbidityState,
+                             previousTurbidityState);
+  trackSensorFaultTransition(AquaSenseConfig::ENABLE_FLOW,
+                             sensorData.flowState, previousFlowState);
+  trackSensorFaultTransition(AquaSenseConfig::ENABLE_ENS160,
+                             sensorData.ens160State, previousEns160State);
+  trackSensorFaultTransition(AquaSenseConfig::ENABLE_AHT2X,
+                             sensorData.aht2xState, previousAht2xState);
+  trackSensorFaultTransition(AquaSenseConfig::ENABLE_MQ135,
+                             sensorData.mq135State, previousMq135State);
 }
 
 const char* resetReasonName(const esp_reset_reason_t reason) {
@@ -140,7 +216,7 @@ const char* resetReasonName(const esp_reset_reason_t reason) {
 void printHardwareSummary() {
   Serial.println();
   Serial.println(F("AQUASENSE+"));
-  Serial.println(F("ESP32 Hardware Phase 6"));
+  Serial.println(F("ESP32 Hardware Phase 7"));
   Serial.printf("Firmware version: %s\n", AquaSenseConfig::FIRMWARE_VERSION);
   Serial.printf("Chip model: %s\n", ESP.getChipModel());
   Serial.printf("Chip revision: %u\n", ESP.getChipRevision());
@@ -197,6 +273,14 @@ void printHardwareSummary() {
                 AquaSensePins::ENS160_SDA, AquaSensePins::ENS160_SCL,
                 AquaSensePins::ENS160_INT, AquaSensePins::MQ135_ANALOG);
   Serial.println(F("Unverified sensor circuits remain disabled; unavailable is valid."));
+  Serial.printf("RAM telemetry queue: %u records x %u bytes = %u bytes fixed\n",
+                static_cast<unsigned int>(telemetryQueue.capacity()),
+                static_cast<unsigned int>(sizeof(PendingTelemetry)),
+                static_cast<unsigned int>(telemetryQueue.capacity() *
+                                          sizeof(PendingTelemetry)));
+  Serial.println(F("Queue is volatile: reset/power loss clears unsent records."));
+  Serial.println(F("Queue overflow policy: DROP OLDEST; retry order: FIFO."));
+  Serial.println(F("Custom watchdog: NOT ADDED; bounded operations and recovery states used."));
 }
 
 void printRuntimeStatus(const uint32_t nowMs) {
@@ -210,12 +294,25 @@ void printRuntimeStatus(const uint32_t nowMs) {
                 static_cast<unsigned long>(networkConnectionCount()),
                 static_cast<unsigned long>(networkReconnectCount()),
                 static_cast<unsigned long>(networkDisconnectCount()));
-  Serial.printf("Telemetry diagnostics: accepted=%lu | failed/retried=%lu\n",
+  Serial.printf("Telemetry: success=%lu | failures=%lu | network=%lu | timeout=%lu | 4xx=%lu | 5xx=%lu\n",
                 static_cast<unsigned long>(telemetryAcceptedCount),
-                static_cast<unsigned long>(telemetryFailureCount));
+                static_cast<unsigned long>(telemetryFailureCount),
+                static_cast<unsigned long>(networkFailureCount),
+                static_cast<unsigned long>(timeoutCount),
+                static_cast<unsigned long>(http4xxCount),
+                static_cast<unsigned long>(http5xxCount));
+  Serial.printf("Queue: depth=%u/%u | high-water=%u | dropped-oldest=%lu | permanent-discards=%lu\n",
+                static_cast<unsigned int>(telemetryQueue.size()),
+                static_cast<unsigned int>(telemetryQueue.capacity()),
+                static_cast<unsigned int>(telemetryQueue.highWaterMark()),
+                static_cast<unsigned long>(telemetryQueue.droppedOldestCount()),
+                static_cast<unsigned long>(telemetryPermanentDiscardCount));
+  Serial.printf("Faults: sensor acquisitions=%lu | ultrasonic timeouts=%lu | I2C errors=%lu | I2C recoveries=%lu\n",
+                static_cast<unsigned long>(sensorErrorCount),
+                static_cast<unsigned long>(ultrasonicTimeoutCount),
+                static_cast<unsigned long>(i2cErrorCount()),
+                static_cast<unsigned long>(i2cRecoveryCount()));
   printNetworkStatus();
-  Serial.printf("Pending telemetry: %s\n",
-                pendingTelemetry.active ? "YES" : "NO");
   printSensorData(sensorData);
 }
 
@@ -235,6 +332,8 @@ void setup() {
   printHardwareSummary();
   Serial.printf("Algorithm self-test: %s\n",
                 ultrasonicAlgorithmSelfTest() ? "PASS" : "FAIL");
+  Serial.printf("RAM queue FIFO/overflow self-test: %s\n",
+                telemetryQueueSelfTest() ? "PASS" : "FAIL");
   Serial.println(F("Reference only: 10 cm=80%, 20 cm=40%, 30 cm=0% with temporary calibration."));
   networkConfigurationValid = networkSettingsAreValid();
   if (networkConfigurationValid) {
@@ -248,8 +347,9 @@ void setup() {
   }
   lastStatusMs = millis();
   lastSensorStartMs = millis() - AquaSenseConfig::SENSOR_INTERVAL_MS;
-  nextTelemetryActionMs = millis() +
-                          AquaSenseConfig::INITIAL_TELEMETRY_DELAY_MS;
+  nextTelemetryCaptureMs = millis() +
+                           AquaSenseConfig::INITIAL_TELEMETRY_DELAY_MS;
+  nextUploadAttemptMs = nextTelemetryCaptureMs;
   printRuntimeStatus(lastStatusMs);
 }
 
@@ -262,13 +362,16 @@ void loop() {
   flowSensorUpdate(nowMs, sensorData);
   environmentSensorsUpdate(nowMs, sensorData);
   gasSensorUpdate(nowMs, sensorData);
+  updateOptionalSensorFailureCounters();
   if (nowMs - lastSensorStartMs >= AquaSenseConfig::SENSOR_INTERVAL_MS) {
     lastSensorStartMs = nowMs;
     ++sensorSequence;
     latestReading = readUltrasonic();
+    updateSensorFailureCounters(latestReading);
     printUltrasonicDiagnostics(latestReading, sensorSequence);
   }
-  handleTelemetry(millis());
+  captureTelemetry(millis());
+  handleTelemetryUpload(millis());
   if (nowMs - lastStatusMs >= AquaSenseConfig::STATUS_INTERVAL_MS) {
     lastStatusMs = nowMs;
     printRuntimeStatus(nowMs);

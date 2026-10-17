@@ -131,20 +131,23 @@ temperature. Invalid optional subsystems are omitted instead of sent as zero.
 
 Telemetry retention must be finalized before high-frequency large-scale deployment. Bounded website history queries do not delete readings automatically.
 
-## Firmware 0.6.0 reliability, power, and calibration diagnostics
+## Firmware 0.7.0 reliability, power, and calibration diagnostics
 
 The ESP32 samples the HC-SR04 independently of the 15-second telemetry schedule.
 It creates a request only from a valid filtered physical distance. No Echo,
 out-of-range data, insufficient samples, or invalid calibration skips the
 request without substituting zero, full, or safe values.
 
-Wi-Fi attempts time out after 15 seconds and retry after five seconds. HTTP
-connect/read operations time out after five seconds. A failed pending request
-retains its UUID and distance and retries after 5, 10, then 30 seconds; HTTP 429
-honors `Retry-After`. Authentication, assignment, calibration, and validation
-responses, including malformed-payload HTTP 400, are paced rather than causing
+Wi-Fi attempts time out after 15 seconds and use state-based 5/10/30-second
+backoff. HTTP connect/read operations time out after five seconds. Valid
+snapshots enter an eight-record RAM FIFO and keep their UUID across retries.
+HTTP 429 honors `Retry-After`; network/timeouts/5xx retain the oldest record.
+HTTP 408 is retryable as a timeout. Other 4xx responses discard the permanently
+rejected record after one attempt and pause for 30 seconds rather than causing
 a reboot or tight loop.
 
-Phase 6 also reports the declared power mode, reset reason, minimum free heap,
-Wi-Fi transition counts, and telemetry counts. Firmware has no rail-voltage
-monitor and never prints invented 5 V or 3.3 V measurements.
+Phase 7 also reports the declared power mode, reset reason, minimum free heap,
+Wi-Fi transition counts, API result classes, queue depth/high-water/drops,
+sensor errors, ultrasonic timeouts, and I2C errors/recoveries. The queue is
+volatile and is lost on reset/power loss. Firmware has no rail-voltage monitor
+and never prints invented 5 V or 3.3 V measurements.

@@ -43,6 +43,17 @@ void turbiditySensorUpdate(const uint32_t nowMs, SensorData& data) {
   lastReadMs = nowMs;
   data.turbidityRawAdc = averagedAdc(AquaSensePins::TURBIDITY_ANALOG,
                                      data.turbidityLatestAdc);
+  if (data.turbidityRawAdc <= AquaSenseConfig::ANALOG_RAIL_FAULT_MARGIN ||
+      data.turbidityRawAdc >= AquaSenseConfig::ADC_MAX_COUNT -
+                                  AquaSenseConfig::ANALOG_RAIL_FAULT_MARGIN) {
+    data.turbidityRawValid = false;
+    data.turbidityNtuValid = false;
+    data.turbidityAdcVoltage = NAN;
+    data.turbiditySourceVoltage = NAN;
+    data.turbidityNtu = NAN;
+    data.turbidityState = SensorState::kError;
+    return;
+  }
   data.turbidityAdcVoltage = pinVoltage(data.turbidityRawAdc);
   data.turbiditySourceVoltage = data.turbidityAdcVoltage *
                                AquaSenseConfig::ANALOG_SOURCE_MULTIPLIER;

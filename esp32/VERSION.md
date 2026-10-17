@@ -2,7 +2,23 @@
 
 ## Current version
 
-0.6.0
+0.7.0
+
+## 0.7.0 - Hardware Phase 7 reliability and recovery - 2026-10-17
+
+- Added an eight-record, fixed-allocation, RAM-only FIFO with a drop-oldest
+  overflow policy, high-water/drop counters, and an on-device algorithm test.
+- Kept each `reading_uuid` unchanged across retries and reused PHP's existing
+  UUID/payload-hash duplicate protection.
+- Separated capture from upload and classified network, timeout, 4xx, 5xx,
+  429, success, and local configuration outcomes.
+- Added state-based Wi-Fi connection/backoff diagnostics, sensor/ultrasonic
+  counters, controlled I2C recovery, and analog rail-fault validation.
+- Preserved Phase 6 calibration and server-authoritative alert behavior.
+- Documented the roughly two-minute queue window, drop conditions, and total
+  loss of unsent RAM records on reset/power failure.
+- Physical outage, sensor-fault, latency, load, final-power, and extended-run
+  verification remains PARTIAL until the full hardware is available.
 
 ## 0.6.0 - Hardware Phase 6 calibration gates - 2026-10-17
 
