@@ -1,4 +1,4 @@
-# AQUASENSE+ ESP32 Hardware Phase 7
+# AQUASENSE+ ESP32 Hardware — Final Phase 8
 
 Firmware **0.7.0** preserves the Phase 1–6 sensor, telemetry, power, and
 calibration implementation and adds bounded outage recovery. Physical
@@ -170,3 +170,27 @@ automatically; the measured reconnect case took 31.2 seconds while rotating
 past an unavailable configured network. Free heap stayed between 219,128 and
 219,140 bytes during the captured run. These results do not replace the pending
 full-sensor, final-power, latency, stress, and several-hour tests.
+
+## Final Phase 8 audit
+
+Phase 8 is the final hardware phase. Firmware remains **0.7.0** because the
+audit found no software defect and final physical testing cannot be performed
+without the six modules, grease trap, plumbing, enclosure, and approved
+regulated supply. The locked GPIO map, calibration gates, backend thresholds,
+and Phase 7 recovery behavior remain unchanged.
+
+Only the ESP32 DevKit V1 on COM6 is physically evidenced. No sensor or final
+power component is marked installed. The final wiring/placement plan,
+low-voltage assembly sequence, moisture rules, inventory, actuation gaps, and
+readiness decision are in [Final assembly](../docs/FINAL_ASSEMBLY.md). The exact
+72-item result is in [Phase 8 report](PHASE8-TEST-REPORT.md).
+
+Physical latch/diversion and backup power remain blocked because no approved
+actuator/driver/GPIO/power/fail-safe design or backup-power circuit exists.
+Final assembled bench demo, capstone hardware demo, and controlled field test
+are **not ready**. A labelled software/USB diagnostic demonstration remains
+available. Do not create Phase 9.
+
+Available software validation passed 504 sequential PHP/backend checks, Flutter
+static analysis, and all 113 Flutter tests. These results verify the supported
+software path only and do not pass any missing physical test.

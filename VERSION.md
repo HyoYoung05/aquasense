@@ -2,6 +2,25 @@
 
 1.3.0
 
+## Website/backend 1.3.0 and ESP32 Final Hardware Phase 8 audit
+
+Date: 2026-10-18
+
+- Retained ESP32 firmware 0.7.0 after the final audit found no software defect
+  that can be resolved without the missing physical hardware.
+- Added a final inventory, locked wiring/placement table, low-voltage assembly
+  sequence, moisture/enclosure rules, readiness decision, and 72-item completion
+  report.
+- Recorded that only the COM6 ESP32 is physically evidenced. The six sensor
+  modules, final supply, trap/plumbing, enclosure, harness, calibration
+  references, and field-test setup remain unavailable.
+- Marked latch/oil diversion blocked by the missing actuator/driver/GPIO/power
+  specification; automated extraction and backup power are not implemented.
+- Final Hardware Phase 8 is PARTIAL. The assembled prototype is not ready for a
+  bench, capstone hardware, or controlled field test. There is no Phase 9.
+- Validation passed 504 sequential PHP/backend checks, Flutter static analysis,
+  and all 113 Flutter tests; these do not substitute for physical acceptance.
+
 ## Website/backend 1.3.0 and ESP32 Hardware Phase 7 firmware 0.7.0
 
 Date: 2026-10-18

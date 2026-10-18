@@ -8,7 +8,7 @@ The administrative website and PHP backend have completed **Phase 8 Final System
 
 ## Current Version
 
-The repository includes revised [ESP32 Hardware Phase 7](esp32/README.md)
+The repository includes the final [ESP32 Hardware Phase 8](esp32/README.md)
 firmware **0.7.0** in `esp32/UltrasonicTest`. It preserves HC-SR04, Wi-Fi, and
 retry-safe PHP telemetry, then adds independently valid drivers for DS18B20,
 SEN0189, YF-S201, the ENS160+AHT2x combination module, and MQ-135. Raw ADC
@@ -17,7 +17,7 @@ ppm. The sensor-absent COM6 run connected to Wi-Fi without rebooting and left
 the AQS-001 baseline unchanged. Phase 6 centralizes calibration state, keeps
 uncalibrated NTU/L/min/ppm unavailable, and gates turbidity/flow alerts until
 physical calibration and threshold approval. Physical measurements remain
-deferred until the hardware is available, so Hardware Phases 4–7 are PARTIAL.
+deferred until the hardware is available, so Hardware Phases 4–8 are PARTIAL.
 Phase 7 adds nonblocking Wi-Fi backoff, an eight-record bounded RAM FIFO,
 explicit HTTP failure classes, retry-stable UUIDs, I2C recovery, fault
 counters, and analog rail-fault rejection. The queue covers only brief powered
@@ -29,10 +29,32 @@ buzzer, or DHT22. The Flutter source is tracked under
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 The current Android development build is verified with Flutter **3.41.6**.
 
-Hardware Phase 7 keeps the revised paper's local acceptance path: sensors to
+Hardware Phase 8 keeps the revised paper's local acceptance path: sensors to
 ESP32, then a
 local Wi-Fi router, then Apache/PHP, MariaDB, website, and Flutter APIs. The
 same configurable endpoint supports the separate production HTTPS target.
+
+Phase 8 is the final ESP32 hardware phase. Firmware remains **0.7.0** because no
+firmware defect was found during the final audit. Only the ESP32 DevKit V1 on
+COM6 has physical evidence; the six sensor modules, final grease-trap/plumbing,
+regulated supply, protection components, enclosure, and finished wiring are
+unavailable for final assembly and acceptance.
+
+The locked GPIO map and target placements are documented without claiming
+installation. Physical latch/oil diversion is blocked because the paper has no
+approved actuator, driver, GPIO, power, or fail-safe circuit. Automated grease
+extraction and backup power are not implemented, and external SMS/push providers
+are not configured. See [Final assembly and installation](docs/FINAL_ASSEMBLY.md)
+and the [Phase 8 completion report](esp32/PHASE8-TEST-REPORT.md).
+
+Final assembled bench, capstone hardware, and controlled field-test readiness
+are **NO** until the physical blockers and required calibration, power,
+end-to-end, recovery, and long-run tests are completed. Phase 8 is **PARTIAL**;
+there is no Phase 9.
+
+Phase 8 software validation passed 504 sequential PHP/backend checks, Flutter
+static analysis, and all 113 Flutter tests. These results do not replace any
+physical installation or field-acceptance item.
 
 **Version: 1.3.0**
 

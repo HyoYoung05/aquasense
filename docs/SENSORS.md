@@ -1,6 +1,6 @@
 # AQUASENSE+ sensor implementation status
 
-Firmware 0.6.0 implements the six-module architecture while keeping every
+Firmware 0.7.0 implements the six-module architecture while keeping every
 unverified physical input disabled. Enable a module only after checking its
 actual wiring, supply, and divider voltage.
 
@@ -28,3 +28,9 @@ not an address result for the missing board.
 Phase 6 calibration software gates are implemented, but every physical
 calibration remains pending. See `CALIBRATION.md`; no provisional factor or raw
 ADC value is published as a calibrated engineering unit.
+
+Phase 8 found no physical sensor module available for final installation. None
+of the planned Chamber 1, Chamber 3, inlet-pipe, or wastewater-probe placements
+is marked installed. Final mounting, moisture protection, calibration
+revalidation, and real telemetry remain blocked. See `FINAL_ASSEMBLY.md` and
+`../esp32/PHASE8-TEST-REPORT.md`.

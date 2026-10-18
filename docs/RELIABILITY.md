@@ -143,3 +143,13 @@ system and are not claimed:
 
 Record those results in `esp32/PHASE7-TEST-REPORT.md`. Phase 8 must not treat
 the software-only Phase 7 result as completed field reliability evidence.
+
+## Phase 8 final-assembly status
+
+The final physical assembly is unavailable, so the Phase 7 measurements remain
+the only device evidence: a 206.243-second USB run, two controlled automatic
+Wi-Fi recoveries, no observed reset/brownout, and stable short-run heap. Phase 8
+did not repeat router loss, server loss with valid queued records, sensor
+disconnects, final-power interruption, concurrent load, or the several-hour
+run. Those checks remain mandatory after assembly and are tracked in
+`esp32/PHASE8-TEST-REPORT.md`; none is inferred from software tests.

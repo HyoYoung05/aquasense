@@ -4,6 +4,20 @@
 
 0.7.0
 
+## Final Hardware Phase 8 audit — firmware remains 0.7.0 — 2026-10-18
+
+- Completed the final repository/hardware-gap audit without changing working
+  firmware, pins, calibration gates, thresholds, networking, or recovery logic.
+- Added the final assembly/inventory record and 72-item Phase 8 report.
+- Recorded that only the COM6 ESP32 is physically evidenced; all six modules,
+  final power, trap/plumbing, enclosure, and final harness remain unavailable.
+- Documented blocked physical latch/diversion, absent extraction implementation,
+  undefined backup-power circuit, and unavailable SMS/push providers.
+- Phase 8 is PARTIAL. Final assembled bench, capstone hardware, and controlled
+  field-test readiness remain NO. There is no Phase 9.
+- Validation passed 504 sequential PHP/backend checks, Flutter static analysis,
+  and all 113 Flutter tests; physical acceptance remains blocked.
+
 ## 0.7.0 - Hardware Phase 7 reliability and recovery - 2026-10-18
 
 - Added an eight-record, fixed-allocation, RAM-only FIFO with a drop-oldest

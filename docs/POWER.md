@@ -1,7 +1,7 @@
 # AQUASENSE+ final power architecture
 
-Hardware Phase 5 status: **PARTIAL — physical supply and sensors unavailable**
-Last updated: 2026-10-17
+Hardware Phase 8 final status: **PARTIAL — physical supply and sensors unavailable**
+Last updated: 2026-10-18
 
 The latest capstone paper specifies an enclosed, regulated AC-to-DC supply
 feeding safe low-voltage 5 V and 3.3 V rails. Phase 5 work must stay entirely
@@ -112,3 +112,13 @@ claim 24/7 reliability from a short bench run.
 - Sensor calibration and final thresholds belong to Phase 6.
 - Physical Phase 4 remains on hold until the sensors are available; therefore
   full-load Phase 5 acceptance is also blocked.
+
+## Phase 8 installation result
+
+No final adapter, 5 V/3.3 V distribution, enclosure, finished harness, or
+loaded-rail measurement is available. The common ground, divider outputs,
+polarity, MQ-135 heater load, moisture separation, and controlled final-supply
+restart therefore remain unverified. Only the USB-powered ESP32 diagnostic has
+physical evidence. The final assembly must follow `FINAL_ASSEMBLY.md`; it must
+not return to MT3608/Li-ion wiring or introduce a backup circuit without an
+approved schematic.

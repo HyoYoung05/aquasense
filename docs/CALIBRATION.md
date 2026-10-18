@@ -1,7 +1,7 @@
 # AQUASENSE+ sensor calibration and threshold register
 
-Hardware Phase 6 status: **PARTIAL — physical sensors and reference equipment unavailable**
-Last updated: 2026-10-17
+Hardware Phase 8 final calibration status: **PARTIAL — physical sensors and reference equipment unavailable**
+Last updated: 2026-10-18
 
 This file is the calibration record for the six physical sensor modules. No
 table below contains fabricated measurements. Firmware constants are
@@ -147,3 +147,9 @@ type, severity, status, threshold, value, and timestamps, then appears on the
 website and Flutter app. Do not physically overflow the prototype. No approved
 turbidity, flow, ENS160, or MQ-135 business thresholds currently exist beyond
 the disabled development placeholders described above.
+
+Phase 8 cannot perform installation revalidation because the six physical
+modules, final grease trap, plumbing, and reference equipment remain
+unavailable. The firmware flags and stored development thresholds are therefore
+unchanged. Mounting must not turn any `PENDING`, `RAW_ONLY`, or
+`NOT_CALIBRATED` state into a validated state without recorded measurements.
