@@ -1,6 +1,18 @@
 # AQUASENSE+ Version History
 
-1.3.2
+1.3.3
+
+## Website/backend 1.3.3 and ESP32 firmware 0.8.0
+
+Date: 2026-10-22
+
+- Added a local VS Code C/C++ configuration for the active private
+  `AquaSenseSensors` workspace using the verified Arduino compiler arguments.
+- Restored IntelliSense resolution for `Arduino.h` and other ESP32 core headers
+  without adding private Wi-Fi or API credentials to Git.
+- Added `AQUASENSE` to the ESP32 workspace spelling dictionary.
+- Kept firmware 0.8.0 unchanged because the reported diagnostics were editor
+  configuration warnings rather than Arduino compiler failures.
 
 ## Website/backend 1.3.2 and ESP32 firmware 0.8.0
 

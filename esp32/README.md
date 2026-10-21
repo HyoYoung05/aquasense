@@ -41,6 +41,12 @@ Firmware 0.8.0 compiled at 991,600 bytes flash and 51,200 bytes static RAM and
 was hash-verified on COM7. Its startup banner identifies `ESP32 Six-Sensor
 Firmware`, Wi-Fi connected, and live telemetry received HTTP 201 responses.
 
+When editing the ignored private mirror directly in VS Code, its local
+`.vscode/c_cpp_properties.json` must point to the generated Arduino compile
+database. The active development mirror includes this local configuration, so
+`Arduino.h` resolves using the installed ESP32 3.3.12 core. `AQUASENSE` is also
+included in the workspace spelling dictionary.
+
 - `temperature_sensor`: asynchronous OneWire/DallasTemperature conversion,
   disconnect/sentinel/range validation, and controlled reinitialization.
 - `turbidity_sensor`: latest/averaged ADC, divider/source voltage diagnostics,

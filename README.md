@@ -4,7 +4,7 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 test firmware.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.3.2 renames and renews the six-sensor ESP32 sketch while preserving calibrated-only sensor and alert gates, the full-access Admin role, and limited Barangay Administrator/Environmental Staff navigation.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.3.3 adds verified local IntelliSense configuration for the renamed six-sensor ESP32 sketch while preserving calibrated-only sensor and alert gates, the full-access Admin role, and limited Barangay Administrator/Environmental Staff navigation.
 
 ## Current Version
 
@@ -63,7 +63,7 @@ physical installation or field-acceptance item.
 See the [connected-sensor verification](esp32/PHYSICAL-VERIFICATION-2026-10-22.md)
 for the measured results and remaining corrections.
 
-**Version: 1.3.2**
+**Version: 1.3.3**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 

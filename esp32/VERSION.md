@@ -20,6 +20,9 @@
   pin and uncalibrated NTU/L/min calculations.
 - Compiled at 991,600 bytes flash and 51,200 bytes static RAM, uploaded only to
   COM7 with verified hashes, and confirmed Wi-Fi plus HTTP 201 telemetry.
+- Added local VS Code compile-database wiring for the active private sketch so
+  IntelliSense resolves the installed ESP32 core and `Arduino.h`; added
+  `AQUASENSE` to the workspace dictionary. Firmware behavior is unchanged.
 
 ## 0.7.1 - Connected-sensor verification - 2026-10-22
 
