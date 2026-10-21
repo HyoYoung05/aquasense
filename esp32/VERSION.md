@@ -2,7 +2,24 @@
 
 ## Current version
 
-0.7.1
+0.8.0
+
+## 0.8.0 - Six-sensor sketch renewal - 2026-10-22
+
+- Renamed `UltrasonicTest/UltrasonicTest.ino` to
+  `AquaSenseSensors/AquaSenseSensors.ino` so the Arduino target represents all
+  six official sensors.
+- Added explicit 12-bit DS18B20 resolution, 12-bit ADC configuration for
+  SEN0189 and MQ-135, and 100 kHz I2C initialization.
+- Configured the gated YF-S201 input with a pull-up and falling-edge pulse
+  counting on official GPIO19; the external voltage-protection circuit remains
+  mandatory.
+- Preserved nonblocking acquisition, independent validity flags, raw/calibrated
+  boundaries, retry-safe PHP telemetry, private secrets, and failure recovery.
+- Reviewed the supplied combined sketch but rejected its obsolete GPIO27 flow
+  pin and uncalibrated NTU/L/min calculations.
+- Compiled at 991,600 bytes flash and 51,200 bytes static RAM, uploaded only to
+  COM7 with verified hashes, and confirmed Wi-Fi plus HTTP 201 telemetry.
 
 ## 0.7.1 - Connected-sensor verification - 2026-10-22
 

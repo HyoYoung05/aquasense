@@ -1,8 +1,10 @@
 # AQUASENSE+ ESP32 Hardware — Final Phase 8
 
-Firmware **0.7.1** preserves the Phase 1–7 sensor, telemetry, power,
-calibration, and bounded outage-recovery implementation. A 2026-10-22 COM7
-follow-up now contains real connected-sensor and end-to-end evidence.
+Firmware **0.8.0** is the renewed six-sensor target in
+`AquaSenseSensors/AquaSenseSensors.ino`. It preserves the Phase 1–7 sensor,
+telemetry, power, calibration, and bounded outage-recovery implementation. A
+2026-10-22 COM7 follow-up contains real connected-sensor and end-to-end
+evidence.
 
 ```text
 HC-SR04 -> ESP32 -> Wi-Fi -> PHP API -> MySQL/MariaDB -> website / Flutter
@@ -28,6 +30,16 @@ supplies humidity, and AHT2x ambient temperature never overwrites DS18B20
 wastewater temperature. There is no microSD, OLED, buzzer, or DHT22.
 
 ## Firmware structure
+
+The user-supplied combined sketch was reviewed as a hardware reference. Its
+useful initialization details were incorporated: 12-bit DS18B20 resolution,
+12-bit ADC setup for SEN0189 and MQ-135, 100 kHz I2C, and a pulled-up
+falling-edge flow input. The official YF-S201 signal remains GPIO19. Its old
+GPIO27 assignment and uncalibrated NTU/L/min conversions were not copied.
+
+Firmware 0.8.0 compiled at 991,600 bytes flash and 51,200 bytes static RAM and
+was hash-verified on COM7. Its startup banner identifies `ESP32 Six-Sensor
+Firmware`, Wi-Fi connected, and live telemetry received HTTP 201 responses.
 
 - `temperature_sensor`: asynchronous OneWire/DallasTemperature conversion,
   disconnect/sentinel/range validation, and controlled reinitialization.
@@ -199,6 +211,10 @@ Phase 8 is the final hardware phase. The 2026-10-18 audit retained firmware
 connected, firmware 0.7.1 added a safe local hardware profile and the DS18B20
 development pull-up fix. The locked GPIO map, calibration gates, backend
 thresholds, and Phase 7 recovery behavior remain unchanged.
+
+Firmware 0.8.0 then renamed the Arduino target to `AquaSenseSensors` and
+renewed initialization for the complete six-sensor codebase without changing
+the backend contract or claiming that pending physical calibration has passed.
 
 The COM7 follow-up provides connected bench evidence for the sensor set but not
 final installation acceptance. The final wiring/placement plan, low-voltage

@@ -49,7 +49,7 @@
 
 namespace AquaSenseConfig {
 
-inline constexpr char FIRMWARE_VERSION[] = "0.7.1";
+inline constexpr char FIRMWARE_VERSION[] = "0.8.0";
 inline constexpr char POWER_MODE[] =
     "USB DEVELOPMENT - EXTERNAL DC NOT VERIFIED";
 inline constexpr bool EXTERNAL_DC_POWER_VERIFIED = false;
@@ -114,6 +114,7 @@ inline constexpr uint32_t FLOW_INTERVAL_MS = 1000;
 inline constexpr uint32_t ENS160_INTERVAL_MS = 5000;
 inline constexpr uint32_t AHT2X_INTERVAL_MS = 5000;
 inline constexpr uint32_t I2C_RETRY_MS = 30000;
+inline constexpr uint32_t I2C_CLOCK_HZ = 100000;
 inline constexpr uint32_t MQ135_INTERVAL_MS = 5000;
 // Minimum development stabilization gate. The installed MQ-135 may require
 // longer initial conditioning according to its actual module documentation.
@@ -134,5 +135,6 @@ inline constexpr uint8_t AHT2X_I2C_ADDRESS =
     AQUASENSE_HW_AHT2X_I2C_ADDRESS;
 inline constexpr uint8_t I2C_STABLE_SCAN_COUNT = 3;
 inline constexpr uint32_t I2C_TIMEOUT_MS = 50;
+inline constexpr uint8_t DS18B20_RESOLUTION_BITS = 12;
 
 }  // namespace AquaSenseConfig

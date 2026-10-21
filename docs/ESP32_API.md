@@ -12,7 +12,7 @@ Firmware 0.6.0 sends structured sensor telemetry through PHP. The ESP32 never co
 Configure the complete URL once in the firmware's private configuration. Do not hardcode a developer LAN address throughout the sketch. Production must use HTTPS.
 
 Firmware 0.6.0 stores the URL, Wi-Fi credentials, AQS-001 device key, and
-optional trusted CA in ignored `esp32/UltrasonicTest/secrets.h`. The committed
+optional trusted CA in ignored `esp32/AquaSenseSensors/secrets.h`. The committed
 `secrets.example.h` contains placeholders. It rejects loopback endpoint URLs,
 never prints secrets, and never uses insecure TLS.
 

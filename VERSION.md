@@ -1,6 +1,26 @@
 # AQUASENSE+ Version History
 
-1.3.1
+1.3.2
+
+## Website/backend 1.3.2 and ESP32 firmware 0.8.0
+
+Date: 2026-10-22
+
+- Renamed the Arduino IDE target from `esp32/UltrasonicTest/UltrasonicTest.ino`
+  to `esp32/AquaSenseSensors/AquaSenseSensors.ino` so its name represents the
+  complete six-sensor firmware.
+- Renewed sensor initialization with 12-bit DS18B20 resolution, 12-bit ADC
+  setup for SEN0189 and MQ-135, a 100 kHz I2C bus, and a pulled-up falling-edge
+  YF-S201 input on the official GPIO19.
+- Preserved the existing nonblocking Wi-Fi/API queue, independent validity
+  flags, calibration gates, secrets separation, and backend contract.
+- Kept the supplied sketch's obsolete GPIO27 flow assignment and uncalibrated
+  NTU/L/min formulas out of the production firmware.
+- Updated Arduino IDE workspace history to the renamed private sketch and kept
+  COM7 as the active physical ESP32 port at 115200 baud.
+- Compiled firmware 0.8.0 at 991,600 bytes flash and 51,200 bytes static RAM,
+  uploaded it to COM7 with verified flash hashes, and observed live HTTP 201
+  telemetry accepted by PHP/MySQL.
 
 ## Website/backend 1.3.1 and ESP32 firmware 0.7.1
 
@@ -209,7 +229,7 @@ Date: 2026-10-15
 
 Date: 2026-10-15
 
-- Upgraded the existing `esp32/UltrasonicTest` target from firmware 0.1.1 to
+- Upgraded the existing sketch target, now `esp32/AquaSenseSensors`, from firmware 0.1.1 to
   modular firmware 0.3.0 while retaining HC-SR04 TRIG GPIO5 and ECHO GPIO18.
 - Established COM6 as the only authorized AQUASENSE+ hardware port. COM6 was
   identified as an ESP32-D0WD-V3 revision 3.1 and uploaded at 115200 with verified

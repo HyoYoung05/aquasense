@@ -216,7 +216,7 @@ const char* resetReasonName(const esp_reset_reason_t reason) {
 void printHardwareSummary() {
   Serial.println();
   Serial.println(F("AQUASENSE+"));
-  Serial.println(F("ESP32 Hardware Phase 7"));
+  Serial.println(F("ESP32 Six-Sensor Firmware"));
   Serial.printf("Firmware version: %s\n", AquaSenseConfig::FIRMWARE_VERSION);
   Serial.printf("Chip model: %s\n", ESP.getChipModel());
   Serial.printf("Chip revision: %u\n", ESP.getChipRevision());

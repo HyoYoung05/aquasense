@@ -26,11 +26,11 @@ def main():
     if len(sys.argv) != 2:
         raise SystemExit("Usage: python tools/refresh_intellisense.py <build-directory>")
     project = Path(__file__).resolve().parent.parent
-    sketch = project / "UltrasonicTest" / "UltrasonicTest.ino"
+    sketch = project / "AquaSenseSensors" / "AquaSenseSensors.ino"
     database = Path(sys.argv[1]).resolve() / "compile_commands.json"
     entries = json.loads(database.read_text(encoding="utf-8-sig"))
     entry = next(item for item in entries
-                 if Path(item["file"]).name == "UltrasonicTest.ino.cpp")
+                 if Path(item["file"]).name == "AquaSenseSensors.ino.cpp")
     directory = Path(entry["directory"])
     arguments = list(expand_response_files(entry["arguments"], directory))
     compiler = Path(arguments[0])

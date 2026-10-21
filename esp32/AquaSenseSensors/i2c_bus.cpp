@@ -11,6 +11,7 @@ uint32_t lastRecoveryMs = 0;
 
 void i2cBusBegin() {
   Wire.begin(AquaSensePins::ENS160_SDA, AquaSensePins::ENS160_SCL);
+  Wire.setClock(AquaSenseConfig::I2C_CLOCK_HZ);
   Wire.setTimeOut(AquaSenseConfig::I2C_TIMEOUT_MS);
 }
 
@@ -32,6 +33,7 @@ void i2cRecover(const uint32_t nowMs) {
   if (nowMs - lastRecoveryMs < AquaSenseConfig::I2C_RETRY_MS) return;
   Wire.end();
   Wire.begin(AquaSensePins::ENS160_SDA, AquaSensePins::ENS160_SCL);
+  Wire.setClock(AquaSenseConfig::I2C_CLOCK_HZ);
   Wire.setTimeOut(AquaSenseConfig::I2C_TIMEOUT_MS);
   lastRecoveryMs = nowMs;
   ++recoveryCount;

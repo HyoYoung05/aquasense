@@ -31,6 +31,8 @@ void turbiditySensorBegin(SensorData& data) {
     data.turbidityState = SensorState::kError;
     return;
   }
+  analogReadResolution(12);
+  analogSetPinAttenuation(AquaSensePins::TURBIDITY_ANALOG, ADC_11db);
   pinMode(AquaSensePins::TURBIDITY_ANALOG, INPUT);
   data.turbidityState = SensorState::kNotCalibrated;
   lastReadMs = millis() - AquaSenseConfig::TURBIDITY_INTERVAL_MS;

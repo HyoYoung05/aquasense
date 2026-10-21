@@ -5,7 +5,7 @@ Last updated: 2026-10-18
 
 This file is the calibration record for the six physical sensor modules. No
 table below contains fabricated measurements. Firmware constants are
-centralized in `esp32/UltrasonicTest/calibration.h`; grease-trap geometry and
+centralized in `esp32/AquaSenseSensors/calibration.h`; grease-trap geometry and
 user-facing level thresholds remain authoritative in MySQL.
 
 ## Authority and current configuration

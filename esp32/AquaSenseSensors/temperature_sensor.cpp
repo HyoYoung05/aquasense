@@ -32,6 +32,7 @@ void temperatureSensorBegin(SensorData& data) {
   // requires the external pull-up specified by the revised schematic.
   pinMode(AquaSensePins::DS18B20_DATA, INPUT_PULLUP);
   ds18b20.begin();
+  ds18b20.setResolution(AquaSenseConfig::DS18B20_RESOLUTION_BITS);
   ds18b20.setWaitForConversion(false);
   lastActionMs = millis();
   if (!devicePresent()) return;
@@ -51,6 +52,8 @@ void temperatureSensorUpdate(const uint32_t nowMs, SensorData& data) {
     conversionPending = false;
     if (nowMs - lastActionMs >= AquaSenseConfig::TEMPERATURE_RETRY_MS) {
       ds18b20.begin();
+      ds18b20.setResolution(AquaSenseConfig::DS18B20_RESOLUTION_BITS);
+      ds18b20.setWaitForConversion(false);
       lastActionMs = nowMs;
     }
     return;

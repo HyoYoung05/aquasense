@@ -25,6 +25,8 @@ void gasSensorBegin(SensorData& data) {
     data.mq135State = SensorState::kError;
     return;
   }
+  analogReadResolution(12);
+  analogSetPinAttenuation(AquaSensePins::MQ135_ANALOG, ADC_11db);
   pinMode(AquaSensePins::MQ135_ANALOG, INPUT);
   warmupStartedMs = millis();
   lastReadMs = warmupStartedMs;

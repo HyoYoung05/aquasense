@@ -19,9 +19,12 @@ void flowSensorBegin(SensorData& data) {
     data.flowState = SensorState::kError;
     return;
   }
-  pinMode(AquaSensePins::FLOW_SIGNAL, INPUT);
+  // YF-S201 modules commonly expose an open-collector pulse output. The weak
+  // internal pull-up prevents a verified but disconnected input from floating;
+  // the required external voltage protection remains authoritative.
+  pinMode(AquaSensePins::FLOW_SIGNAL, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(AquaSensePins::FLOW_SIGNAL),
-                  countFlowPulse, RISING);
+                  countFlowPulse, FALLING);
   data.flowState = AquaSenseCalibration::FLOW_PHYSICALLY_CALIBRATED
                        ? SensorState::kValid
                        : SensorState::kNotCalibrated;

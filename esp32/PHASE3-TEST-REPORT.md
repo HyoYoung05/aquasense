@@ -79,7 +79,7 @@ No Phase 4 work is included.
 2. Current firmware: 0.3.1.
 3. Files created: `config.h`, `private_config.h`, `secrets.example.h`,
    `wifi_manager.h/.cpp`, `telemetry.h/.cpp`, and this report.
-4. Files modified: `UltrasonicTest.ino`, firmware/root README and version files,
+4. Files modified: the sketch now named `AquaSenseSensors.ino`, firmware/root README and version files,
    API documentation, pinout, and ignore rules.
 5. Device: active `AQS-001`.
 6. Local server: configured once in ignored `secrets.h`; current test host is

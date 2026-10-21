@@ -4,12 +4,12 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 test firmware.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.3.1 adds connected-sensor verification while preserving calibrated-only sensor and alert gates, the full-access Admin role, and limited Barangay Administrator/Environmental Staff navigation.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.3.2 renames and renews the six-sensor ESP32 sketch while preserving calibrated-only sensor and alert gates, the full-access Admin role, and limited Barangay Administrator/Environmental Staff navigation.
 
 ## Current Version
 
 The repository includes the final [ESP32 Hardware Phase 8](esp32/README.md)
-firmware **0.7.1** in `esp32/UltrasonicTest`. It preserves HC-SR04, Wi-Fi, and
+firmware **0.8.0** in `esp32/AquaSenseSensors`. It preserves HC-SR04, Wi-Fi, and
 retry-safe PHP telemetry, then adds independently valid drivers for DS18B20,
 SEN0189, YF-S201, the ENS160+AHT2x combination module, and MQ-135. Raw ADC
 values use dedicated database fields and are never mislabeled as NTU or gas
@@ -35,9 +35,12 @@ ESP32, then a
 local Wi-Fi router, then Apache/PHP, MariaDB, website, and Flutter APIs. The
 same configurable endpoint supports the separate production HTTPS target.
 
-Phase 8 is the final ESP32 hardware phase. Firmware **0.7.1** adds a safe local
+Phase 8 is the final ESP32 hardware phase. Firmware **0.8.0** keeps the safe local
 hardware profile and a DS18B20 development pull-up fix after the six modules
-were connected. COM7 now sends authenticated AQS-001 telemetry to the PHP API.
+were connected, and applies the useful initialization details from the supplied
+combined-sensor sketch without adopting its obsolete GPIO27 flow pin or
+uncalibrated engineering-unit formulas. COM7 sends authenticated AQS-001
+telemetry to the PHP API.
 HC-SR04, DS18B20, SEN0189 raw ADC, AHT2x, and valid MQ-135 raw samples have
 reached MySQL; ENS160 and YF-S201 remain isolated pending correction.
 
@@ -60,7 +63,7 @@ physical installation or field-acceptance item.
 See the [connected-sensor verification](esp32/PHYSICAL-VERIFICATION-2026-10-22.md)
 for the measured results and remaining corrections.
 
-**Version: 1.3.1**
+**Version: 1.3.2**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -612,7 +615,7 @@ Mobile 0.1.5+6 requires an explicit `API_BASE_URL` for every target. A Flutter W
 Verification: `php tests/mobile-cors.php` passed 36 policy and integration checks; the mobile API suite passed 30 checks. Manual preflight from `http://localhost:49840` returned HTTP 204 with the exact required headers, owner login/logout succeeded through the same browser origin, and Flutter Web compiled and launched in headless Chrome on port 49840 with the configured LAN API root. See `api/README.md` for the endpoint contract.
 ## ESP32 Hardware Phase 7 reliability and fault recovery (0.7.0)
 
-The tracked `esp32/UltrasonicTest` Arduino IDE sketch is mirrored to the
+The tracked `esp32/AquaSenseSensors` Arduino IDE sketch is mirrored to the
 ignored private build directory without copying its secrets into Git. Firmware
 sends valid sensor snapshots to PHP; it never receives database credentials or
 connects directly to MySQL. The contract is in
