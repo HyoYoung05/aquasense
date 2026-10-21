@@ -2,7 +2,23 @@
 
 ## Current version
 
-0.7.0
+0.7.1
+
+## 0.7.1 - Connected-sensor verification - 2026-10-22
+
+- Added an ignored `config.local.h` hardware profile with safe committed
+  defaults and a public example, allowing one prototype to enable only verified
+  modules without committing machine-specific hardware state.
+- Added a supplemental GPIO4 internal pull-up so the connected DS18B20 can be
+  detected during development; the external schematic pull-up remains required.
+- Compiled at 989,088 bytes flash and 51,200 bytes RAM and uploaded only to
+  the user-corrected COM7 port with verified hashes.
+- Verified live HTTP 201 ingestion and MySQL plus website/Flutter monitoring for
+  HC-SR04, DS18B20, SEN0189 raw ADC, AHT2x, and valid MQ-135 raw samples.
+- Kept YF-S201 disabled pending official GPIO19/protection verification and kept
+  ENS160 disabled because repeated I2C scans found only AHT2x at `0x38`.
+- Recorded intermittent HC-SR04 timeouts, AHT2x I2C faults, SEN0189 rail faults,
+  and noisy MQ-135 input honestly; connected-sensor acceptance remains PARTIAL.
 
 ## Final Hardware Phase 8 audit — firmware remains 0.7.0 — 2026-10-18
 

@@ -1,13 +1,14 @@
 # AQUASENSE+ final assembly and installation record
 
-Hardware Phase 8 status: **PARTIAL — final physical hardware is unavailable**
+Hardware Phase 8 status: **PARTIAL — connected bench hardware is not a verified final assembly**
 
-Last updated: 2026-10-18
+Last updated: 2026-10-22
 
 This is the final ESP32 hardware phase. There is no automatic Phase 9. The
-locked electrical design, firmware 0.7.0, server-derived thresholds, Phase 6
-calibration gates, and Phase 7 recovery behavior remain unchanged because the
-repository audit found no defect that justifies redesign.
+locked electrical design, firmware 0.7.1, server-derived thresholds, Phase 6
+calibration gates, and Phase 7 recovery behavior remain authoritative. The
+2026-10-22 follow-up adds connected bench evidence without claiming final
+mounting, calibration, power, enclosure, or field acceptance.
 
 This document separates the approved installation plan from physically
 verified evidence. A planned connection or paper placement is not marked as an
@@ -17,15 +18,15 @@ installed component.
 
 | Item | Evidence-based state | Evidence / blocker |
 | --- | --- | --- |
-| ESP32 DevKit V1 | **PRESENT** | CH340 ESP32 detected and tested only on COM6 |
-| HC-SR04 | **NOT AVAILABLE** | User confirmed sensors are not currently available |
-| DS18B20 waterproof probe | **NOT AVAILABLE** | No physical module to inspect |
-| SEN0189 | **NOT AVAILABLE** | No physical module to inspect |
-| YF-S201 | **NOT AVAILABLE** | No physical module to inspect |
-| ENS160+AHT2x combination board | **NOT AVAILABLE** | No physical module or stable I2C address evidence |
-| MQ-135 | **NOT AVAILABLE** | No physical module to inspect |
+| ESP32 DevKit V1 | **PRESENT** | CH340 ESP32 detected, compiled, and hash-verified on COM7 |
+| HC-SR04 | **CONNECTED / PARTIAL** | Live distance reached MySQL; intermittent no-echo and unstable distance remain |
+| DS18B20 waterproof probe | **CONNECTED / COMMUNICATING** | Valid GPIO4 temperature reached MySQL; reference calibration pending |
+| SEN0189 | **CONNECTED / PARTIAL** | Raw GPIO34 ADC reached MySQL; rail fault and NTU calibration remain |
+| YF-S201 | **CONNECTED BY USER / NOT VERIFIED** | Official GPIO19 and protection are not yet electrically confirmed; firmware gate remains off |
+| ENS160+AHT2x combination board | **PARTIAL** | AHT2x is detected at `0x38`; ENS160 is not detected at `0x52` or `0x53` |
+| MQ-135 | **CONNECTED / PARTIAL** | Warmed raw GPIO35 samples reached MySQL; noisy/low-rail behavior and calibration remain |
 | Approved regulated power supply | **NOT AVAILABLE / UNVERIFIED** | Model, ratings, polarity, and loaded rails are unknown |
-| Voltage-divider and pull-up components | **NOT PHYSICALLY VERIFIED** | Values are specified, but installed components are unavailable for inspection |
+| Voltage-divider and pull-up components | **NOT METER-VERIFIED** | Runtime signals exist, but installed resistor values and worst-case GPIO voltages still require measurement |
 | Final grease-trap prototype | **NOT AVAILABLE** | No final chamber/plumbing evidence |
 | Electronics enclosure | **NOT AVAILABLE** | No enclosure or IP rating evidence |
 | Final wiring and connectors | **NOT AVAILABLE** | No finished harness to inspect |
@@ -33,8 +34,10 @@ installed component.
 | Latch actuator and driver | **NOT SPECIFIED / NOT AVAILABLE** | No actuator, voltage/current rating, GPIO, or driver circuit |
 | Oil-diversion mechanism | **NOT SPECIFIED / NOT AVAILABLE** | No approved mechanical or electrical implementation |
 
-The ESP32 is the only physically evidenced item. No unchecked item may be
-changed to present until it is inspected directly.
+Connected bench evidence is summarized in the
+[2026-10-22 report](../esp32/PHYSICAL-VERIFICATION-2026-10-22.md). No bench
+connection may be treated as final installation evidence until it is inspected,
+metered, calibrated, mounted, and retested under final power.
 
 ## Locked wiring and placement table
 

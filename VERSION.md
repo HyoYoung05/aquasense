@@ -1,6 +1,21 @@
 # AQUASENSE+ Version History
 
-1.3.0
+1.3.1
+
+## Website/backend 1.3.1 and ESP32 firmware 0.7.1
+
+Date: 2026-10-22
+
+- Added a safe ignored ESP32 hardware profile and connected-sensor evidence on
+  the user-corrected COM7 port.
+- Fixed DS18B20 development detection by supplementing the required external
+  pull-up with GPIO4's internal pull-up.
+- Proved physical ESP32-to-PHP-to-MySQL ingestion and confirmed both website and
+  owner-scoped Flutter monitoring read the current AQS-001 record.
+- Verified HC-SR04, DS18B20, SEN0189 raw ADC, AHT2x, and valid MQ-135 raw data
+  without presenting uncalibrated NTU, L/min, or ppm values.
+- Retained PARTIAL hardware status: YF-S201 protection/GPIO19 is not verified,
+  ENS160 is not detected, and several connected signals remain intermittent.
 
 ## Website/backend 1.3.0 and ESP32 Final Hardware Phase 8 audit
 

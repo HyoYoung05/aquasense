@@ -4,10 +4,10 @@ Date: 2026-10-18
 Authorized hardware port: COM6 only
 Status: **PARTIAL**
 
-The user previously confirmed that the sensor modules are not available. No
-physical installation, enclosure, final-power, wet test, or field-test result is
-fabricated. Phase 7 firmware remains unchanged because the audit found no defect
-that can be corrected without the missing hardware.
+This numbered section preserves the original 2026-10-18 audit, when the user
+confirmed that the sensor modules were not available. No physical installation,
+enclosure, final-power, wet test, or field-test result was fabricated. The
+2026-10-22 connected-sensor evidence is recorded in the post-audit section below.
 
 ## General
 
@@ -189,3 +189,17 @@ that can be corrected without the missing hardware.
   committed device credential.
 - AQS-001 remained at 335 readings with latest reading ID 409 and unchanged
   `last_seen_at`; Phase 8 inserted no fake device telemetry.
+
+## Post-audit connected-sensor follow-up — 2026-10-22
+
+The previously unavailable modules were connected after this 72-item audit.
+Firmware 0.7.1 was compiled and hash-verified on the user-corrected COM7 port.
+Authenticated physical telemetry reached PHP/MySQL, website monitoring, and the
+Flutter monitoring model. HC-SR04, DS18B20, SEN0189 raw ADC, AHT2x, and valid
+MQ-135 raw samples have end-to-end evidence.
+
+The final status remains **PARTIAL**. YF-S201 is gated pending GPIO19/protection
+verification, ENS160 is not detected, and HC-SR04, AHT2x, SEN0189, and MQ-135
+showed intermittent faults requiring wiring, power, calibration, and sustained
+testing. This follow-up does not create Phase 9. See
+[the connected-sensor report](PHYSICAL-VERIFICATION-2026-10-22.md).

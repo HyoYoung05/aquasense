@@ -2,9 +2,54 @@
 
 #include <Arduino.h>
 
+// Optional ignored hardware profile. The committed defaults below keep every
+// physically gated Phase 4 input disabled until the specific installation is
+// checked. Copy config.local.example.h to config.local.h to activate only the
+// modules and protected inputs verified on the connected prototype.
+#if __has_include("config.local.h")
+#include "config.local.h"
+#endif
+
+#ifndef AQUASENSE_HW_ENABLE_DS18B20
+#define AQUASENSE_HW_ENABLE_DS18B20 0
+#endif
+#ifndef AQUASENSE_HW_ENABLE_TURBIDITY
+#define AQUASENSE_HW_ENABLE_TURBIDITY 0
+#endif
+#ifndef AQUASENSE_HW_TURBIDITY_INPUT_VERIFIED
+#define AQUASENSE_HW_TURBIDITY_INPUT_VERIFIED 0
+#endif
+#ifndef AQUASENSE_HW_ENABLE_FLOW
+#define AQUASENSE_HW_ENABLE_FLOW 0
+#endif
+#ifndef AQUASENSE_HW_FLOW_SIGNAL_VERIFIED
+#define AQUASENSE_HW_FLOW_SIGNAL_VERIFIED 0
+#endif
+#ifndef AQUASENSE_HW_ENABLE_ENS160
+#define AQUASENSE_HW_ENABLE_ENS160 0
+#endif
+#ifndef AQUASENSE_HW_ENABLE_AHT2X
+#define AQUASENSE_HW_ENABLE_AHT2X 0
+#endif
+#ifndef AQUASENSE_HW_ENS160_USE_INTERRUPT
+#define AQUASENSE_HW_ENS160_USE_INTERRUPT 0
+#endif
+#ifndef AQUASENSE_HW_ENABLE_MQ135
+#define AQUASENSE_HW_ENABLE_MQ135 0
+#endif
+#ifndef AQUASENSE_HW_MQ135_INPUT_VERIFIED
+#define AQUASENSE_HW_MQ135_INPUT_VERIFIED 0
+#endif
+#ifndef AQUASENSE_HW_ENS160_I2C_ADDRESS
+#define AQUASENSE_HW_ENS160_I2C_ADDRESS 0x00
+#endif
+#ifndef AQUASENSE_HW_AHT2X_I2C_ADDRESS
+#define AQUASENSE_HW_AHT2X_I2C_ADDRESS 0x00
+#endif
+
 namespace AquaSenseConfig {
 
-inline constexpr char FIRMWARE_VERSION[] = "0.7.0";
+inline constexpr char FIRMWARE_VERSION[] = "0.7.1";
 inline constexpr char POWER_MODE[] =
     "USB DEVELOPMENT - EXTERNAL DC NOT VERIFIED";
 inline constexpr bool EXTERNAL_DC_POWER_VERIFIED = false;
@@ -45,16 +90,20 @@ inline constexpr float ULTRASONIC_MAX_DISTANCE_CM = 400.0F;
 #define AQUASENSE_ENABLE_DS18B20_LIBRARIES 1
 #define AQUASENSE_ENABLE_ENS160_LIBRARY 1
 #define AQUASENSE_ENABLE_AHT2X_LIBRARY 1
-inline constexpr bool ENABLE_DS18B20 = false;
-inline constexpr bool ENABLE_TURBIDITY = false;
-inline constexpr bool TURBIDITY_INPUT_VOLTAGE_VERIFIED = false;
-inline constexpr bool ENABLE_FLOW = false;
-inline constexpr bool FLOW_SIGNAL_VOLTAGE_VERIFIED = false;
-inline constexpr bool ENABLE_ENS160 = false;
-inline constexpr bool ENABLE_AHT2X = false;
-inline constexpr bool ENS160_USE_INTERRUPT = false;
-inline constexpr bool ENABLE_MQ135 = false;
-inline constexpr bool MQ135_INPUT_VOLTAGE_VERIFIED = false;
+inline constexpr bool ENABLE_DS18B20 = AQUASENSE_HW_ENABLE_DS18B20 != 0;
+inline constexpr bool ENABLE_TURBIDITY = AQUASENSE_HW_ENABLE_TURBIDITY != 0;
+inline constexpr bool TURBIDITY_INPUT_VOLTAGE_VERIFIED =
+    AQUASENSE_HW_TURBIDITY_INPUT_VERIFIED != 0;
+inline constexpr bool ENABLE_FLOW = AQUASENSE_HW_ENABLE_FLOW != 0;
+inline constexpr bool FLOW_SIGNAL_VOLTAGE_VERIFIED =
+    AQUASENSE_HW_FLOW_SIGNAL_VERIFIED != 0;
+inline constexpr bool ENABLE_ENS160 = AQUASENSE_HW_ENABLE_ENS160 != 0;
+inline constexpr bool ENABLE_AHT2X = AQUASENSE_HW_ENABLE_AHT2X != 0;
+inline constexpr bool ENS160_USE_INTERRUPT =
+    AQUASENSE_HW_ENS160_USE_INTERRUPT != 0;
+inline constexpr bool ENABLE_MQ135 = AQUASENSE_HW_ENABLE_MQ135 != 0;
+inline constexpr bool MQ135_INPUT_VOLTAGE_VERIFIED =
+    AQUASENSE_HW_MQ135_INPUT_VERIFIED != 0;
 
 inline constexpr uint32_t TEMPERATURE_INTERVAL_MS = 3000;
 inline constexpr uint32_t TEMPERATURE_CONVERSION_MS = 750;
@@ -79,8 +128,10 @@ inline constexpr float ADC_REFERENCE_V = 3.3F;
 inline constexpr float ANALOG_SOURCE_MULTIPLIER = 1.5F;
 // Set these only after the physical combo board is repeatedly detected by the
 // I2C scanner. Zero deliberately prevents assumed internet-example addresses.
-inline constexpr uint8_t ENS160_I2C_ADDRESS = 0x00;
-inline constexpr uint8_t AHT2X_I2C_ADDRESS = 0x00;
+inline constexpr uint8_t ENS160_I2C_ADDRESS =
+    AQUASENSE_HW_ENS160_I2C_ADDRESS;
+inline constexpr uint8_t AHT2X_I2C_ADDRESS =
+    AQUASENSE_HW_AHT2X_I2C_ADDRESS;
 inline constexpr uint8_t I2C_STABLE_SCAN_COUNT = 3;
 inline constexpr uint32_t I2C_TIMEOUT_MS = 50;
 

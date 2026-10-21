@@ -27,6 +27,10 @@ void temperatureSensorBegin(SensorData& data) {
                           : SensorState::kDisabled;
 #if AQUASENSE_ENABLE_DS18B20_LIBRARIES
   if (!AquaSenseConfig::ENABLE_DS18B20) return;
+  // Keep the data line defined during development and reconnects. The ESP32's
+  // weak internal pull-up is only supplemental; the installed probe still
+  // requires the external pull-up specified by the revised schematic.
+  pinMode(AquaSensePins::DS18B20_DATA, INPUT_PULLUP);
   ds18b20.begin();
   ds18b20.setWaitForConversion(false);
   lastActionMs = millis();

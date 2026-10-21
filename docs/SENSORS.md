@@ -1,8 +1,8 @@
 # AQUASENSE+ sensor implementation status
 
-Firmware 0.7.0 implements the six-module architecture while keeping every
-unverified physical input disabled. Enable a module only after checking its
-actual wiring, supply, and divider voltage.
+Firmware 0.7.1 implements the six-module architecture. Committed defaults keep
+every physical input disabled; an ignored `config.local.h` enables only the
+paths checked on the connected prototype.
 
 | Module | Library / method | Data | Invalid or uncalibrated behavior |
 | --- | --- | --- | --- |
@@ -19,18 +19,17 @@ independent `DISABLED`, `UNAVAILABLE`, `WARMING_UP`, `NOT_CALIBRATED`, `VALID`,
 or `ERROR` state. One failure does not block the other sensors, Wi-Fi, or main
 loop.
 
-`config.h` leaves the five new modules disabled until physical checks are
-possible. ENS160 and AHT2x addresses remain `0x00`. Run `I2CScanner` and require
-three stable scans before entering actual addresses. The sensor-absent COM6
-test produced seven stable zero-device scans; this verifies the scanner but is
-not an address result for the missing board.
+`config.h` provides safe defaults and loads ignored `config.local.h` when
+present. On 2026-10-22, repeated COM7 scans found AHT2x at `0x38` but no ENS160
+at `0x52` or `0x53`. AHT2x was enabled locally; ENS160 remains disabled.
 
 Phase 6 calibration software gates are implemented, but every physical
 calibration remains pending. See `CALIBRATION.md`; no provisional factor or raw
 ADC value is published as a calibrated engineering unit.
 
-Phase 8 found no physical sensor module available for final installation. None
-of the planned Chamber 1, Chamber 3, inlet-pipe, or wastewater-probe placements
-is marked installed. Final mounting, moisture protection, calibration
-revalidation, and real telemetry remain blocked. See `FINAL_ASSEMBLY.md` and
-`../esp32/PHASE8-TEST-REPORT.md`.
+A post-Phase-8 COM7 follow-up verified real telemetry for HC-SR04, DS18B20,
+SEN0189 raw ADC, AHT2x, and valid MQ-135 raw samples. YF-S201 is still gated,
+ENS160 is absent, and several signals are intermittent. Final mounting,
+moisture protection, calibration, and sustained stability remain blocked. See
+`FINAL_ASSEMBLY.md`, `../esp32/PHASE8-TEST-REPORT.md`, and the
+[connected-sensor report](../esp32/PHYSICAL-VERIFICATION-2026-10-22.md).

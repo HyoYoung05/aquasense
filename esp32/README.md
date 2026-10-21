@@ -1,16 +1,17 @@
 # AQUASENSE+ ESP32 Hardware — Final Phase 8
 
-Firmware **0.7.0** preserves the Phase 1–6 sensor, telemetry, power, and
-calibration implementation and adds bounded outage recovery. Physical
-verification remains on hold until sensors are available.
+Firmware **0.7.1** preserves the Phase 1–7 sensor, telemetry, power,
+calibration, and bounded outage-recovery implementation. A 2026-10-22 COM7
+follow-up now contains real connected-sensor and end-to-end evidence.
 
 ```text
 HC-SR04 -> ESP32 -> Wi-Fi -> PHP API -> MySQL/MariaDB -> website / Flutter
 ```
 
-The ESP32 never accesses MySQL. All unverified physical sensor gates remain
-disabled because the sensors are not currently available. The software is
-ready for one-at-a-time physical verification in required 4A-4E order.
+The ESP32 never accesses MySQL. Public sensor gates remain disabled by default;
+an ignored local hardware profile enables only paths verified on one prototype.
+The current COM7 profile enables DS18B20, SEN0189 raw ADC, AHT2x at `0x38`, and
+MQ-135 raw ADC. YF-S201 and ENS160 remain disabled pending hardware correction.
 
 ## Six physical modules
 
@@ -50,9 +51,11 @@ Wi-Fi recovery, or the main loop.
 ## Private configuration and activation
 
 Copy `secrets.example.h` to ignored `secrets.h` for Wi-Fi, endpoint, device
-key, and optional trusted CA. Never commit it.
+key, and optional trusted CA. Copy `config.local.example.h` to ignored
+`config.local.h` for prototype-specific sensor gates and I2C addresses. Never
+commit either private file.
 
-Before enabling each Phase 4 sensor in `config.h`:
+Before enabling each Phase 4 sensor in `config.local.h`:
 
 1. Wire only that module using [the pinout](../docs/PINOUT.md).
 2. Confirm the actual board supply requirement.
@@ -61,6 +64,23 @@ Before enabling each Phase 4 sensor in `config.h`:
    actual addresses.
 5. Enable only that module and repeat sensor, HC-SR04, Wi-Fi, API, database,
    website, Flutter, and reset checks.
+
+## Connected-sensor verification on 2026-10-22
+
+- Firmware 0.7.1 compiled at 989,088 bytes flash and 51,200 bytes RAM and was
+  hash-verified on COM7.
+- HC-SR04, DS18B20, SEN0189 raw ADC, AHT2x, and valid MQ-135 raw samples reached
+  the PHP API and MySQL. Website and Flutter monitoring both returned AQS-001
+  as online with the current physical record.
+- DS18B20 is valid after adding an internal development pull-up; the external
+  schematic pull-up remains required.
+- Repeated I2C scans found only AHT2x at `0x38`; ENS160 was not detected.
+- YF-S201 remains disabled until its protected signal is verified on official
+  GPIO19. No false flow rate is stored.
+- HC-SR04 timeouts, intermittent AHT2x errors, a recoverable SEN0189 rail fault,
+  and noisy MQ-135 samples keep physical acceptance PARTIAL.
+
+See the [full connected-sensor report](PHYSICAL-VERIFICATION-2026-10-22.md).
 
 ## Telemetry semantics
 
@@ -158,9 +178,10 @@ OLED, buzzer, or approved backup-battery circuit.
 
 Software/build/runtime and regression evidence is in the
 [Phase 7 report](PHASE7-TEST-REPORT.md); design details are in
-[RELIABILITY.md](../docs/RELIABILITY.md). With sensors and final power absent,
-physical router/server outage, sensor disconnect, latency/load, power-cycle,
-and long-duration tests remain pending. Hardware Phase 7 is **PARTIAL**. Phase
+[RELIABILITY.md](../docs/RELIABILITY.md). At the time of the Phase 7 run, the
+sensors and final power were absent; physical router/server outage,
+latency/load, power-cycle, and long-duration tests remain pending. Hardware
+Phase 7 is **PARTIAL**. Phase
 8 is final physical assembly, enclosure, installation, and end-to-end field
 testing after those blockers clear.
 
@@ -173,17 +194,18 @@ full-sensor, final-power, latency, stress, and several-hour tests.
 
 ## Final Phase 8 audit
 
-Phase 8 is the final hardware phase. Firmware remains **0.7.0** because the
-audit found no software defect and final physical testing cannot be performed
-without the six modules, grease trap, plumbing, enclosure, and approved
-regulated supply. The locked GPIO map, calibration gates, backend thresholds,
-and Phase 7 recovery behavior remain unchanged.
+Phase 8 is the final hardware phase. The 2026-10-18 audit retained firmware
+0.7.0 because the modules were unavailable at that time. After the modules were
+connected, firmware 0.7.1 added a safe local hardware profile and the DS18B20
+development pull-up fix. The locked GPIO map, calibration gates, backend
+thresholds, and Phase 7 recovery behavior remain unchanged.
 
-Only the ESP32 DevKit V1 on COM6 is physically evidenced. No sensor or final
-power component is marked installed. The final wiring/placement plan,
-low-voltage assembly sequence, moisture rules, inventory, actuation gaps, and
-readiness decision are in [Final assembly](../docs/FINAL_ASSEMBLY.md). The exact
-72-item result is in [Phase 8 report](PHASE8-TEST-REPORT.md).
+The COM7 follow-up provides connected bench evidence for the sensor set but not
+final installation acceptance. The final wiring/placement plan, low-voltage
+assembly sequence, moisture rules, inventory, actuation gaps, and readiness
+decision are in [Final assembly](../docs/FINAL_ASSEMBLY.md). The original exact
+72-item audit and its post-audit update are in the
+[Phase 8 report](PHASE8-TEST-REPORT.md).
 
 Physical latch/diversion and backup power remain blocked because no approved
 actuator/driver/GPIO/power/fail-safe design or backup-power circuit exists.

@@ -4,20 +4,21 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 test firmware.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.3.0 adds calibrated-only sensor and alert gates while preserving the full-access Admin role and limited Barangay Administrator/Environmental Staff navigation.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.3.1 adds connected-sensor verification while preserving calibrated-only sensor and alert gates, the full-access Admin role, and limited Barangay Administrator/Environmental Staff navigation.
 
 ## Current Version
 
 The repository includes the final [ESP32 Hardware Phase 8](esp32/README.md)
-firmware **0.7.0** in `esp32/UltrasonicTest`. It preserves HC-SR04, Wi-Fi, and
+firmware **0.7.1** in `esp32/UltrasonicTest`. It preserves HC-SR04, Wi-Fi, and
 retry-safe PHP telemetry, then adds independently valid drivers for DS18B20,
 SEN0189, YF-S201, the ENS160+AHT2x combination module, and MQ-135. Raw ADC
 values use dedicated database fields and are never mislabeled as NTU or gas
-ppm. The sensor-absent COM6 run connected to Wi-Fi without rebooting and left
-the AQS-001 baseline unchanged. Phase 6 centralizes calibration state, keeps
+ppm. The 2026-10-22 COM7 follow-up proved live physical telemetry through PHP,
+MySQL, website monitoring, and the Flutter monitoring model. Phase 6 centralizes calibration state, keeps
 uncalibrated NTU/L/min/ppm unavailable, and gates turbidity/flow alerts until
-physical calibration and threshold approval. Physical measurements remain
-deferred until the hardware is available, so Hardware Phases 4–8 are PARTIAL.
+physical calibration and threshold approval. Hardware Phases 4–8 remain
+PARTIAL because YF-S201 is not safely verified, ENS160 is not detected, and
+several connected signals require wiring/power stabilization and calibration.
 Phase 7 adds nonblocking Wi-Fi backoff, an eight-record bounded RAM FIFO,
 explicit HTTP failure classes, retry-stable UUIDs, I2C recovery, fault
 counters, and analog rail-fault rejection. The queue covers only brief powered
@@ -34,11 +35,11 @@ ESP32, then a
 local Wi-Fi router, then Apache/PHP, MariaDB, website, and Flutter APIs. The
 same configurable endpoint supports the separate production HTTPS target.
 
-Phase 8 is the final ESP32 hardware phase. Firmware remains **0.7.0** because no
-firmware defect was found during the final audit. Only the ESP32 DevKit V1 on
-COM6 has physical evidence; the six sensor modules, final grease-trap/plumbing,
-regulated supply, protection components, enclosure, and finished wiring are
-unavailable for final assembly and acceptance.
+Phase 8 is the final ESP32 hardware phase. Firmware **0.7.1** adds a safe local
+hardware profile and a DS18B20 development pull-up fix after the six modules
+were connected. COM7 now sends authenticated AQS-001 telemetry to the PHP API.
+HC-SR04, DS18B20, SEN0189 raw ADC, AHT2x, and valid MQ-135 raw samples have
+reached MySQL; ENS160 and YF-S201 remain isolated pending correction.
 
 The locked GPIO map and target placements are documented without claiming
 installation. Physical latch/oil diversion is blocked because the paper has no
@@ -56,7 +57,10 @@ Phase 8 software validation passed 504 sequential PHP/backend checks, Flutter
 static analysis, and all 113 Flutter tests. These results do not replace any
 physical installation or field-acceptance item.
 
-**Version: 1.3.0**
+See the [connected-sensor verification](esp32/PHYSICAL-VERIFICATION-2026-10-22.md)
+for the measured results and remaining corrections.
+
+**Version: 1.3.1**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 

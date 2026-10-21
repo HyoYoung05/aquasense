@@ -97,3 +97,22 @@ bytes flash / 50,160 bytes RAM; 35 backend checks; 53 mobile API checks;
 Flutter analysis; AQS-001 unchanged at 335 readings, latest ID 409, and
 `last_seen_at` 2026-09-30 12:17:26. Compiler warnings were confined to the
 installed DFRobot ENS160 and OneWire libraries.
+
+## Physical follow-up — 2026-10-22
+
+The user connected the sensor set and corrected the active board port to COM7.
+Firmware 0.7.1 compiled at 989,088 bytes flash and 51,200 bytes RAM and was
+hash-verified on COM7.
+
+- HC-SR04, DS18B20, SEN0189 raw ADC, AHT2x, and valid MQ-135 raw samples reached
+  PHP/MySQL; website and Flutter monitoring read the current AQS-001 record.
+- DS18B20 became valid after a supplemental internal pull-up was added; the
+  external schematic resistor is still required.
+- AHT2x was repeatedly detected at `0x38`; ENS160 was not detected at `0x52`
+  or `0x53`.
+- YF-S201 remains disabled until the official GPIO19 protected input is
+  electrically verified. No fabricated pulse count or L/min value is stored.
+- HC-SR04 no-echo events, intermittent AHT2x/I2C errors, a SEN0189 rail-fault
+  interval, and noisy MQ-135 readings keep Phase 4 **PARTIAL**.
+
+See [the connected-sensor report](PHYSICAL-VERIFICATION-2026-10-22.md).
