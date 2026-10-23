@@ -49,7 +49,7 @@
 
 namespace AquaSenseConfig {
 
-inline constexpr char FIRMWARE_VERSION[] = "0.8.1";
+inline constexpr char FIRMWARE_VERSION[] = "0.8.2";
 inline constexpr char POWER_MODE[] =
     "USB DEVELOPMENT - EXTERNAL DC NOT VERIFIED";
 inline constexpr bool EXTERNAL_DC_POWER_VERIFIED = false;

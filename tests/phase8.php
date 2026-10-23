@@ -64,7 +64,7 @@ try {
     p8_check(str_contains((string)($plan['key']??''),'reading_assignment'),'Latest telemetry query uses the assignment/time index');
     $started=microtime(true);phase7_report_data($pdo,phase7_report_filters(['report'=>'overview','period'=>'last30']));p8_check(microtime(true)-$started<5,'Representative 30-day report completes within five seconds locally');
     $constraints=(int)$pdo->query('SELECT COUNT(*) FROM information_schema.referential_constraints WHERE constraint_schema=DATABASE()')->fetchColumn();p8_check($constraints>=25,'Foreign-key coverage is present across operational records');
-    $before=(int)$pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();$pdo->exec((string)file_get_contents(dirname(__DIR__).'/database/migrations/011-phase4-sensor-fields.sql'));p8_check((int)$pdo->query('SELECT COUNT(*) FROM users')->fetchColumn()===$before,'Latest migration is safe to reapply without changing business rows');
+    $before=(int)$pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();$pdo->exec((string)file_get_contents(dirname(__DIR__).'/database/migrations/011-phase4-sensor-fields.sql'));p8_check((int)$pdo->query('SELECT COUNT(*) FROM users')->fetchColumn()===$before,'Sensor-field migration is safe to reapply without changing business rows');
 
     $reference=(string)file_get_contents(dirname(__DIR__).'/database/reference-data.sql');$sample=(string)file_get_contents(dirname(__DIR__).'/database/sample-data.sql');
     p8_check(!str_contains($reference,'password_hash')&&!str_contains($reference,'@aquasense.test'),'Production reference data contains no accounts or passwords');

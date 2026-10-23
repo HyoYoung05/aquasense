@@ -45,19 +45,19 @@ void ultrasonicBegin() {
   pinMode(AquaSensePins::ULTRASONIC_ECHO, INPUT);
 }
 
-bool ultrasonicAlgorithmSelfTest() {
+bool ultrasonicAlgorithmCheck() {
   float medianSamples[] = {30.0F, 10.0F, 21.0F, 20.0F, 20.0F};
   const float median = medianOfValidSamples(medianSamples, 5U);
-  const float fillAt10 = calculateTestFillPercent(
+  const float fillAt10 = calculateFillPercent(
       10.0F, AquaSenseCalibration::ULTRASONIC_EMPTY_DISTANCE_CM,
       AquaSenseCalibration::ULTRASONIC_FULL_DISTANCE_CM);
-  const float fillAt20 = calculateTestFillPercent(
+  const float fillAt20 = calculateFillPercent(
       20.0F, AquaSenseCalibration::ULTRASONIC_EMPTY_DISTANCE_CM,
       AquaSenseCalibration::ULTRASONIC_FULL_DISTANCE_CM);
-  const float fillAt30 = calculateTestFillPercent(
+  const float fillAt30 = calculateFillPercent(
       30.0F, AquaSenseCalibration::ULTRASONIC_EMPTY_DISTANCE_CM,
       AquaSenseCalibration::ULTRASONIC_FULL_DISTANCE_CM);
-  const float invalidFill = calculateTestFillPercent(
+  const float invalidFill = calculateFillPercent(
       NAN, AquaSenseCalibration::ULTRASONIC_EMPTY_DISTANCE_CM,
       AquaSenseCalibration::ULTRASONIC_FULL_DISTANCE_CM);
   return fabsf(median - 20.0F) < 0.01F &&
@@ -106,19 +106,15 @@ UltrasonicReading readUltrasonic() {
 
   reading.medianDistanceCm =
       medianOfValidSamples(validDistances, reading.validSampleCount);
-  if (!testCalibrationIsValid(
-          AquaSenseCalibration::ULTRASONIC_EMPTY_DISTANCE_CM,
-          AquaSenseCalibration::ULTRASONIC_FULL_DISTANCE_CM)) {
-    reading.status = UltrasonicStatus::kCalibrationError;
-    return reading;
+  if (AquaSenseCalibration::ULTRASONIC_PHYSICALLY_CALIBRATED &&
+      calibrationIsValid(AquaSenseCalibration::ULTRASONIC_EMPTY_DISTANCE_CM,
+                         AquaSenseCalibration::ULTRASONIC_FULL_DISTANCE_CM)) {
+    reading.localFillPercent = calculateFillPercent(
+        reading.medianDistanceCm,
+        AquaSenseCalibration::ULTRASONIC_EMPTY_DISTANCE_CM,
+        AquaSenseCalibration::ULTRASONIC_FULL_DISTANCE_CM);
   }
-  reading.testFillPercent = calculateTestFillPercent(
-      reading.medianDistanceCm,
-      AquaSenseCalibration::ULTRASONIC_EMPTY_DISTANCE_CM,
-      AquaSenseCalibration::ULTRASONIC_FULL_DISTANCE_CM);
-  reading.status = isfinite(reading.testFillPercent)
-      ? UltrasonicStatus::kOk
-      : UltrasonicStatus::kCalibrationError;
+  reading.status = UltrasonicStatus::kOk;
   return reading;
 }
 
@@ -128,7 +124,6 @@ const char* ultrasonicStatusName(const UltrasonicStatus status) {
     case UltrasonicStatus::kNoEcho: return "NO_ECHO";
     case UltrasonicStatus::kOutOfRange: return "OUT_OF_RANGE";
     case UltrasonicStatus::kInsufficientValidSamples: return "INSUFFICIENT_SAMPLES";
-    case UltrasonicStatus::kCalibrationError: return "CALIBRATION_ERROR";
   }
   return "ERROR";
 }
@@ -138,11 +133,14 @@ void printUltrasonicLiveSection(const UltrasonicReading& reading) {
   if (reading.status == UltrasonicStatus::kOk &&
       isfinite(reading.medianDistanceCm)) {
     Serial.printf("Filtered distance: %.2f cm\n", reading.medianDistanceCm);
-    Serial.printf("Development fill estimate: %.1f%%\n",
-                  reading.testFillPercent);
+    if (isfinite(reading.localFillPercent)) {
+      Serial.printf("Local fill estimate: %.1f%%\n", reading.localFillPercent);
+    } else {
+      Serial.println(F("Local fill estimate: UNKNOWN (calibration pending)"));
+    }
   } else {
     Serial.println(F("Filtered distance: INVALID"));
-    Serial.println(F("Development fill estimate: UNKNOWN"));
+    Serial.println(F("Local fill estimate: UNKNOWN"));
   }
   Serial.printf("Valid echo samples: %u/%u\n",
                 static_cast<unsigned int>(reading.validSampleCount),
@@ -167,7 +165,11 @@ void printUltrasonicDiagnostics(const UltrasonicReading& reading,
 
   if (reading.status == UltrasonicStatus::kOk) {
     Serial.printf("Median distance: %.2f cm\n", reading.medianDistanceCm);
-    Serial.printf("Test fill: %.1f%%\n", reading.testFillPercent);
+    if (isfinite(reading.localFillPercent)) {
+      Serial.printf("Local fill estimate: %.1f%%\n", reading.localFillPercent);
+    } else {
+      Serial.println(F("Local fill estimate: UNKNOWN (calibration pending)"));
+    }
     Serial.println(F("Sensor: OK"));
   } else {
     Serial.println(F("Distance: INVALID"));

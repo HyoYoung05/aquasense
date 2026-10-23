@@ -6,7 +6,7 @@ paths checked on the connected prototype.
 
 | Module | Library / method | Data | Invalid or uncalibrated behavior |
 | --- | --- | --- | --- |
-| HC-SR04 | ESP32 pulse acquisition | Duration, median distance, test fill | Distance invalid, fill unknown, no telemetry |
+| HC-SR04 | ESP32 pulse acquisition | Duration, median distance, optional calibrated local fill | Distance invalid, fill unknown, no telemetry |
 | DS18B20 | OneWire + DallasTemperature | Wastewater temperature | Null/N/A; never humidity |
 | SEN0189 | Latest + averaged ADC | Raw ADC and diagnostic voltage | NTU stays null until physical calibration |
 | YF-S201 | GPIO interrupt counter | Pulses and frequency | L/min stays null until known-volume calibration |

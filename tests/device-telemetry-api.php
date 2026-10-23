@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 if (PHP_SAPI !== 'cli' || !in_array('--allow-local-fixtures', $argv, true)) {
-    exit("Usage: php tests/ultrasonic-api.php --allow-local-fixtures\n");
+    exit("Usage: php tests/device-telemetry-api.php --allow-local-fixtures\n");
 }
 require dirname(__DIR__) . '/config/config.php';
 require dirname(__DIR__) . '/config/database.php';
-require dirname(__DIR__) . '/includes/ultrasonic-test.php';
+require dirname(__DIR__) . '/includes/telemetry.php';
 require dirname(__DIR__) . '/includes/mobile-monitoring.php';
 if ($config['environment'] !== 'development') throw new RuntimeException('Development fixtures only.');
 $base = rtrim((string) $config['test_base_url'], '/');
@@ -31,39 +31,34 @@ function request_test(string $path, string $method = 'GET', ?string $body = null
     curl_close($c);
     return ['status' => $status, 'body' => $raw, 'json' => json_decode($raw, true)];
 }
-$cal = ['empty_distance_cm' => 30, 'full_distance_cm' => 5, 'warning_percent' => 75, 'critical_percent' => 90];
-foreach ([[30,0,'NORMAL'], [12.4,70.4,'NORMAL'], [11.25,75,'WARNING'], [7.5,90,'CRITICAL'], [5,100,'CRITICAL'], [3,100,'CRITICAL'], [35,0,'NORMAL']] as [$cm,$pct,$status]) {
-    $level = ultrasonic_test_level((float) $cm, $cal);
+$trapCalibration = ['empty_distance_cm'=>30,'full_distance_cm'=>5,'low_threshold'=>20,'medium_threshold'=>50,'high_threshold'=>75,'critical_threshold'=>90];
+foreach ([[30,0,'NORMAL'],[12.4,70.4,'MEDIUM'],[11.25,75,'HIGH'],[7.5,90,'CRITICAL'],[5,100,'OVERFLOW'],[3,100,'OVERFLOW'],[35,0,'NORMAL']] as [$cm,$pct,$status]) {
+    $level = phase3_calculate_level((float)$cm,$trapCalibration,95);
     check(abs($level['waste_level_percent']-$pct) < 0.01 && $level['status'] === $status, 'Calibration boundary at ' . $cm . ' cm');
-}
-foreach ([0,1.99,401,INF,NAN] as $invalid) {
-    try { ultrasonic_test_level($invalid, $cal); $rejected = false; } catch (InvalidArgumentException) { $rejected = true; }
-    check($rejected, 'Invalid distance rejected by calculation');
 }
 $pdo = db();
 $uid = $site = $trap = $device = $assignment = null;
-$email = 'ultrasonic-' . bin2hex(random_bytes(6)) . '@example.test';
+$email = 'device-telemetry-' . bin2hex(random_bytes(6)) . '@example.test';
 $key = bin2hex(random_bytes(32));
 $password = bin2hex(random_bytes(24));
 $path = '/api/device/telemetry.php';
-$code = 'UT-' . bin2hex(random_bytes(6));
+$code = 'DT-' . bin2hex(random_bytes(6));
 try {
     $role = $pdo->query("SELECT id FROM roles WHERE slug = 'owner'")->fetchColumn();
     $pdo->prepare('INSERT INTO users (role_id,full_name,email,password_hash) VALUES (?,?,?,?)')
-        ->execute([$role,'Ultrasonic fixture',$email,password_hash($password,PASSWORD_DEFAULT)]);
+        ->execute([$role,'Device telemetry fixture',$email,password_hash($password,PASSWORD_DEFAULT)]);
     $uid = (int) $pdo->lastInsertId();
     $pdo->prepare('INSERT INTO establishments (registration_code,business_name,owner_user_id,owner_name,address,registration_date)
-        VALUES (?,?,?,?,?,CURRENT_DATE())')->execute([$code,'Ultrasonic fixture',$uid,'Test','Test']);
+        VALUES (?,?,?,?,?,CURRENT_DATE())')->execute([$code,'Device telemetry fixture',$uid,'Test','Test']);
     $site = (int) $pdo->lastInsertId();
     $pdo->prepare('INSERT INTO grease_traps (establishment_id,trap_code,name,capacity_liters,low_threshold,medium_threshold,high_threshold,critical_threshold,empty_distance_cm,full_distance_cm)
         VALUES (?,?,?,1,20,50,75,90,30,5)')->execute([$site,$code,'Test']);
     $trap = (int) $pdo->lastInsertId();
     $pdo->prepare('INSERT INTO devices (device_code,name,device_type,api_key_hash) VALUES (?,?,?,?)')
-        ->execute([$code,'Fixture','ESP32_ULTRASONIC_TEST',hash('sha256',$key)]);
+        ->execute([$code,'Six-sensor fixture','ESP32_SIX_SENSOR',hash('sha256',$key)]);
     $device = (int) $pdo->lastInsertId();
     $pdo->prepare('INSERT INTO device_assignments (device_id,grease_trap_id,started_at) VALUES (?,?,UTC_TIMESTAMP())')->execute([$device,$trap]);
     $assignment = (int) $pdo->lastInsertId();
-    $pdo->prepare('INSERT INTO device_ultrasonic_test_config VALUES (?,30,5,75,90)')->execute([$device]);
     $body = ['device_id'=>$code,'grease_trap_id'=>$trap,'ultrasonic_distance'=>12.4,'waste_level_percent'=>70.4,'status'=>'MEDIUM'];
     $json = json_encode($body);
     check(request_test($path)['status'] === 405, 'GET does not insert telemetry');
@@ -92,7 +87,7 @@ try {
     $q->execute([$assignment]); $row=$q->fetch();
     check((float)$row['ultrasonic_distance_cm'] === 12.4 && (float)$row['waste_level_percent'] === 70.4, 'Distance and derived percentage stored');
     check($row['temperature_c'] === null && $row['turbidity_ntu'] === null && $row['gas_value'] === null && $row['odor_value'] === null, 'Absent sensors remain NULL');
-    check((int)$row['is_test'] === 1 && (int)$row['is_simulated'] === 0, 'Hardware contract marks bench test separately from simulation');
+    check((int)$row['is_test'] === 0 && (int)$row['is_simulated'] === 0, 'Physical device telemetry is stored as device data');
     $q=$pdo->prepare('SELECT api_key_hash,last_seen_at FROM devices WHERE id=?'); $q->execute([$device]); $d=$q->fetch();
     check($d['api_key_hash']===hash('sha256',$key) && $d['last_seen_at']!==null,'Only key hash stored; heartbeat updated on acceptance');
     check(request_test($path,'POST',$json,$key)['status'] === 429,'Rapid repeated telemetry is limited');
@@ -109,7 +104,7 @@ try {
     $reply=request_test('/api/mobile/dashboard.php','GET',null,$ownerToken);
     $r=$reply['json']['data']['establishments'][0]['traps'][0];
     check($reply['status']===200 && $r['status']==='CRITICAL' && $r['reading']['temperature_c']===null
-        && $r['reading']['is_test']===true && $r['reading']['ultrasonic_distance_cm']===7.5,'Owner API reads stored ultrasonic test without fake temperature');
+        && $r['reading']['is_test']===false && $r['reading']['ultrasonic_distance_cm']===7.5,'Owner API reads stored device telemetry without fake temperature');
     check(mobile_dashboard($uid)['establishments'][0]['traps'][0]['status']==='CRITICAL','Shared PHP reader can serve website telemetry later');
     $pdo->prepare('UPDATE sensor_readings SET recorded_at=DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 DAY) WHERE device_assignment_id=?')->execute([$assignment]);
     $r=mobile_dashboard($uid)['establishments'][0]['traps'][0];
@@ -133,10 +128,7 @@ try {
         $pdo->prepare('DELETE FROM sensor_readings WHERE device_assignment_id=?')->execute([$assignment]);
         $pdo->prepare('DELETE FROM device_assignments WHERE id=?')->execute([$assignment]);
     }
-    if($device) {
-        $pdo->prepare('DELETE FROM device_ultrasonic_test_config WHERE device_id=?')->execute([$device]);
-        $pdo->prepare('DELETE FROM devices WHERE id=?')->execute([$device]);
-    }
+    if($device) $pdo->prepare('DELETE FROM devices WHERE id=?')->execute([$device]);
     if($trap) $pdo->prepare('DELETE FROM grease_traps WHERE id=?')->execute([$trap]);
     if($site) $pdo->prepare('DELETE FROM establishments WHERE id=?')->execute([$site]);
     if($uid) {

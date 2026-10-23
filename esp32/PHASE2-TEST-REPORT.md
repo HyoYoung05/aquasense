@@ -12,7 +12,7 @@ Overall result: **SOFTWARE PASS / PHYSICAL SENSOR TESTS DEFERRED**
 | Timeout | PASS | 30,000 us bounded timeout; absent sensor returns 0 us |
 | Invalid reading detection | PASS | No-Echo, range, sample-count, and calibration states are explicit |
 | Median filtering | PASS (algorithm) | On-device fixed-vector self-test selects 20 cm median |
-| Test fill formula | PASS (algorithm) | On-device self-test confirms 10 cm=80%, 20 cm=40%, 30 cm=0% for temporary 30/5 cm calibration |
+| Local fill formula | PASS (algorithm) | On-device check confirms 10 cm=80%, 20 cm=40%, 30 cm=0% for the documented 30/5 cm reference geometry |
 | Clamp 0-100% | PASS (code review) | Calculation returns bounded result only for finite input and valid calibration |
 | Failed-Echo safety | PASS (COM6) | Every failure printed INVALID / UNKNOWN / ERROR; no 0 cm, 0%, 100%, or OK substitution |
 | Approximately 10 cm physical target | DEFERRED | HC-SR04 is not available |

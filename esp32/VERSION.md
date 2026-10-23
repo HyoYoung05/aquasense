@@ -2,7 +2,18 @@
 
 ## Current version
 
-0.8.1
+0.8.2
+
+## 0.8.2 - Deployment identity cleanup - 2026-10-23
+
+- Removed the serial Wi-Fi fault-injection command used during reliability
+  testing.
+- Renamed ultrasonic fill helpers and state from bench-test terminology to the
+  production sensor vocabulary.
+- Keeps local fill `UNKNOWN` until physical calibration is approved while
+  continuing to upload valid raw HC-SR04 distance for server-side calculation.
+- Preserved median filtering, invalid-reading rejection, six-sensor reporting,
+  retry-safe telemetry, and all official GPIO assignments.
 
 ## 0.8.1 - Consolidated six-sensor live report - 2026-10-22
 

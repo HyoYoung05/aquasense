@@ -54,7 +54,7 @@ HTTP status codes: 200 success, 400 malformed JSON, 401 invalid authentication,
 returned; they are logged through the existing PHP log configuration.
 
 Database upgrade: import database/migrations/001-mobile-tokens.sql into the existing
-aquasense database. Fresh development installs import schema.sql and sample-data.sql first. Apply migration 002-ultrasonic-test.sql once after migration 001 for the current reader.
+aquasense database. Fresh development installs import schema.sql and sample-data.sql first. Apply migration 002-sensor-telemetry-foundation.sql once after migration 001 for the current reader.
 The token migration is additive and repeatable. Do not reimport the full schema.
 
 Development owner: php database/mobile-development.php --allow-demo-data

@@ -5,11 +5,6 @@ require_once __DIR__.'/monitoring.php';
 
 function mobile_reading_status(array $trap, array $reading, array $settings): string
 {
-    // Test status was computed server-side at ingestion, not accepted from the device.
-    if (!empty($reading['is_test']) && isset($reading['level_status'])
-        && in_array($reading['level_status'], ['NORMAL', 'WARNING', 'CRITICAL'], true)) {
-        return $reading['level_status'];
-    }
     $level = (float) $reading['waste_level_percent'];
     if ($level >= (float) $settings['overflow_threshold']) {
         return 'OVERFLOW';

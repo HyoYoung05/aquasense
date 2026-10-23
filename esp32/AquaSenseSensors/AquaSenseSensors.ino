@@ -87,15 +87,6 @@ uint32_t nextRetryDelay(const TelemetryResult& result) {
   return delayMs;
 }
 
-void handleSerialDiagnostics() {
-  while (Serial.available() > 0) {
-    const char command = static_cast<char>(Serial.read());
-    if ((command == 'w' || command == 'W') && networkConfigurationValid) {
-      networkForceDisconnectForTest();
-    }
-  }
-}
-
 void captureTelemetry(const uint32_t nowMs) {
   if (!networkConfigurationValid ||
       !timeReached(nowMs, nextTelemetryCaptureMs)) return;
@@ -344,17 +335,15 @@ void setup() {
   environmentSensorsBegin(sensorData);
   gasSensorBegin(sensorData);
   printHardwareSummary();
-  Serial.printf("Algorithm self-test: %s\n",
-                ultrasonicAlgorithmSelfTest() ? "PASS" : "FAIL");
-  Serial.printf("RAM queue FIFO/overflow self-test: %s\n",
+  Serial.printf("Ultrasonic algorithm check: %s\n",
+                ultrasonicAlgorithmCheck() ? "PASS" : "FAIL");
+  Serial.printf("RAM queue FIFO/overflow check: %s\n",
                 telemetryQueueSelfTest() ? "PASS" : "FAIL");
-  Serial.println(F("Reference only: 10 cm=80%, 20 cm=40%, 30 cm=0% with temporary calibration."));
   networkConfigurationValid = networkSettingsAreValid();
   if (networkConfigurationValid) {
     Serial.println(F("[CONFIG] Private Wi-Fi, API URL, and device credential loaded"));
     Serial.println(F("[CONFIG] Secrets are not printed"));
     networkBegin();
-    Serial.println(F("[TEST] Send W over Serial to test Wi-Fi recovery"));
   } else {
     Serial.println(F("[CONFIG] Private network/API settings are incomplete"));
     Serial.println(F("[CONFIG] Sensing continues; telemetry is disabled"));
@@ -369,7 +358,6 @@ void setup() {
 
 void loop() {
   const uint32_t nowMs = millis();
-  handleSerialDiagnostics();
   if (networkConfigurationValid) networkUpdate(nowMs);
   temperatureSensorUpdate(nowMs, sensorData);
   turbiditySensorUpdate(nowMs, sensorData);

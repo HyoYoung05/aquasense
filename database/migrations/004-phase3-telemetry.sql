@@ -6,13 +6,6 @@ ALTER TABLE grease_traps
     ADD COLUMN IF NOT EXISTS empty_distance_cm DECIMAL(10,2) NULL AFTER critical_threshold,
     ADD COLUMN IF NOT EXISTS full_distance_cm DECIMAL(10,2) NULL AFTER empty_distance_cm;
 
--- Preserve the calibration already used by the development AQS-001 test.
-UPDATE grease_traps g
-JOIN device_assignments a ON a.grease_trap_id = g.id AND a.ended_at IS NULL
-JOIN device_ultrasonic_test_config c ON c.device_id = a.device_id
-SET g.empty_distance_cm = COALESCE(g.empty_distance_cm, c.empty_distance_cm),
-    g.full_distance_cm = COALESCE(g.full_distance_cm, c.full_distance_cm);
-
 ALTER TABLE sensor_readings
     ADD COLUMN IF NOT EXISTS device_reported_percent DECIMAL(5,2) NULL AFTER waste_level_percent,
     ADD COLUMN IF NOT EXISTS reading_uuid CHAR(36) NULL AFTER is_test,

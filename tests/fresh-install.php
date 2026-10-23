@@ -29,8 +29,8 @@ try {
     $migrations = glob($root . '/database/migrations/*.sql') ?: [];
     sort($migrations, SORT_STRING);
     foreach ($migrations as $migration) $pdo->exec((string) file_get_contents($migration));
-    fresh_check(count($migrations) === 12, 'All twelve numbered migrations were discovered in order');
-    fresh_check(count($pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN)) === 19, 'Migrations produce the complete 19-table schema');
+    fresh_check(count($migrations) === 13, 'All thirteen numbered migrations were discovered in order');
+    fresh_check(count($pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN)) === 18, 'Migrations produce the complete 18-table schema');
     $pdo->exec((string) file_get_contents($root . '/database/reference-data.sql'));
     fresh_check((int) $pdo->query('SELECT COUNT(*) FROM roles')->fetchColumn() === 4, 'Production-safe role reference data imports');
     fresh_check((int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn() === 0, 'Fresh production sequence creates no sample accounts');

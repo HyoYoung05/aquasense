@@ -9,7 +9,6 @@ enum class UltrasonicStatus : uint8_t {
   kNoEcho,
   kOutOfRange,
   kInsufficientValidSamples,
-  kCalibrationError,
 };
 
 struct UltrasonicReading {
@@ -18,12 +17,12 @@ struct UltrasonicReading {
   bool sampleValid[AquaSenseConfig::ULTRASONIC_SAMPLE_COUNT]{};
   uint8_t validSampleCount = 0;
   float medianDistanceCm = NAN;
-  float testFillPercent = NAN;
+  float localFillPercent = NAN;
   UltrasonicStatus status = UltrasonicStatus::kNoEcho;
 };
 
 void ultrasonicBegin();
-bool ultrasonicAlgorithmSelfTest();
+bool ultrasonicAlgorithmCheck();
 UltrasonicReading readUltrasonic();
 const char* ultrasonicStatusName(UltrasonicStatus status);
 void printUltrasonicLiveSection(const UltrasonicReading& reading);

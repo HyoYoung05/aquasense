@@ -74,23 +74,26 @@ On a fresh installation:
   d. Click Import.
   e. Choose C:\xampp\htdocs\aquasense-web\database\schema.sql.
   f. Click Import/Go and wait for the success message.
-  g. Click Import again.
-  h. Choose C:\xampp\htdocs\aquasense-web\database\sample-data.sql.
-  i. Click Import/Go and wait for the success message.
-  j. Import database\migrations\001-mobile-tokens.sql.
-  k. Import database\migrations\002-ultrasonic-test.sql.
-  l. Import database\migrations\003-phase2-administrative-core.sql.
-  m. Import database\migrations\004-phase3-telemetry.sql.
-  n. Import database\migrations\005-phase4-alerts.sql.
-  o. Import database\migrations\006-phase5-oil-surrender.sql.
-  p. Import database\migrations\007-phase6-incentives.sql.
-  q. Import database\migrations\008-phase7-reporting.sql.
-  r. Import database\migrations\009-system-admin-role.sql.
-  s. Import database\migrations\010-separate-odor-reading.sql.
+  g. Import database\migrations\001-mobile-tokens.sql.
+  h. Import database\migrations\002-sensor-telemetry-foundation.sql.
+  i. Import database\migrations\003-phase2-administrative-core.sql.
+  j. Import database\migrations\004-phase3-telemetry.sql.
+  k. Import database\migrations\005-phase4-alerts.sql.
+  l. Import database\migrations\006-phase5-oil-surrender.sql.
+  m. Import database\migrations\007-phase6-incentives.sql.
+  n. Import database\migrations\008-phase7-reporting.sql.
+  o. Import database\migrations\009-system-admin-role.sql.
+  p. Import database\migrations\010-separate-odor-reading.sql.
+  q. Import database\migrations\011-phase4-sensor-fields.sql.
+  r. Import database\migrations\012-phase6-calibration-gates.sql.
+  s. Import database\migrations\013-remove-ultrasonic-bench-test.sql.
+  t. Import database\sample-data.sql for local development, or
+     database\reference-data.sql for production.
 
-Import schema.sql BEFORE sample-data.sql, then apply migrations in numeric order.
+Import schema.sql first, apply migrations in numeric order, then import the
+appropriate development or production data file.
 All files must use the same server. After the complete import, the database should
-contain 19 tables, the nullable establishment notes column, and three website users.
+contain 18 tables, the nullable establishment notes column, and three website users.
 
 Import these files only once into a fresh database. They are not update scripts.
 If tables already exist, inspect the database before doing anything further.
@@ -309,13 +312,11 @@ port. Flutter may call Apache through this PC's LAN address. OPTIONS returns 204
 before authentication. Production disables this rule and uses only configured
 HTTPS origins. Verify with php tests/mobile-cors.php --allow-local-fixtures.
 
-BACKEND 0.3.0 SCHEMA UPDATE
-Apply database/migrations/002-ultrasonic-test.sql once after migration 001, including
-when deploying the updated owner dashboard reader. Back up first. This preserves
-existing readings and supports absent temperature. Migration 004 later promotes the
-device route to the production-capable telemetry endpoint with HTTPS enforcement.
-Do not provision test fixtures in production. See the sibling
-aquasense-esp32/README.md for local one-sensor testing.
+BACKEND SENSOR TELEMETRY FOUNDATION
+Apply database/migrations/002-sensor-telemetry-foundation.sql once after migration
+001. Back up first. This preserves existing readings, supports unavailable sensor
+values, and prepares the schema for the production telemetry endpoint in migration
+004. Do not provision development fixtures in production.
 
 BACKEND 0.4.0 / PHASE 2 SCHEMA UPDATE
 ------------------------------------
@@ -379,18 +380,18 @@ Open Reports and verify the compliance overview, Audit Log, filtered CSV, PDF,
 and print view. Contracts: docs\REPORTING.md
 
 After migration, sign in as the development administrator and verify Dashboard,
-Establishments, Grease Traps, and Devices. The existing AQS-001 test device is
-shown from the database; stale telemetry is reported as OFFLINE rather than being
-made current. Run tests/phase2.php only against a development database because it
+Establishments, Grease Traps, and Devices. The AQS-001 six-sensor device is shown
+from the database; stale telemetry is reported as OFFLINE rather than being made
+current. Run tests/phase2.php only against a development database because it
 creates named temporary records and removes them when the suite finishes.
 
 BACKEND 0.5.0 / PHASE 3 SCHEMA UPDATE
 ------------------------------------
 Back up the aquasense database, then import
 database/migrations/004-phase3-telemetry.sql after migration 003. It preserves
-existing readings and assignments, copies existing AQS-001 calibration to its
-grease trap, and adds telemetry retry identifiers, server received time, diagnostic
-percentage, and indexes. Do not re-import schema.sql or sample-data.sql.
+existing readings and assignments and adds telemetry retry identifiers, server
+received time, diagnostic percentage, and indexes. Do not re-import schema.sql or
+sample-data.sql.
 
 Sign in as the administrator, configure both ultrasonic calibration distances on
 each monitored grease trap, and open Devices to generate or rotate a credential.
@@ -408,10 +409,19 @@ See docs/ESP32_API.md for the payload, status codes, retry behavior, and interva
 guidance. Run tests/phase3.php only against a development database; its temporary
 records are removed afterward. Phase 4 is the next task and will add alert automation.
 
+VERSION 1.3.7 / DEPLOYMENT TELEMETRY CLEANUP
+--------------------------------------------
+Back up an existing database, then import
+database/migrations/013-remove-ultrasonic-bench-test.sql. It converts AQS-001
+from the retired one-sensor bench identity to ESP32_SIX_SENSOR, clears the old
+test marker from its physical readings, renames its temporary grease-trap label,
+and drops the obsolete device-specific bench configuration table. The production
+HC-SR04 distance field and grease-trap calibration remain available.
+
 PHASE 8 / PRODUCTION RELEASE
 ----------------------------
-For a local development install: import schema.sql, migrations 001 through 010, then sample-data.sql.
-For production: import schema.sql, migrations 001 through 010, then reference-data.sql. Never import sample-data.sql.
+For a local development install: import schema.sql, migrations 001 through 013, then sample-data.sql.
+For production: import schema.sql, migrations 001 through 013, then reference-data.sql. Never import sample-data.sql.
 Production also requires an HTTPS AQUASENSE_APP_URL, environment-managed database credentials, private upload/log paths, Composer dependencies, cron for scripts/check_offline_devices.php, backups, monitoring, and the first full-access Admin CLI.
 Read docs/DEPLOYMENT.md and complete docs/PRODUCTION_CHECKLIST.md before go-live.
 The application reads process environment variables; a .env file is not required or automatically parsed.

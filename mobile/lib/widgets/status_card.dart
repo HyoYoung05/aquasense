@@ -101,7 +101,7 @@ class StatusCard extends StatelessWidget {
                   const Padding(
                     padding: EdgeInsets.only(top: 14),
                     child: Text(
-                      'ULTRASONIC TEST · Bench readings only',
+                      'TEST DATA · Development reading',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,

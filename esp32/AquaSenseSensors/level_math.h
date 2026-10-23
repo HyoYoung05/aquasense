@@ -3,17 +3,17 @@
 #include <Arduino.h>
 #include <math.h>
 
-inline bool testCalibrationIsValid(const float emptyDistanceCm,
-                                   const float fullDistanceCm) {
+inline bool calibrationIsValid(const float emptyDistanceCm,
+                               const float fullDistanceCm) {
   return isfinite(emptyDistanceCm) && isfinite(fullDistanceCm) &&
          emptyDistanceCm > fullDistanceCm;
 }
 
-inline float calculateTestFillPercent(const float distanceCm,
-                                      const float emptyDistanceCm,
-                                      const float fullDistanceCm) {
+inline float calculateFillPercent(const float distanceCm,
+                                  const float emptyDistanceCm,
+                                  const float fullDistanceCm) {
   if (!isfinite(distanceCm) ||
-      !testCalibrationIsValid(emptyDistanceCm, fullDistanceCm)) {
+      !calibrationIsValid(emptyDistanceCm, fullDistanceCm)) {
     return NAN;
   }
   const float percent =

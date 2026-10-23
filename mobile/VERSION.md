@@ -2,7 +2,19 @@
 
 ## Current Version
 
-0.9.1+20
+0.9.2+21
+
+## 0.9.2+21 - 2026-10-23
+
+Development Phase: deployment telemetry cleanup
+
+### Changed
+
+- Replaced the obsolete ultrasonic bench-test label with a generic development
+  data label for any intentionally marked fixture.
+- Renamed focused sensor-reading coverage so the owner app tests the deployed
+  telemetry contract without presenting AQS-001 as a bench-only device.
+- Increased the application version from `0.9.1+20` to `0.9.2+21`.
 
 ## 0.9.1+20 - 2026-10-23
 

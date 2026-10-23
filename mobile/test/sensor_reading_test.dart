@@ -10,18 +10,18 @@ void main() {
     'temperature_c': null,
     'ultrasonic_distance_cm': 11.25,
     'is_simulated': false,
-    'is_test': true,
+    'is_test': false,
     'recorded_at': '2026-09-21T00:00:00Z',
   };
 
   test(
-    'ultrasonic-only telemetry retains absent temperature and test identity',
+    'device telemetry retains an unavailable temperature without a fake zero',
     () {
       final reading = SensorReading.fromJson(payload());
       expect(reading.temperature, isNull);
       expect(reading.ultrasonicDistance, 11.25);
       expect(reading.wasteLevel, 75);
-      expect(reading.isTest, isTrue);
+      expect(reading.isTest, isFalse);
       expect(reading.isSimulated, isFalse);
     },
   );
@@ -37,12 +37,12 @@ void main() {
     expect(reading.ultrasonicDistance, isNull);
   });
 
-  testWidgets('test warning renders without inventing a temperature', (
+  testWidgets('device warning renders without inventing a temperature', (
     tester,
   ) async {
     final trap = GreaseTrap(
       id: 12,
-      name: 'Ultrasonic bench test',
+      name: 'AQUASENSE+ monitored grease trap',
       status: 'WARNING',
       deviceStatus: 'ONLINE',
       deviceCode: 'AQS-001',
@@ -60,7 +60,7 @@ void main() {
     );
     expect(find.text('WARNING'), findsOneWidget);
     expect(find.text('75%'), findsOneWidget);
-    expect(find.text('ULTRASONIC TEST · Bench readings only'), findsOneWidget);
+    expect(find.text('TEST DATA · Development reading'), findsNothing);
     expect(find.text('11.3 cm'), findsOneWidget);
     expect(find.text('Not available'), findsOneWidget);
     expect(find.textContaining('0.0 °C'), findsNothing);

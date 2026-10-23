@@ -130,20 +130,6 @@ void printNetworkStatus() {
   Serial.printf(" | RSSI: %d dBm\n", WiFi.RSSI());
 }
 
-void networkForceDisconnectForTest() {
-  Serial.println(F("[WIFI TEST] Forced disconnect requested"));
-  const bool wasConnected = networkConnected();
-  WiFi.disconnect(false, false);
-  connectionAttemptActive = false;
-  if (wasConnected) ++disconnectCount;
-  previouslyConnected = false;
-  const uint32_t delayMs = currentRetryDelayMs();
-  nextAttemptMs = millis() + delayMs;
-  recoveryState = WiFiRecoveryState::kRetryWait;
-  Serial.printf("[WIFI TEST] Recovery scheduled in %lu ms\n",
-                static_cast<unsigned long>(delayMs));
-}
-
 uint32_t networkConnectionCount() { return connectionCount; }
 
 uint32_t networkReconnectCount() {

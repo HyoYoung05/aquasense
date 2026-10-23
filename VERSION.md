@@ -1,6 +1,24 @@
 # AQUASENSE+ Version History
 
-1.3.6
+1.3.7
+
+## Website/backend 1.3.7, Flutter owner app 0.9.2+21, and ESP32 firmware 0.8.2
+
+Date: 2026-10-23
+
+- Removed the obsolete one-sensor ultrasonic bench provisioning script,
+  dedicated configuration table, and bench-only helper.
+- Renamed the telemetry regression suite and schema foundation around the
+  deployable six-sensor device contract.
+- Added migration 013 to reclassify AQS-001 and its physical readings as
+  six-sensor device telemetry, rename its temporary trap identity, and remove
+  the legacy bench configuration table, leaving the complete 18-table schema.
+- Kept the production HC-SR04 acquisition, median filtering, distance field,
+  PHP calibration, MySQL storage, website display, and owner app display.
+- Removed firmware fault-injection input and test-named fill variables. Local
+  fill remains unknown until physical calibration; raw distance still uploads.
+- Removed stale private sketch/build copies that still carried the old
+  `UltrasonicTest` target name.
 
 ## Website/backend 1.3.6 and Flutter owner app 0.9.1+20
 

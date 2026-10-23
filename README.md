@@ -2,14 +2,14 @@
 
 ## Project Overview
 
-AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 test firmware.
+AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 six-sensor firmware.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.3.6 adds repeatable local Chrome testing for the website-aligned Flutter owner app while preserving calibrated-only sensor and alert gates, the full-access Admin role, and limited Barangay Administrator/Environmental Staff navigation.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.3.7 removes the obsolete one-sensor ultrasonic bench-test path and keeps the deployable six-sensor telemetry flow, calibrated-only sensor and alert gates, the full-access Admin role, and limited Barangay Administrator/Environmental Staff navigation.
 
 ## Current Version
 
 The repository includes the final [ESP32 Hardware Phase 8](esp32/README.md)
-firmware **0.8.1** in `esp32/AquaSenseSensors`. It preserves HC-SR04, Wi-Fi, and
+firmware **0.8.2** in `esp32/AquaSenseSensors`. It preserves HC-SR04, Wi-Fi, and
 retry-safe PHP telemetry, then adds independently valid drivers for DS18B20,
 SEN0189, YF-S201, the ENS160+AHT2x combination module, and MQ-135. Raw ADC
 values use dedicated database fields and are never mislabeled as NTU or gas
@@ -26,7 +26,7 @@ outages; it is cleared by reset or power loss and drops the oldest record when
 full.
 COM3 must not be used. There is no microSD, OLED,
 buzzer, or DHT22. The Flutter source is tracked under
-[`mobile/`](mobile/README.md) at version **0.9.1+20**. Generated APKs,
+[`mobile/`](mobile/README.md) at version **0.9.2+21**. Generated APKs,
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 The current Android development build is verified with Flutter **3.41.6**.
 
@@ -35,7 +35,7 @@ ESP32, then a
 local Wi-Fi router, then Apache/PHP, MariaDB, website, and Flutter APIs. The
 same configurable endpoint supports the separate production HTTPS target.
 
-Phase 8 is the final ESP32 hardware phase. Firmware **0.8.1** keeps the safe local
+Phase 8 is the final ESP32 hardware phase. Firmware **0.8.2** keeps the safe local
 hardware profile and a DS18B20 development pull-up fix after the six modules
 were connected, and applies the useful initialization details from the supplied
 combined-sensor sketch without adopting its obsolete GPIO27 flow pin or
@@ -63,7 +63,7 @@ physical installation or field-acceptance item.
 See the [connected-sensor verification](esp32/PHYSICAL-VERIFICATION-2026-10-22.md)
 for the measured results and remaining corrections.
 
-**Version: 1.3.6**
+**Version: 1.3.7**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -232,7 +232,7 @@ These are the standard steps for a healthy XAMPP installation. See **Current mac
 5. Open [phpMyAdmin](http://localhost/phpmyadmin/).
 6. Create a database named **aquasense**, using `utf8mb4_unicode_ci`.
 7. Select **aquasense**, choose **Import**, select `database/schema.sql`, and click **Import/Go**. The SQL creates tables in the database selected by the importer, so production hosts may use their assigned database name without editing the schema.
-8. Apply migrations `001-mobile-tokens.sql` through `010-separate-odor-reading.sql` in numeric order.
+8. Apply migrations `001-mobile-tokens.sql` through `013-remove-ultrasonic-bench-test.sql` in numeric order.
 9. For local development, import `database/sample-data.sql`. For a production-style empty database, import `database/reference-data.sql` instead; it creates roles but no users or passwords.
 10. Run `composer install` in the project directory to install the locked PDF dependency.
 11. If your local database credentials differ, copy `config/local.example.php` to `config/local.php` and adjust the settings. Set every development database value in the ignored file; the committed application has no database username, database name, or password defaults.
@@ -254,7 +254,7 @@ Open [credentials.txt](credentials.txt) locally in your editor for the developme
 
 `sample-data.sql` contains only PHP `password_hash()` output, not plaintext passwords in user records. Login uses `password_verify()` and rehashes passwords when the configured PHP default changes. The optional mobile development helper creates `owner@aquasense.test` with password `AquaSense!2026` and links fictional Demo Kusina. Owners cannot access the administrative website.
 
-For an existing development database, apply migrations 009-012 and provision or
+For an existing development database, apply migrations 009-013 and provision or
 repair the demo Admin account with:
 
 ```powershell
@@ -271,7 +271,7 @@ history, alerts, protected oil-surrender evidence, and incentive APIs under
 [Flutter Owner app](mobile/README.md) implements Mobile Phases 1 through 5,
 including authenticated oil surrender submission and review-state history.
 
-For an existing or fresh installation, select the `aquasense` database and import migrations 001 through 010 in order. Do not rerun the full schema on an existing database.
+For an existing or fresh installation, select the `aquasense` database and import migrations 001 through 013 in order. Do not rerun the full schema on an existing database.
 
 For local development only, run from the website directory:
 
@@ -346,6 +346,8 @@ aquasense-web/
   database/
     schema.sql                 full website database foundation
     sample-data.sql            fictional development seed
+    migrations/001-...sql      owner mobile-token migration
+    migrations/002-...sql      sensor telemetry foundation migration
     migrations/003-...sql      additive Phase 2 establishment notes migration
     migrations/004-...sql      Phase 3 telemetry/calibration migration
     migrations/005-...sql      Phase 4 alert migration
@@ -354,6 +356,9 @@ aquasense-web/
     migrations/008-...sql      Phase 7 reporting index migration
     migrations/009-...sql      full Admin role migration
     migrations/010-...sql      separate odor telemetry migration
+    migrations/011-...sql      remaining sensor telemetry fields
+    migrations/012-...sql      calibrated alert gates
+    migrations/013-...sql      retired bench identity cleanup
   docs/ESP32_API.md            ESP32 request, authentication, and retry contract
   public/
     index.php                  public entry redirect
@@ -447,7 +452,7 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 
 - The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
 - PDF detail is limited to 500 rows and CSV detail to 10,000 rows; narrower filters are required for complete exports beyond those limits.
-- The Flutter Owner app is version `0.9.1+20`. Its responsive interface now
+- The Flutter Owner app is version `0.9.2+21`. Its responsive interface now
   follows the website's emerald, deep-green, mint, canvas, card, form, and
   navigation design system while remaining limited to owner workflows.
   Dashboard Quick Actions appear
@@ -510,7 +515,7 @@ From PowerShell in the project directory, with Apache and the configured databas
 & C:\xampp\php\php.exe tests\mobile-api.php --allow-local-fixtures
 & C:\xampp\php\php.exe tests\mobile-cors.php
 & C:\xampp\php\php.exe tests\production-config.php
-& C:\xampp\php\php.exe tests\ultrasonic-api.php --allow-local-fixtures
+& C:\xampp\php\php.exe tests\device-telemetry-api.php --allow-local-fixtures
 & C:\xampp\php\php.exe tests\phase8.php --allow-local-fixtures
 & C:\xampp\php\php.exe tests\fresh-install.php --allow-temporary-database
 & C:\xampp\php\php.exe tests\performance.php --allow-local-fixtures
@@ -578,7 +583,7 @@ the isolated server was started, and direct access to `aquasense.roles` succeede
 On 2026-09-30 the same refusal recurred because the scheduled task was enabled but
 its MariaDB process was no longer running. The existing task was started again and
 verified in the `Running` state, listening only on `127.0.0.1:3307`. A direct query
-opened the `aquasense` database and returned all 19 tables, and phpMyAdmin responded
+opened the `aquasense` database and returned all 18 tables, and phpMyAdmin responded
 successfully. No database files were recreated or imported.
 
 Do not reinitialize the data directory or repeat the imports. To shut down **only this isolated database**:
