@@ -2,7 +2,18 @@
 
 ## Current version
 
-0.8.0
+0.8.1
+
+## 0.8.1 - Consolidated six-sensor live report - 2026-10-22
+
+- Replaced continuous five-sample HC-SR04 output with one numbered six-sensor
+  report every five seconds.
+- Preserved the five-sample median filter; raw echo lines are available only
+  through the disabled-by-default `VERBOSE_ULTRASONIC_SERIAL` debug flag.
+- Reports invalid, unavailable, warming, disabled, and uncalibrated states as
+  such instead of substituting zero or fabricated engineering values.
+- Moved runtime queue/network/heap/fault counters to a separate 30-second
+  system-health block.
 
 ## 0.8.0 - Six-sensor sketch renewal - 2026-10-22
 

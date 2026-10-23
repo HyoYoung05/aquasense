@@ -1,6 +1,6 @@
 # AQUASENSE+ ESP32 Hardware — Final Phase 8
 
-Firmware **0.8.0** is the renewed six-sensor target in
+Firmware **0.8.1** is the renewed six-sensor target in
 `AquaSenseSensors/AquaSenseSensors.ino`. It preserves the Phase 1–7 sensor,
 telemetry, power, calibration, and bounded outage-recovery implementation. A
 2026-10-22 COM7 follow-up contains real connected-sensor and end-to-end
@@ -40,6 +40,13 @@ GPIO27 assignment and uncalibrated NTU/L/min conversions were not copied.
 Firmware 0.8.0 compiled at 991,600 bytes flash and 51,200 bytes static RAM and
 was hash-verified on COM7. Its startup banner identifies `ESP32 Six-Sensor
 Firmware`, Wi-Fi connected, and live telemetry received HTTP 201 responses.
+
+Firmware 0.8.1 prints one `AQUASENSE+ SIX-SENSOR LIVE REPORT` every five
+seconds. The report always contains numbered sections for all six official
+sensors. Disabled, unavailable, warming, and uncalibrated inputs remain visible
+with their real state. HC-SR04 still uses five samples and a median internally;
+the individual echo lines are hidden unless `VERBOSE_ULTRASONIC_SERIAL` is
+temporarily enabled. System health prints separately every 30 seconds.
 
 When editing the ignored private mirror directly in VS Code, its local
 `.vscode/c_cpp_properties.json` must point to the generated Arduino compile

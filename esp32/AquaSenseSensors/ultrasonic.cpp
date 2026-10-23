@@ -133,6 +133,23 @@ const char* ultrasonicStatusName(const UltrasonicStatus status) {
   return "ERROR";
 }
 
+void printUltrasonicLiveSection(const UltrasonicReading& reading) {
+  Serial.println(F("[1] HC-SR04 ULTRASONIC LEVEL"));
+  if (reading.status == UltrasonicStatus::kOk &&
+      isfinite(reading.medianDistanceCm)) {
+    Serial.printf("Filtered distance: %.2f cm\n", reading.medianDistanceCm);
+    Serial.printf("Development fill estimate: %.1f%%\n",
+                  reading.testFillPercent);
+  } else {
+    Serial.println(F("Filtered distance: INVALID"));
+    Serial.println(F("Development fill estimate: UNKNOWN"));
+  }
+  Serial.printf("Valid echo samples: %u/%u\n",
+                static_cast<unsigned int>(reading.validSampleCount),
+                static_cast<unsigned int>(AquaSenseConfig::ULTRASONIC_SAMPLE_COUNT));
+  Serial.printf("Status: %s\n\n", ultrasonicStatusName(reading.status));
+}
+
 void printUltrasonicDiagnostics(const UltrasonicReading& reading,
                                 const uint32_t sequence) {
   Serial.printf("\n[ULTRASONIC #%lu]\n", static_cast<unsigned long>(sequence));

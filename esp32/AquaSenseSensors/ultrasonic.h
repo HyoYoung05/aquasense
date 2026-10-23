@@ -26,5 +26,6 @@ void ultrasonicBegin();
 bool ultrasonicAlgorithmSelfTest();
 UltrasonicReading readUltrasonic();
 const char* ultrasonicStatusName(UltrasonicStatus status);
+void printUltrasonicLiveSection(const UltrasonicReading& reading);
 void printUltrasonicDiagnostics(const UltrasonicReading& reading,
                                 uint32_t sequence);

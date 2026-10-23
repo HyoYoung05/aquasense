@@ -1,6 +1,22 @@
 # AQUASENSE+ Version History
 
-1.3.3
+1.3.4
+
+## Website/backend 1.3.4 and ESP32 firmware 0.8.1
+
+Date: 2026-10-22
+
+- Replaced one-second five-line HC-SR04 Serial flooding with one consolidated
+  `AQUASENSE+ SIX-SENSOR LIVE REPORT` every five seconds.
+- Added numbered sections for HC-SR04, DS18B20, SEN0189, YF-S201,
+  ENS160+AHT2x, and MQ-135 while retaining honest validity and calibration
+  states.
+- Kept all five ultrasonic samples in the median filter and added a disabled
+  debug flag for raw echo output when bench diagnosis is needed.
+- Moved queue, Wi-Fi, heap, and fault counters to a separate 30-second system
+  health report so sensor readings remain compact and readable.
+- Confirmed the HTTP 500 visible in the supplied capture is caused by the local
+  MySQL/MariaDB service refusing connections, not by the sensor-report layout.
 
 ## Website/backend 1.3.3 and ESP32 firmware 0.8.0
 

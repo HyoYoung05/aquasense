@@ -21,8 +21,10 @@
 namespace {
 
 uint32_t lastStatusMs = 0;
+uint32_t lastHealthMs = 0;
 uint32_t lastSensorStartMs = 0;
 uint32_t sensorSequence = 0;
+uint32_t reportSequence = 0;
 uint32_t telemetryQueueSequence = 0;
 uint32_t nextTelemetryCaptureMs = 0;
 uint32_t nextUploadAttemptMs = 0;
@@ -283,14 +285,27 @@ void printHardwareSummary() {
   Serial.println(F("Custom watchdog: NOT ADDED; bounded operations and recovery states used."));
 }
 
-void printRuntimeStatus(const uint32_t nowMs) {
+void printSixSensorLiveReport() {
+  Serial.println();
+  Serial.println(F("========================================"));
+  Serial.printf("AQUASENSE+ SIX-SENSOR LIVE REPORT #%lu\n",
+                static_cast<unsigned long>(++reportSequence));
+  Serial.println(F("========================================"));
+  Serial.println();
+  printUltrasonicLiveSection(latestReading);
+  printSensorData(sensorData);
+  Serial.println(F("========================================"));
+}
+
+void printSystemHealth(const uint32_t nowMs) {
   const uint32_t currentHeap = ESP.getFreeHeap();
   minimumFreeHeap = min(minimumFreeHeap, currentHeap);
-  Serial.printf("Uptime: %lu ms | Free heap: %lu bytes\n",
+  Serial.println(F("[SYSTEM HEALTH]"));
+  Serial.printf("Uptime: %lu ms | free heap: %lu | minimum heap: %lu\n",
                 static_cast<unsigned long>(nowMs),
-                static_cast<unsigned long>(currentHeap));
-  Serial.printf("Power diagnostics: min heap=%lu | Wi-Fi connects=%lu | reconnects=%lu | disconnects=%lu\n",
-                static_cast<unsigned long>(minimumFreeHeap),
+                static_cast<unsigned long>(currentHeap),
+                static_cast<unsigned long>(minimumFreeHeap));
+  Serial.printf("Wi-Fi: connects=%lu | reconnects=%lu | disconnects=%lu\n",
                 static_cast<unsigned long>(networkConnectionCount()),
                 static_cast<unsigned long>(networkReconnectCount()),
                 static_cast<unsigned long>(networkDisconnectCount()));
@@ -313,7 +328,6 @@ void printRuntimeStatus(const uint32_t nowMs) {
                 static_cast<unsigned long>(i2cErrorCount()),
                 static_cast<unsigned long>(i2cRecoveryCount()));
   printNetworkStatus();
-  printSensorData(sensorData);
 }
 
 }  // namespace
@@ -350,7 +364,7 @@ void setup() {
   nextTelemetryCaptureMs = millis() +
                            AquaSenseConfig::INITIAL_TELEMETRY_DELAY_MS;
   nextUploadAttemptMs = nextTelemetryCaptureMs;
-  printRuntimeStatus(lastStatusMs);
+  lastHealthMs = lastStatusMs;
 }
 
 void loop() {
@@ -368,13 +382,19 @@ void loop() {
     ++sensorSequence;
     latestReading = readUltrasonic();
     updateSensorFailureCounters(latestReading);
-    printUltrasonicDiagnostics(latestReading, sensorSequence);
+    if (AquaSenseConfig::VERBOSE_ULTRASONIC_SERIAL) {
+      printUltrasonicDiagnostics(latestReading, sensorSequence);
+    }
   }
   captureTelemetry(millis());
   handleTelemetryUpload(millis());
   if (nowMs - lastStatusMs >= AquaSenseConfig::STATUS_INTERVAL_MS) {
     lastStatusMs = nowMs;
-    printRuntimeStatus(nowMs);
+    printSixSensorLiveReport();
+  }
+  if (nowMs - lastHealthMs >= AquaSenseConfig::HEALTH_INTERVAL_MS) {
+    lastHealthMs = nowMs;
+    printSystemHealth(nowMs);
   }
   delay(1);
 }

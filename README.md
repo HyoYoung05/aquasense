@@ -4,12 +4,12 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 test firmware.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.3.3 adds verified local IntelliSense configuration for the renamed six-sensor ESP32 sketch while preserving calibrated-only sensor and alert gates, the full-access Admin role, and limited Barangay Administrator/Environmental Staff navigation.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.3.4 adds a consolidated ESP32 six-sensor Serial Monitor report while preserving calibrated-only sensor and alert gates, the full-access Admin role, and limited Barangay Administrator/Environmental Staff navigation.
 
 ## Current Version
 
 The repository includes the final [ESP32 Hardware Phase 8](esp32/README.md)
-firmware **0.8.0** in `esp32/AquaSenseSensors`. It preserves HC-SR04, Wi-Fi, and
+firmware **0.8.1** in `esp32/AquaSenseSensors`. It preserves HC-SR04, Wi-Fi, and
 retry-safe PHP telemetry, then adds independently valid drivers for DS18B20,
 SEN0189, YF-S201, the ENS160+AHT2x combination module, and MQ-135. Raw ADC
 values use dedicated database fields and are never mislabeled as NTU or gas
@@ -35,7 +35,7 @@ ESP32, then a
 local Wi-Fi router, then Apache/PHP, MariaDB, website, and Flutter APIs. The
 same configurable endpoint supports the separate production HTTPS target.
 
-Phase 8 is the final ESP32 hardware phase. Firmware **0.8.0** keeps the safe local
+Phase 8 is the final ESP32 hardware phase. Firmware **0.8.1** keeps the safe local
 hardware profile and a DS18B20 development pull-up fix after the six modules
 were connected, and applies the useful initialization details from the supplied
 combined-sensor sketch without adopting its obsolete GPIO27 flow pin or
@@ -63,7 +63,7 @@ physical installation or field-acceptance item.
 See the [connected-sensor verification](esp32/PHYSICAL-VERIFICATION-2026-10-22.md)
 for the measured results and remaining corrections.
 
-**Version: 1.3.3**
+**Version: 1.3.4**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 

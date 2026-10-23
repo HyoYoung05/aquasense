@@ -14,72 +14,89 @@ const char* sensorStateName(const SensorState state) {
 }
 
 void printSensorData(const SensorData& data) {
-  Serial.print(F("[4A DS18B20] Wastewater temperature: "));
+  Serial.println(F("[2] DS18B20 WATER TEMPERATURE"));
+  Serial.print(F("Temperature: "));
   if (data.wastewaterTemperatureValid) {
     Serial.printf("%.2f C", data.wastewaterTemperatureC);
   } else {
     Serial.print(F("N/A"));
   }
-  Serial.printf(" | offset %.2f C | reference %s | %s\n",
-                AquaSenseCalibration::DS18B20_TEMPERATURE_OFFSET_C,
+  Serial.println();
+  Serial.printf("Calibration offset: %.2f C\n",
+                AquaSenseCalibration::DS18B20_TEMPERATURE_OFFSET_C);
+  Serial.printf("Reference validation: %s\n",
                 AquaSenseCalibration::DS18B20_REFERENCE_VALIDATED
-                    ? "VALIDATED"
-                    : "PENDING",
-                sensorStateName(data.ds18b20State));
+                    ? "VALIDATED" : "PENDING");
+  Serial.printf("Status: %s\n\n", sensorStateName(data.ds18b20State));
 
-  Serial.print(F("[4B SEN0189] Raw ADC: "));
+  Serial.println(F("[3] SEN0189 TURBIDITY"));
   if (data.turbidityRawValid) {
-    Serial.printf("latest %u | filtered %u | pin %.3f V | source %.3f V",
-                  data.turbidityLatestAdc, data.turbidityRawAdc,
-                  data.turbidityAdcVoltage,
+    Serial.printf("Raw ADC: %u\n", data.turbidityRawAdc);
+    Serial.printf("Latest ADC: %u\n", data.turbidityLatestAdc);
+    Serial.printf("GPIO34 ADC voltage: %.3f V\n", data.turbidityAdcVoltage);
+    Serial.printf("Sensor AO voltage (estimated): %.3f V\n",
                   data.turbiditySourceVoltage);
   } else {
-    Serial.print(F("N/A"));
+    Serial.println(F("Raw ADC: N/A"));
+    Serial.println(F("GPIO34 ADC voltage: N/A"));
+    Serial.println(F("Sensor AO voltage (estimated): N/A"));
   }
-  Serial.print(F(" | NTU: "));
-  if (data.turbidityNtuValid) Serial.printf("%.2f", data.turbidityNtu);
-  else Serial.print(F("NOT CALIBRATED"));
-  Serial.printf(" | %s\n", sensorStateName(data.turbidityState));
+  if (data.turbidityNtuValid) {
+    Serial.printf("Calibrated turbidity: %.2f NTU\n", data.turbidityNtu);
+  } else {
+    Serial.println(F("Calibrated turbidity: N/A (calibration required)"));
+  }
+  Serial.printf("Status: %s\n\n", sensorStateName(data.turbidityState));
 
-  Serial.print(F("[4C YF-S201] Pulses: "));
-  if (!data.flowPulseValid) Serial.print(F("N/A"));
-  else Serial.print(data.flowPulseCount);
-  Serial.print(F(" | Frequency: "));
+  Serial.println(F("[4] YF-S201 WATER FLOW"));
+  if (data.flowPulseValid) {
+    Serial.printf("Pulses in latest interval: %lu\n",
+                  static_cast<unsigned long>(data.flowPulseCount));
+    Serial.printf("Pulse frequency: %.2f Hz\n", data.flowPulseFrequencyHz);
+  } else {
+    Serial.println(F("Pulses in latest interval: N/A"));
+    Serial.println(F("Pulse frequency: N/A"));
+  }
   if (data.flowValid) {
-    Serial.printf("%.2f Hz | calibrated %.3f L/min | total %.3f L",
-                  data.flowPulseFrequencyHz, data.flowRateLpm,
+    Serial.printf("Calibrated flow rate: %.3f L/min\n", data.flowRateLpm);
+    Serial.printf("Calibrated volume since boot: %.3f L\n",
                   data.cumulativeFlowLiters);
   } else {
-    Serial.print(F("N/A - FLOW CALIBRATION INCOMPLETE"));
+    Serial.println(F("Calibrated flow rate: N/A (calibration required)"));
+    Serial.println(F("Calibrated volume since boot: N/A"));
   }
-  Serial.printf(" | %s\n", sensorStateName(data.flowState));
+  Serial.printf("Status: %s\n\n", sensorStateName(data.flowState));
 
-  Serial.print(F("[4D ENS160] AQI / TVOC / eCO2: "));
-  if (data.ens160Valid) {
-    Serial.printf("%u / %u ppb / %u ppm", data.ens160Aqi,
-                  data.ens160TvocPpb, data.ens160Eco2Ppm);
-  } else {
-    Serial.print(F("N/A"));
-  }
-  Serial.printf(" | %s\n", sensorStateName(data.ens160State));
-
-  Serial.print(F("[4D AHT2x] Ambient temperature / humidity: "));
+  Serial.println(F("[5] ENS160 + AHT2x AIR QUALITY"));
   if (data.aht2xValid) {
-    Serial.printf("%.2f C / %.2f %%", data.ambientTemperatureC,
-                  data.humidityPercent);
+    Serial.printf("Ambient temperature: %.2f C\n", data.ambientTemperatureC);
+    Serial.printf("Relative humidity: %.2f %%RH\n", data.humidityPercent);
   } else {
-    Serial.print(F("N/A"));
+    Serial.println(F("Ambient temperature: N/A"));
+    Serial.println(F("Relative humidity: N/A"));
   }
-  Serial.printf(" | %s\n", sensorStateName(data.aht2xState));
+  Serial.printf("AHT2x status: %s\n", sensorStateName(data.aht2xState));
+  if (data.ens160Valid) {
+    Serial.printf("ENS160 AQI: %u\n", data.ens160Aqi);
+    Serial.printf("ENS160 TVOC: %u ppb\n", data.ens160TvocPpb);
+    Serial.printf("ENS160 eCO2: %u ppm\n", data.ens160Eco2Ppm);
+  } else {
+    Serial.println(F("ENS160 AQI / TVOC / eCO2: N/A"));
+  }
+  Serial.printf("ENS160 status: %s\n\n", sensorStateName(data.ens160State));
 
-  Serial.print(F("[4E MQ-135] Raw ADC: "));
+  Serial.println(F("[6] MQ-135 GAS / ODOR"));
   if (data.mq135RawValid) {
-    Serial.printf("latest %u | filtered %u | pin %.3f V | source %.3f V | PPM NOT CALIBRATED",
-                  data.mq135LatestAdc, data.mq135RawAdc,
-                  data.mq135AdcVoltage,
+    Serial.printf("Raw ADC: %u\n", data.mq135RawAdc);
+    Serial.printf("Latest ADC: %u\n", data.mq135LatestAdc);
+    Serial.printf("GPIO35 ADC voltage: %.3f V\n", data.mq135AdcVoltage);
+    Serial.printf("Sensor AO voltage (estimated): %.3f V\n",
                   data.mq135SourceVoltage);
   } else {
-    Serial.print(F("N/A | PPM NOT CALIBRATED"));
+    Serial.println(F("Raw ADC: N/A"));
+    Serial.println(F("GPIO35 ADC voltage: N/A"));
+    Serial.println(F("Sensor AO voltage (estimated): N/A"));
   }
-  Serial.printf(" | %s\n", sensorStateName(data.mq135State));
+  Serial.println(F("Gas concentration: UNCALIBRATED (no ppm estimate)"));
+  Serial.printf("Status: %s\n", sensorStateName(data.mq135State));
 }
