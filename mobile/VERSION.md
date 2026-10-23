@@ -2,7 +2,32 @@
 
 ## Current Version
 
-0.8.4+18
+0.9.0+19
+
+## 0.9.0+19 - 2026-10-23
+
+Development Phase: Website-aligned owner app interface
+
+### Changed
+
+- Matched the Flutter app to the website's deep-green, emerald, mint, canvas,
+  border, typography, button, input, card, and navigation design tokens.
+- Rebuilt the login screen as the website-style responsive split story and
+  sign-in layout, including a compact low-height landscape presentation.
+- Added a website-style white app bar, owner workspace navigation rail/drawer,
+  owner badge, water-drop brand, dashboard banner, and compact Quick Actions.
+- Applied the shared surface and state styling to sensor, status, loading,
+  empty, and error panels throughout the owner application.
+- Kept the app limited to owner Dashboard, Monitoring, Alerts, Oil Surrender,
+  Incentives, and Profile workflows; no administrative route was added.
+- Increased the application version from `0.8.4+18` to `0.9.0+19`.
+
+### Verification
+
+- Flutter static analysis passes.
+- Responsive widget checks pass at 320x568, 390x844, 844x390, and 1024x768.
+- Owner dashboard and navigation widget tests pass, including Quick Actions,
+  pull-to-refresh, secure session handling, and Android back history.
 
 ## 0.8.4+18 - 2026-10-16
 

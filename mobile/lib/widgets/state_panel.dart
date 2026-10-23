@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 class StatePanel extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -36,10 +38,15 @@ class StatePanel extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  icon,
-                  size: 44,
-                  color: Theme.of(context).colorScheme.primary,
+                Container(
+                  width: 52,
+                  height: 52,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: mintSurface,
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Icon(icon, size: 28, color: emerald),
                 ),
                 const SizedBox(height: 16),
                 Text(

@@ -381,7 +381,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('owner@aquasense.test'), findsOneWidget);
-    expect(find.textContaining('Owner App v0.8.4+18'), findsOneWidget);
+    expect(find.textContaining('Owner App v0.9.0+19'), findsOneWidget);
 
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();

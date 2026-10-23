@@ -49,27 +49,7 @@ class DashboardContent extends StatelessWidget {
                   ],
                   _QuickActions(onNavigate: onNavigate),
                   const SizedBox(height: 24),
-                  Text(
-                    'Welcome, ${dashboard.user.fullName}',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: forest,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    dashboard.establishments.isEmpty
-                        ? 'No establishment is linked to your account.'
-                        : dashboard.establishments
-                              .map((site) => site.businessName)
-                              .join(' · '),
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Dashboard updated ${readingTime(dashboard.generatedAt)}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                  _OwnerWelcomeBanner(dashboard: dashboard),
                   const SizedBox(height: 20),
                   if (_hasCriticalCondition(dashboard)) ...[
                     const _CriticalBanner(),
@@ -130,6 +110,113 @@ class DashboardContent extends StatelessWidget {
     return dashboard.establishments
         .expand((site) => site.traps)
         .any((trap) => const {'CRITICAL', 'OVERFLOW'}.contains(trap.status));
+  }
+}
+
+class _OwnerWelcomeBanner extends StatelessWidget {
+  final OwnerDashboard dashboard;
+
+  const _OwnerWelcomeBanner({required this.dashboard});
+
+  @override
+  Widget build(BuildContext context) {
+    final businessNames = dashboard.establishments.isEmpty
+        ? 'No establishment is linked to your account.'
+        : dashboard.establishments.map((site) => site.businessName).join(' · ');
+    return Container(
+      constraints: const BoxConstraints(minHeight: 220),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: const Color(0xFF174D43),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) => Stack(
+          children: [
+            Positioned(
+              right: constraints.maxWidth < 520 ? -58 : -28,
+              top: -34,
+              bottom: -34,
+              child: Opacity(
+                opacity: constraints.maxWidth < 520 ? .18 : .32,
+                child: Image.asset(
+                  'assets/images/water-drop-splash.png',
+                  width: constraints.maxWidth < 520 ? 260 : 330,
+                  fit: BoxFit.contain,
+                  excludeFromSemantics: true,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(28),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: constraints.maxWidth < 600
+                      ? constraints.maxWidth
+                      : constraints.maxWidth * .64,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'YOUR AQUASENSE+ WORKSPACE',
+                      style: TextStyle(
+                        color: mint,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.6,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      'Welcome, ${dashboard.user.fullName}',
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
+                            color: Colors.white,
+                            height: 1.12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      businessNames,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFFBCD0C7),
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF306456),
+                        border: Border.all(color: const Color(0xFF527B68)),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Updated ${readingTime(dashboard.generatedAt)}',
+                        style: const TextStyle(
+                          color: Color(0xFFD9EADB),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -386,11 +473,20 @@ class _QuickActions extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(
-        'Quick actions',
-        style: Theme.of(
-          context,
-        ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+      const Row(
+        children: [
+          Text(
+            'Quick actions',
+            style: TextStyle(
+              color: emerald,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.5,
+            ),
+          ),
+          SizedBox(width: 10),
+          Expanded(child: Divider()),
+        ],
       ),
       const SizedBox(height: 12),
       Wrap(
@@ -409,7 +505,21 @@ class _QuickActions extends StatelessWidget {
 
   Widget _action(int index, IconData icon, String label) => OutlinedButton.icon(
     onPressed: () => onNavigate(index),
-    icon: Icon(icon),
+    style: OutlinedButton.styleFrom(
+      backgroundColor: Colors.white,
+      foregroundColor: ink,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+    ),
+    icon: Container(
+      width: 30,
+      height: 30,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: mintSurface,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(icon, size: 18, color: emerald),
+    ),
     label: Text(label),
   );
 }

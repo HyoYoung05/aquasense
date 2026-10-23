@@ -12,6 +12,7 @@ import '../../services/oil_surrender_service.dart';
 import '../../services/incentives_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/loading_widget.dart';
+import '../../widgets/owner_brand.dart';
 import '../../widgets/state_panel.dart';
 import 'dashboard_content.dart';
 import '../monitoring/monitoring_screen.dart';
@@ -142,12 +143,53 @@ class _HomeScreenState extends State<HomeScreen> {
     },
     child: LayoutBuilder(
       builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 760;
+        final wide =
+            constraints.maxWidth >= 760 && constraints.maxHeight >= 600;
+        final extended = constraints.maxWidth >= 1120;
         return Scaffold(
           appBar: AppBar(
-            title: Text(
-              _destinations[selectedIndex].label,
-              style: const TextStyle(fontWeight: FontWeight.w700),
+            title: Row(
+              children: [
+                if (wide) ...[
+                  const OwnerBrand(compact: true),
+                  const SizedBox(width: 18),
+                  const SizedBox(height: 24, child: VerticalDivider()),
+                  const SizedBox(width: 18),
+                ],
+                Flexible(
+                  child: Text(
+                    _destinations[selectedIndex].label,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: forest,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (constraints.maxWidth >= 620) ...[
+                  const SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: mintSurface,
+                      border: Border.all(color: line),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'Owner workspace',
+                      style: TextStyle(
+                        color: emerald,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
             actions: [
               IconButton(
@@ -158,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   applicationVersion: appVersion,
                   children: const [
                     Text(
-                      'Final release candidate with owner dashboard, monitoring, alerts, oil surrender, and read-only rice incentives.',
+                      'Karinderya owner portal for monitoring, alerts, oil surrender, and read-only rice incentives.',
                     ),
                   ],
                 ),
@@ -181,16 +223,38 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                   children: [
                     const Padding(
-                      padding: EdgeInsets.fromLTRB(28, 24, 16, 12),
-                      child: Text(
-                        appName,
-                        style: TextStyle(
-                          color: forest,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      padding: EdgeInsets.fromLTRB(24, 24, 16, 18),
+                      child: OwnerBrand(showPortalLabel: true),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(28, 4, 20, 12),
+                      child: Row(
+                        children: [
+                          _WorkspaceMark(),
+                          SizedBox(width: 11),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Karinderya Owner',
+                                  style: TextStyle(
+                                    color: ink,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                Text(
+                                  'Personal monitoring workspace',
+                                  style: TextStyle(color: muted, fontSize: 10),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                    const Divider(),
                     for (final item in _destinations)
                       NavigationDrawerDestination(
                         icon: Icon(item.icon),
@@ -205,10 +269,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   NavigationRail(
                     selectedIndex: selectedIndex,
                     onDestinationSelected: selectDestination,
-                    extended: constraints.maxWidth >= 1100,
-                    labelType: constraints.maxWidth >= 1100
+                    extended: extended,
+                    minExtendedWidth: 230,
+                    labelType: extended
                         ? NavigationRailLabelType.none
                         : NavigationRailLabelType.selected,
+                    leading: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 20, 12, 22),
+                      child: extended
+                          ? const _OwnerWorkspaceLabel()
+                          : const _WorkspaceMark(),
+                    ),
                     destinations: [
                       for (final item in _destinations)
                         NavigationRailDestination(
@@ -359,4 +430,63 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
+}
+
+class _WorkspaceMark extends StatelessWidget {
+  const _WorkspaceMark();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 34,
+    height: 34,
+    alignment: Alignment.center,
+    decoration: BoxDecoration(
+      color: const Color(0xFFF7F8F5),
+      border: Border.all(color: line),
+      borderRadius: BorderRadius.circular(7),
+    ),
+    child: const Text(
+      'KO',
+      style: TextStyle(
+        color: forest,
+        fontSize: 10,
+        fontWeight: FontWeight.w800,
+        letterSpacing: .5,
+      ),
+    ),
+  );
+}
+
+class _OwnerWorkspaceLabel extends StatelessWidget {
+  const _OwnerWorkspaceLabel();
+
+  @override
+  Widget build(BuildContext context) => const SizedBox(
+    width: 198,
+    child: Row(
+      children: [
+        _WorkspaceMark(),
+        SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Karinderya Owner',
+                style: TextStyle(
+                  color: ink,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Text(
+                'Owner workspace',
+                style: TextStyle(color: muted, fontSize: 9),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
 }

@@ -41,10 +41,10 @@ class StatusCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,8 +80,8 @@ class StatusCard extends StatelessWidget {
                       status,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 27,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],

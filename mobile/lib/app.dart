@@ -10,25 +10,11 @@ class ConfigurationErrorApp extends StatelessWidget {
   final String message;
   const ConfigurationErrorApp({super.key, required this.message});
 
-  ThemeData _theme(Brightness brightness) {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: emerald,
-      brightness: brightness,
-    );
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: scheme,
-      scaffoldBackgroundColor: scheme.surface,
-    );
-  }
-
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: '$appName Owner',
     debugShowCheckedModeBanner: false,
-    theme: _theme(Brightness.light),
-    darkTheme: _theme(Brightness.dark),
-    themeMode: ThemeMode.system,
+    theme: ownerTheme(),
     home: Builder(
       builder: (context) => Scaffold(
         body: SafeArea(

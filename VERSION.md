@@ -1,6 +1,21 @@
 # AQUASENSE+ Version History
 
-1.3.4
+1.3.5
+
+## Website/backend 1.3.5 and Flutter owner app 0.9.0+19
+
+Date: 2026-10-23
+
+- Aligned the Flutter owner app with the website's AQUASENSE+ colors,
+  typography, bordered surfaces, compact controls, and responsive navigation.
+- Rebuilt the owner login into the website-style story and sign-in layout and
+  added a branded owner workspace shell and dashboard welcome banner.
+- Preserved owner-only Dashboard, Monitoring, Alerts, Oil Surrender,
+  Incentives, and Profile access with no administrative routes or permissions.
+- Kept Quick Actions at the top, pull-to-refresh, secure authentication,
+  server-enforced owner scope, and Android destination back history.
+- Verified static analysis and responsive owner widget coverage at phone,
+  landscape-phone, tablet, and desktop widths.
 
 ## Website/backend 1.3.4 and ESP32 firmware 0.8.1
 

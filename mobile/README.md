@@ -1,12 +1,12 @@
 # AQUASENSE+ Carinderia Owner App
 
-Flutter owner application for AQUASENSE+. Version **0.8.4+18** retains the
-Mobile Phase 7 foundation and adds the Phase 4 sensor contract. Monitoring now
-keeps DS18B20 wastewater temperature, SEN0189 raw/calibrated turbidity,
-YF-S201 flow/pulses, AHT2x ambient/humidity, ENS160 AQI/TVOC/eCO2, and MQ-135
-raw/calibrated values distinct. Missing readings remain unavailable rather
-than becoming zero. Quick Actions stay at the top, pull-down refresh remains
-enabled, and Android edge-back gestures follow tab history.
+Flutter owner application for AQUASENSE+. Version **0.9.0+19** aligns the app
+with the administrative website's AQUASENSE+ visual system while retaining the
+Mobile Phase 7 owner-only foundation and Phase 4 sensor contract. The app now
+uses the website's emerald, deep-green, mint, canvas, border, typography, form,
+card, and navigation patterns across its responsive login and authenticated
+workspace. Quick Actions stay at the top, pull-down refresh remains enabled,
+and Android edge-back gestures follow tab history.
 
 The app communicates only with the PHP API. It contains no SQL, MySQL package,
 or database credential.
