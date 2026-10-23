@@ -1,6 +1,17 @@
 # AQUASENSE+ Version History
 
-1.3.5
+1.3.6
+
+## Website/backend 1.3.6 and Flutter owner app 0.9.1+20
+
+Date: 2026-10-23
+
+- Added a reusable Flutter Web launcher on `http://localhost:58047` for local
+  Chrome testing with the ignored `API_BASE_URL` configuration.
+- Kept the PHP API address outside committed application source and retained
+  exact localhost-origin CORS checks for development previews.
+- Replaced the stale unconfigured web process with the current owner app and
+  documented both automatic Chrome and standalone web-server commands.
 
 ## Website/backend 1.3.5 and Flutter owner app 0.9.0+19
 

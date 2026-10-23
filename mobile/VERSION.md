@@ -2,7 +2,25 @@
 
 ## Current Version
 
-0.9.0+19
+0.9.1+20
+
+## 0.9.1+20 - 2026-10-23
+
+Development Phase: Repeatable local Chrome testing
+
+### Added
+
+- Added `run-web.ps1` to launch Flutter Web in Chrome on the stable
+  `http://localhost:58047` address using the ignored local API configuration.
+- Added a `web-server` launch option for testing in an existing browser.
+
+### Changed
+
+- Local web startup now validates that `config/api.local.json` exists and
+  contains `API_BASE_URL` before Flutter starts.
+- Documented the Chrome/web testing command and required Apache/database
+  services.
+- Increased the application version from `0.9.0+19` to `0.9.1+20`.
 
 ## 0.9.0+19 - 2026-10-23
 

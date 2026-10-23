@@ -4,7 +4,7 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 test firmware.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.3.5 aligns the Flutter owner app with the website's AQUASENSE+ visual system while preserving calibrated-only sensor and alert gates, the full-access Admin role, and limited Barangay Administrator/Environmental Staff navigation.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.3.6 adds repeatable local Chrome testing for the website-aligned Flutter owner app while preserving calibrated-only sensor and alert gates, the full-access Admin role, and limited Barangay Administrator/Environmental Staff navigation.
 
 ## Current Version
 
@@ -26,7 +26,7 @@ outages; it is cleared by reset or power loss and drops the oldest record when
 full.
 COM3 must not be used. There is no microSD, OLED,
 buzzer, or DHT22. The Flutter source is tracked under
-[`mobile/`](mobile/README.md) at version **0.9.0+19**. Generated APKs,
+[`mobile/`](mobile/README.md) at version **0.9.1+20**. Generated APKs,
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 The current Android development build is verified with Flutter **3.41.6**.
 
@@ -63,7 +63,7 @@ physical installation or field-acceptance item.
 See the [connected-sensor verification](esp32/PHYSICAL-VERIFICATION-2026-10-22.md)
 for the measured results and remaining corrections.
 
-**Version: 1.3.5**
+**Version: 1.3.6**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -447,7 +447,7 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 
 - The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
 - PDF detail is limited to 500 rows and CSV detail to 10,000 rows; narrower filters are required for complete exports beyond those limits.
-- The Flutter Owner app is version `0.9.0+19`. Its responsive interface now
+- The Flutter Owner app is version `0.9.1+20`. Its responsive interface now
   follows the website's emerald, deep-green, mint, canvas, card, form, and
   navigation design system while remaining limited to owner workflows.
   Dashboard Quick Actions appear
@@ -608,6 +608,11 @@ For every meaningful completed release, update `APP_VERSION` in `config/config.p
 ## Flutter Web development CORS (0.2.3)
 
 For local development, set `'mobile_allow_local_web_preview' => true` in the ignored `config/local.php` file. The committed default is `false`. Development then accepts only exact origins matching `http://localhost:<port>` or `http://127.0.0.1:<port>`, where the port is 1 through 65535. The browser may call Apache through the computer's LAN address; origin validation does not depend on the client's source IP.
+
+This workspace keeps the local Flutter API root in ignored
+`mobile/config/api.local.json`. From `mobile`, run `.\run-web.ps1` to open the
+current owner app in Chrome at `http://localhost:58047`, or add
+`-Device web-server` to serve it for an existing browser tab.
 
 Allowed preflights return HTTP 204 before database access, bearer authentication, endpoint method checks, or JSON parsing. Responses echo the allowed origin and advertise `GET, POST, OPTIONS` plus `Content-Type, Authorization, Accept`, with `Vary: Origin`. Browser credential cookies and wildcard origins are not enabled.
 

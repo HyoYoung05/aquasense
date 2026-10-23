@@ -1,12 +1,12 @@
 {
-    "name": "aquasense_mobile",
-    "short_name": "aquasense_mobile",
+    "name": "AQUASENSE+ Karinderya Owner",
+    "short_name": "AQUASENSE+ Owner",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#F5F7F5",
+    "theme_color": "#103F3B",
+    "description": "AQUASENSE+ monitoring portal for registered karinderya owners.",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {
