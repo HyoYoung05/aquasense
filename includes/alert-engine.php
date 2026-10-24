@@ -31,6 +31,25 @@ function phase4_numeric_settings(PDO $pdo): array
     return array_map('floatval',$values);
 }
 
+/** @return array{total:int,critical:int,warning:int,latest_at:?string} */
+function phase4_unresolved_alert_summary(PDO $pdo): array
+{
+    $row = $pdo->query(
+        "SELECT COUNT(*) total,"
+        . " COALESCE(SUM(severity='CRITICAL'),0) critical,"
+        . " COALESCE(SUM(severity='WARNING'),0) warning,"
+        . " MAX(last_triggered_at) latest_at"
+        . " FROM alerts WHERE status IN ('ACTIVE','ACKNOWLEDGED')"
+    )->fetch();
+
+    return [
+        'total' => (int) ($row['total'] ?? 0),
+        'critical' => (int) ($row['critical'] ?? 0),
+        'warning' => (int) ($row['warning'] ?? 0),
+        'latest_at' => isset($row['latest_at']) ? (string) $row['latest_at'] : null,
+    ];
+}
+
 function phase4_upsert_alert(PDO $pdo,int $assignmentId,?int $readingId,string $type,?float $value,?float $threshold,string $at): void
 {
     $definition=phase4_alert_definitions()[$type]??null;if(!$definition)throw new InvalidArgumentException('Unsupported alert type.');

@@ -1,6 +1,6 @@
 ﻿# AQUASENSE+ Mobile Production Checklist
 
-Version: `0.8.4+18` (Phase 4 sensor telemetry and Android navigation)
+Version: `0.9.3+22` (owner workspace and Android notification permission)
 
 Checked items were verified in source or automated tests on 2026-10-07.
 Deployment-dependent items remain unchecked until performed against the final
@@ -27,7 +27,9 @@ public environment and production-signed build.
 - [ ] Owner isolation is manually verified with two accounts on production.
 - [x] Server-unavailable and invalid-response states have automated coverage.
 - [x] Polling uses one lifecycle-aware timer per active polling screen.
-- [x] Android permissions are limited to Internet and optional Camera.
+- [x] Android permissions are limited to Internet, optional Camera, and notifications.
+- [x] Android notification permission is requested after authenticated workspace entry.
+- [ ] Notification permission accept/deny behavior is manually accepted on Android 13+.
 - [x] Release manifest does not broadly allow cleartext networking.
 - [x] Launcher icon and splash use AQUASENSE+ artwork.
 - [x] `flutter analyze` passes.
@@ -43,7 +45,7 @@ public environment and production-signed build.
 - [ ] Physical ESP32-to-Mobile telemetry/history path passes.
 - [ ] Alert creation, resolution, and device-offline recovery pass end to end.
 - [ ] Oil Surrender approval/rejection and Incentive distribution pass end to end.
-- [x] App version is set to `0.8.4+18`.
+- [x] App version is set to `0.9.3+22`.
 - [x] README, VERSION, architecture, deployment, security, demo, and checklist documents exist.
 
 The unchecked final-domain, signing, identity, installed-device, and public

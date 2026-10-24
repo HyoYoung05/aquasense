@@ -1,6 +1,6 @@
 # AQUASENSE+ Carinderia Owner App
 
-Flutter owner application for AQUASENSE+. Version **0.9.2+21** aligns the app
+Flutter owner application for AQUASENSE+. Version **0.9.3+22** aligns the app
 with the administrative website's AQUASENSE+ visual system while retaining the
 Mobile Phase 7 owner-only foundation and Phase 4 sensor contract. The app now
 uses the website's emerald, deep-green, mint, canvas, border, typography, form,
@@ -230,7 +230,10 @@ Pull-to-refresh and one 20-second timer refresh Alerts only while the screen is
 active. The timer stops in the background and on disposal. Failed refreshes keep
 the last successful page and valid session. Monitoring shows only its most
 important active alert banner and opens the owned detail by backend alert ID.
-Push notifications remain outside this release.
+Android notification permission is declared and requested once the owner enters
+the authenticated workspace. The permission prepares installed Android builds
+for notifications; in-app Alerts remain the active delivery mechanism until a
+production push provider and background delivery service are configured.
 
 ## Mobile Phase 5 Oil Surrender
 
@@ -298,6 +301,8 @@ scrollable with the keyboard open and blocks repeated submission.
 - Current application ID: `com.example.aquasense_mobile`
 - `INTERNET` permission: enabled
 - `CAMERA` permission: enabled for Phase 5 evidence capture
+- `POST_NOTIFICATIONS` permission: declared and requested at runtime on Android
+  after successful authentication
 - Debug manifest: permits explicit local cleartext HTTP
 - Main/release manifest: does not enable cleartext traffic
 

@@ -2,7 +2,7 @@
 
 Owner endpoints, device telemetry, staff monitoring, Phase 4 alerts, Phase 5 oil surrender endpoints, and the Phase 6 owner incentive endpoint are implemented. Existing PDO/configuration, users,
 roles, establishments, readings, audit and rate-limit records are reused.
-Root API access stays denied. `api/mobile` exposes the owner account, monitoring, and surrender routes; `api/device` exposes only telemetry; and `api/admin` exposes monitoring, history, alert history, and administrator-only alert actions.
+Root API access stays denied. `api/mobile` exposes the owner account, monitoring, and surrender routes; `api/device` exposes only telemetry; and `api/admin` exposes monitoring, history, alert history, the unresolved-alert notification summary, and administrator-only alert actions.
 
 The API root is deployment-configured. Production clients use the host's HTTPS
 URL ending in `/api/mobile`; no server hostname is embedded in PHP or Flutter
@@ -125,7 +125,9 @@ the real device API rather than writing to MySQL directly.
 `GET /api/admin/alerts.php` returns alert history for an authenticated Barangay
 administrator or environmental staff session. `POST /api/admin/alert-action.php`
 requires an administrator session, JSON, and the current CSRF token for acknowledge
-or resolve actions. Owners receive only active alerts joined to their own
+or resolve actions. `GET /api/admin/notification-summary.php` returns only the
+ACTIVE/ACKNOWLEDGED totals used by the authenticated website bell and requires
+the same staff session. Owners receive only active alerts joined to their own
 establishments through the existing mobile dashboard response and receive no alert
 management controls. Alert state is always calculated by PHP from sensor values.
 

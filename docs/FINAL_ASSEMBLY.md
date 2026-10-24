@@ -208,7 +208,7 @@ Every item remains unchecked because the final assembly is unavailable.
 | Wi-Fi telemetry | PARTIALLY IMPLEMENTED | Sensor-absent COM6 recovery works; real final-location telemetry absent |
 | MySQL logging | IMPLEMENTED | Authenticated PHP ingestion, validation, idempotency, and history pass tests |
 | Web dashboard | IMPLEMENTED | Monitoring, status, alerts, history, and reports pass tests |
-| Flutter monitoring | IMPLEMENTED | Static analysis and all 113 tests pass; real physical acceptance remains pending |
+| Flutter monitoring | IMPLEMENTED | Static analysis and all 114 tests pass; real physical acceptance remains pending |
 | SMS/push notifications | NOT IMPLEMENTED | No external provider is configured |
 | Oil-water diversion | NOT IMPLEMENTED | No approved mechanism or circuit |
 | Latch control | NOT SPECIFIED ENOUGH TO IMPLEMENT | No actuator, driver, pin, power, or fail-safe design |

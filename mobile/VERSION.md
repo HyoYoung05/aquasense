@@ -2,7 +2,32 @@
 
 ## Current Version
 
-0.9.2+21
+0.9.3+22
+
+## 0.9.3+22 - 2026-10-24
+
+Development Phase: Android notification permission
+
+### Added
+
+- Declared Android `POST_NOTIFICATIONS` permission.
+- Added a runtime notification-permission request after an owner enters the
+  authenticated workspace.
+- Added platform-safe permission handling so Flutter Web and unsupported
+  platforms do not receive an Android permission request.
+
+### Scope
+
+- The permission prepares the Android app for notifications. Current alerts
+  remain in-app; production background push delivery still requires a push
+  provider and server-side device-token delivery.
+- Increased the application version from `0.9.2+21` to `0.9.3+22`.
+
+### Verification
+
+- Flutter static analysis and all 114 Flutter tests pass.
+- Android debug APK assembly passes and the packaged manifest contains
+  `android.permission.POST_NOTIFICATIONS`.
 
 ## 0.9.2+21 - 2026-10-23
 

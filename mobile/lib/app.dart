@@ -3,6 +3,7 @@ import 'config/app_config.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/login/login_screen.dart';
 import 'services/auth_service.dart';
+import 'services/notification_permission_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/loading_widget.dart';
 
@@ -74,7 +75,12 @@ class ConfigurationErrorApp extends StatelessWidget {
 
 class OwnerApp extends StatefulWidget {
   final AuthService auth;
-  const OwnerApp({super.key, required this.auth});
+  final NotificationPermissionRequester notificationPermissions;
+  const OwnerApp({
+    super.key,
+    required this.auth,
+    this.notificationPermissions = const MobileNotificationPermissionService(),
+  });
   @override
   State<OwnerApp> createState() => _OwnerAppState();
 }
@@ -116,6 +122,7 @@ class _OwnerAppState extends State<OwnerApp> {
               key: ValueKey(widget.auth.user!.id),
               auth: widget.auth,
               onLogout: signOut,
+              notificationPermissions: widget.notificationPermissions,
             );
           case AuthState.unavailable:
             return Scaffold(

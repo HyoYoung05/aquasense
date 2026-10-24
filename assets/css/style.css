@@ -177,3 +177,12 @@ select,textarea{font:inherit;color:var(--ink)}select:focus-visible,textarea:focu
 
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 @media(pointer:coarse){.icon-button,.table-action{min-width:44px;min-height:44px}.table-action{display:inline-flex;align-items:center}}
+
+/* Live unresolved-alert indicator in the authenticated workspace header. */
+a.notification-status{align-items:center;justify-content:center;min-width:36px;min-height:36px;border-radius:6px;color:#65766d}
+a.notification-status:hover{background:#eef3ee;text-decoration:none}
+a.notification-status:focus-visible{outline:3px solid #59b49d;outline-offset:2px}
+a.notification-status .status-dot{right:7px;top:7px}
+.notification-count{position:absolute;left:21px;top:2px;display:grid;place-items:center;min-width:17px;height:17px;padding:0 4px;border:2px solid #fff;border-radius:999px;background:#b87827;color:#fff;font-size:8px;font-weight:800;line-height:1}
+.notification-status.has-critical .notification-count{background:#a13d37}
+.notification-count[hidden],.notification-status [data-notification-empty][hidden]{display:none!important}

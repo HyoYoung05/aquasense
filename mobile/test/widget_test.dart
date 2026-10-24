@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:aquasense_mobile/app.dart';
+import 'package:aquasense_mobile/config/app_config.dart';
 import 'package:aquasense_mobile/services/api_service.dart';
 import 'package:aquasense_mobile/services/auth_service.dart';
 import 'package:aquasense_mobile/screens/home/home_screen.dart';
@@ -381,7 +382,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('owner@aquasense.test'), findsOneWidget);
-    expect(find.textContaining('Owner App v0.9.2+21'), findsOneWidget);
+    expect(find.textContaining('Owner App v$appVersion'), findsOneWidget);
 
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();

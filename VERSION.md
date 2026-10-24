@@ -1,6 +1,21 @@
 # AQUASENSE+ Version History
 
-1.3.7
+1.3.8
+
+## Website/backend 1.3.8 and Flutter owner app 0.9.3+22
+
+Date: 2026-10-24
+
+- Replaced the website's disabled decorative bell with an authenticated,
+  clickable unresolved-alert count linked to the Alerts workspace.
+- Added a protected notification-summary API and a lightweight 15-second
+  visible-page refresh so the bell reflects ACTIVE and ACKNOWLEDGED alerts.
+- Added Android `POST_NOTIFICATIONS` declaration and a runtime permission
+  request after an owner reaches the authenticated mobile workspace.
+- Kept in-app alerts operational while documenting that external push delivery
+  still requires a separately configured production push provider.
+- Verified 40 focused website alert checks, all 114 Flutter tests, static
+  analysis, JavaScript syntax, and an Android debug APK build.
 
 ## Website/backend 1.3.7, Flutter owner app 0.9.2+21, and ESP32 firmware 0.8.2
 

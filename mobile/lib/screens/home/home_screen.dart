@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../config/app_config.dart';
@@ -7,6 +9,7 @@ import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/dashboard_service.dart';
 import '../../services/monitoring_service.dart';
+import '../../services/notification_permission_service.dart';
 import '../../services/alerts_service.dart';
 import '../../services/oil_surrender_service.dart';
 import '../../services/incentives_service.dart';
@@ -29,6 +32,7 @@ class HomeScreen extends StatefulWidget {
   final OilSurrenderRepository? oilSurrenderRepository;
   final IncentivesRepository? incentivesRepository;
   final EvidencePicker? evidencePicker;
+  final NotificationPermissionRequester notificationPermissions;
 
   const HomeScreen({
     super.key,
@@ -39,6 +43,7 @@ class HomeScreen extends StatefulWidget {
     this.oilSurrenderRepository,
     this.incentivesRepository,
     this.evidencePicker,
+    this.notificationPermissions = const MobileNotificationPermissionService(),
   });
 
   @override
@@ -73,6 +78,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(widget.notificationPermissions.requestAfterSignIn());
+    });
     loadDashboard();
   }
 

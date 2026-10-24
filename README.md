@@ -4,7 +4,7 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 six-sensor firmware.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.3.7 removes the obsolete one-sensor ultrasonic bench-test path and keeps the deployable six-sensor telemetry flow, calibrated-only sensor and alert gates, the full-access Admin role, and limited Barangay Administrator/Environmental Staff navigation.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.3.8 adds a working unresolved-alert notification indicator while keeping the deployable six-sensor telemetry flow, calibrated-only sensor and alert gates, the full-access Admin role, and limited Barangay Administrator/Environmental Staff navigation.
 
 ## Current Version
 
@@ -26,7 +26,7 @@ outages; it is cleared by reset or power loss and drops the oldest record when
 full.
 COM3 must not be used. There is no microSD, OLED,
 buzzer, or DHT22. The Flutter source is tracked under
-[`mobile/`](mobile/README.md) at version **0.9.2+21**. Generated APKs,
+[`mobile/`](mobile/README.md) at version **0.9.3+22**. Generated APKs,
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 The current Android development build is verified with Flutter **3.41.6**.
 
@@ -57,13 +57,13 @@ end-to-end, recovery, and long-run tests are completed. Phase 8 is **PARTIAL**;
 there is no Phase 9.
 
 Phase 8 software validation passed 504 sequential PHP/backend checks, Flutter
-static analysis, and all 113 Flutter tests. These results do not replace any
+static analysis, and all 114 Flutter tests. These results do not replace any
 physical installation or field-acceptance item.
 
 See the [connected-sensor verification](esp32/PHYSICAL-VERIFICATION-2026-10-22.md)
 for the measured results and remaining corrections.
 
-**Version: 1.3.7**
+**Version: 1.3.8**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -452,13 +452,16 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 
 - The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
 - PDF detail is limited to 500 rows and CSV detail to 10,000 rows; narrower filters are required for complete exports beyond those limits.
-- The Flutter Owner app is version `0.9.2+21`. Its responsive interface now
+- The Flutter Owner app is version `0.9.3+22`. Its responsive interface now
   follows the website's emerald, deep-green, mint, canvas, card, form, and
   navigation design system while remaining limited to owner workflows.
   Dashboard Quick Actions appear
   at the top of the owner dashboard, and swiping down refreshes its data.
   Android back gestures return through previously visited tabs before exiting
   from Home.
+  Android declares and requests notification permission after an owner reaches
+  the authenticated workspace. In-app Alerts remain the delivery mechanism
+  until a production push provider is configured.
   Reward calculations and distribution controls remain exclusively in the PHP
   backend/Barangay site.
   See the [mobile production checklist](docs/MOBILE_PRODUCTION_CHECKLIST.md).
