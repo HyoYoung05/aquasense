@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-define('APP_VERSION', '1.3.8');
+define('APP_VERSION', '1.4.2');
 
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
@@ -75,7 +75,7 @@ $config = array_replace([
     'telemetry_max_body_bytes' => 4096,
     'telemetry_future_skew_seconds' => 300,
     'telemetry_max_past_seconds' => 604800,
-    'telemetry_poll_seconds' => 8,
+    'telemetry_poll_seconds' => 5,
     'telemetry_distance_min_cm' => 2,
     'telemetry_distance_max_cm' => 400,
     'report_export_max_per_minute' => 10,

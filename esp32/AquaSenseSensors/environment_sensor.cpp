@@ -12,7 +12,10 @@
 
 namespace {
 #if AQUASENSE_ENABLE_ENS160_LIBRARY
-DFRobot_ENS160_I2C ens160(&Wire, AquaSenseConfig::ENS160_I2C_ADDRESS);
+DFRobot_ENS160_I2C ens160Low(&Wire, 0x52);
+DFRobot_ENS160_I2C ens160High(&Wire, 0x53);
+DFRobot_ENS160_I2C* ens160 = nullptr;
+uint8_t ens160Address = 0;
 #endif
 #if AQUASENSE_ENABLE_AHT2X_LIBRARY
 Adafruit_AHTX0 aht2x;
@@ -29,21 +32,37 @@ void IRAM_ATTR markEns160DataReady() { ens160DataReady = true; }
 
 bool tryBeginEns160(SensorData& data) {
 #if AQUASENSE_ENABLE_ENS160_LIBRARY
-  if (!AquaSenseConfig::ENABLE_ENS160 ||
-      !i2cAddressStable(AquaSenseConfig::ENS160_I2C_ADDRESS,
-                        AquaSenseConfig::I2C_STABLE_SCAN_COUNT)) return false;
-  if (ens160.begin() != NO_ERR) {
+  if (!AquaSenseConfig::ENABLE_ENS160) return false;
+  const uint8_t preferred = AquaSenseConfig::ENS160_I2C_ADDRESS;
+  const uint8_t alternate = preferred == 0x52U ? 0x53U : 0x52U;
+  const uint8_t candidates[] = {preferred, alternate};
+  ens160 = nullptr;
+  ens160Address = 0;
+  for (const uint8_t address : candidates) {
+    if ((address != 0x52U && address != 0x53U) ||
+        !i2cAddressStable(address, AquaSenseConfig::I2C_STABLE_SCAN_COUNT)) {
+      continue;
+    }
+    ens160 = address == 0x52U ? &ens160Low : &ens160High;
+    ens160Address = address;
+    break;
+  }
+  if (ens160 == nullptr) return false;
+  if (ens160->begin() != NO_ERR) {
     i2cRecordError();
     data.ens160State = SensorState::kError;
+    ens160 = nullptr;
+    ens160Address = 0;
     return false;
   }
-  ens160.setPWRMode(ENS160_STANDARD_MODE);
+  Serial.printf("[ENS160] Detected at I2C address 0x%02X\n", ens160Address);
+  ens160->setPWRMode(ENS160_STANDARD_MODE);
   if (AquaSenseConfig::ENS160_USE_INTERRUPT) {
-    const uint8_t mode = static_cast<uint8_t>(ens160.eINTModeEN) |
-                         static_cast<uint8_t>(ens160.eINTPinPP) |
-                         static_cast<uint8_t>(ens160.eINTPinActiveHigh) |
-                         static_cast<uint8_t>(ens160.eINTDataDrdyEN);
-    ens160.setINTMode(mode);
+    const uint8_t mode = static_cast<uint8_t>(ens160->eINTModeEN) |
+                         static_cast<uint8_t>(ens160->eINTPinPP) |
+                         static_cast<uint8_t>(ens160->eINTPinActiveHigh) |
+                         static_cast<uint8_t>(ens160->eINTDataDrdyEN);
+    ens160->setINTMode(mode);
     pinMode(AquaSensePins::ENS160_INT, INPUT);
     attachInterrupt(digitalPinToInterrupt(AquaSensePins::ENS160_INT),
                     markEns160DataReady, RISING);
@@ -140,30 +159,35 @@ void environmentSensorsUpdate(const uint32_t nowMs, SensorData& data) {
   ens160DataReady = false;
   lastEnsReadMs = nowMs;
   if (data.aht2xValid) {
-    ens160.setTempAndHum(data.ambientTemperatureC, data.humidityPercent);
+    ens160->setTempAndHum(data.ambientTemperatureC, data.humidityPercent);
   }
-  const uint8_t status = ens160.getENS160Status();
-  if (status == ens160.eWarmUpPhase || status == ens160.eInitialStartUpPhase) {
+  const uint8_t status = ens160->getENS160Status();
+  if (status == ens160->eWarmUpPhase ||
+      status == ens160->eInitialStartUpPhase) {
     data.ens160Valid = false;
     data.ens160State = SensorState::kWarmingUp;
     return;
   }
-  if (status != ens160.eNormalOperation) {
+  if (status != ens160->eNormalOperation) {
     i2cRecordError();
     data.ens160Valid = false;
     data.ens160State = SensorState::kError;
     ens160Initialized = false;
+    ens160 = nullptr;
+    ens160Address = 0;
     lastEnsInitMs = nowMs;
     return;
   }
-  const uint8_t aqi = ens160.getAQI();
-  const uint16_t tvoc = ens160.getTVOC();
-  const uint16_t eco2 = ens160.getECO2();
+  const uint8_t aqi = ens160->getAQI();
+  const uint16_t tvoc = ens160->getTVOC();
+  const uint16_t eco2 = ens160->getECO2();
   if (aqi < 1U || aqi > 5U || eco2 < 400U) {
     i2cRecordError();
     data.ens160Valid = false;
     data.ens160State = SensorState::kError;
     ens160Initialized = false;
+    ens160 = nullptr;
+    ens160Address = 0;
     lastEnsInitMs = nowMs;
     return;
   }

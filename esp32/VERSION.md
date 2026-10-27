@@ -2,7 +2,36 @@
 
 ## Current version
 
-0.8.2
+0.8.5
+
+## 0.8.5 - First-connection Wi-Fi startup gate - 2026-10-27
+
+- Added a 60-second first-connection window that rotates only through Wi-Fi
+  networks configured in ignored `secrets.h`.
+- Defers all sensor initialization, sensor acquisition, telemetry capture, and
+  `AQUASENSE+ SIX-SENSOR LIVE REPORT` output until Wi-Fi connects successfully
+  for the first time.
+- Keeps safe Wi-Fi retries active without rebooting if the initial minute
+  expires. Once the first connection unlocks processing, later disconnects use
+  the existing recovery path without stopping sensor acquisition.
+
+## 0.8.4 - Timely telemetry and alert ingestion - 2026-10-27
+
+- Reduced the valid telemetry capture interval from fifteen seconds to five
+  seconds while retaining rate-limit backoff, bounded retries, and the RAM
+  queue.
+- Keeps invalid HC-SR04 readings out of the queue, so faster alert evaluation
+  never relies on fabricated distance or fill values.
+
+## 0.8.3 - Production telemetry alignment - 2026-10-27
+
+- Made device code and grease-trap assignment installation-specific through
+  the ignored hardware profile instead of requiring source edits.
+- Added automatic ENS160 detection at both supported I2C addresses, `0x52`
+  and `0x53`, while retaining repeated stable-address checks.
+- Compiled and hash-verified the six-sensor firmware, then uploaded it only to
+  COM10. Invalid physical inputs remain unavailable and never become fake
+  zero readings.
 
 ## 0.8.2 - Deployment identity cleanup - 2026-10-23
 

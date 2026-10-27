@@ -30,6 +30,9 @@ uint32_t nextTelemetryCaptureMs = 0;
 uint32_t nextUploadAttemptMs = 0;
 uint8_t retryBackoffIndex = 0;
 bool networkConfigurationValid = false;
+bool sensorProcessingStarted = false;
+bool startupWiFiWindowExpired = false;
+uint32_t startupWiFiGateStartedMs = 0;
 UltrasonicReading latestReading{};
 TelemetryQueue telemetryQueue{};
 SensorData sensorData{};
@@ -321,11 +324,8 @@ void printSystemHealth(const uint32_t nowMs) {
   printNetworkStatus();
 }
 
-}  // namespace
-
-void setup() {
-  Serial.begin(AquaSenseConfig::SERIAL_BAUD);
-  delay(AquaSenseConfig::STARTUP_DELAY_MS);
+void beginSensorProcessing(const uint32_t nowMs) {
+  if (sensorProcessingStarted) return;
   ultrasonicBegin();
   // Required integration order: 4A, 4B, 4C, 4D, then 4E.
   temperatureSensorBegin(sensorData);
@@ -334,6 +334,23 @@ void setup() {
   i2cBusBegin();
   environmentSensorsBegin(sensorData);
   gasSensorBegin(sensorData);
+  lastStatusMs = nowMs;
+  lastSensorStartMs = nowMs - AquaSenseConfig::SENSOR_INTERVAL_MS;
+  nextTelemetryCaptureMs = nowMs +
+                           AquaSenseConfig::INITIAL_TELEMETRY_DELAY_MS;
+  nextUploadAttemptMs = nextTelemetryCaptureMs;
+  lastHealthMs = nowMs;
+  sensorProcessingStarted = true;
+  Serial.printf("[STARTUP] Wi-Fi connected after %lu ms; sensor processing unlocked\n",
+                static_cast<unsigned long>(nowMs - startupWiFiGateStartedMs));
+  Serial.println(F("[STARTUP] SIX-SENSOR LIVE REPORT will begin after the normal status interval"));
+}
+
+}  // namespace
+
+void setup() {
+  Serial.begin(AquaSenseConfig::SERIAL_BAUD);
+  delay(AquaSenseConfig::STARTUP_DELAY_MS);
   printHardwareSummary();
   Serial.printf("Ultrasonic algorithm check: %s\n",
                 ultrasonicAlgorithmCheck() ? "PASS" : "FAIL");
@@ -344,21 +361,41 @@ void setup() {
     Serial.println(F("[CONFIG] Private Wi-Fi, API URL, and device credential loaded"));
     Serial.println(F("[CONFIG] Secrets are not printed"));
     networkBegin();
+    startupWiFiGateStartedMs = millis();
+    Serial.println(F("[STARTUP] Wi-Fi gate active for the first connection"));
+    Serial.println(F("[STARTUP] Trying only networks configured in secrets.h for 60000 ms"));
+    Serial.println(F("[STARTUP] Sensor reads and SIX-SENSOR LIVE REPORT are paused"));
   } else {
     Serial.println(F("[CONFIG] Private network/API settings are incomplete"));
-    Serial.println(F("[CONFIG] Sensing continues; telemetry is disabled"));
+    Serial.println(F("[CONFIG] Sensor processing is locked until valid secrets permit Wi-Fi"));
   }
   lastStatusMs = millis();
-  lastSensorStartMs = millis() - AquaSenseConfig::SENSOR_INTERVAL_MS;
-  nextTelemetryCaptureMs = millis() +
-                           AquaSenseConfig::INITIAL_TELEMETRY_DELAY_MS;
-  nextUploadAttemptMs = nextTelemetryCaptureMs;
   lastHealthMs = lastStatusMs;
 }
 
 void loop() {
   const uint32_t nowMs = millis();
   if (networkConfigurationValid) networkUpdate(nowMs);
+  if (!sensorProcessingStarted) {
+    if (networkConfigurationValid && networkConnected()) {
+      beginSensorProcessing(nowMs);
+    } else {
+      if (networkConfigurationValid && !startupWiFiWindowExpired &&
+          nowMs - startupWiFiGateStartedMs >=
+              AquaSenseConfig::WIFI_STARTUP_GATE_MS) {
+        startupWiFiWindowExpired = true;
+        Serial.println(F("[STARTUP] No configured Wi-Fi connected within 60000 ms"));
+        Serial.println(F("[STARTUP] Processing remains locked; safe Wi-Fi retries continue"));
+      }
+      if (nowMs - lastStatusMs >= AquaSenseConfig::STATUS_INTERVAL_MS) {
+        lastStatusMs = nowMs;
+        Serial.println(F("[STARTUP] Waiting for the first configured Wi-Fi connection"));
+        if (networkConfigurationValid) printNetworkStatus();
+      }
+      delay(1);
+      return;
+    }
+  }
   temperatureSensorUpdate(nowMs, sensorData);
   turbiditySensorUpdate(nowMs, sensorData);
   flowSensorUpdate(nowMs, sensorData);

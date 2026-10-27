@@ -63,10 +63,14 @@ try {
     fresh_check((string) $pdo->query('SELECT r.slug FROM users u JOIN roles r ON r.id=u.role_id LIMIT 1')->fetchColumn() === 'system_admin', 'Bootstrap account receives full Admin access');
     fresh_check((int) $pdo->query("SELECT COUNT(*) FROM audit_logs WHERE action='BOOTSTRAP_ADMIN_CREATED'")->fetchColumn() === 1, 'Bootstrap administrator creation is audited');
     $pdo->exec((string) file_get_contents($root . '/database/sample-data.sql'));
-    fresh_check((int) $pdo->query("SELECT COUNT(*) FROM users WHERE email IN ('systemadmin@aquasense.test','admin@aquasense.test','staff@aquasense.test')")->fetchColumn() === 3,
-        'Development sample accounts import after all migrations without fixed role ID conflicts');
+    fresh_check((int) $pdo->query("SELECT COUNT(*) FROM users WHERE email='systemadmin@aquasense.test'")->fetchColumn() === 1,
+        'Development sample import creates exactly one website demo account');
+    fresh_check((int) $pdo->query("SELECT COUNT(*) FROM users WHERE email IN ('admin@aquasense.test','staff@aquasense.test')")->fetchColumn() === 0,
+        'Fresh development seed does not create legacy website accounts');
     fresh_check((string) $pdo->query("SELECT r.slug FROM users u JOIN roles r ON r.id=u.role_id WHERE u.email='systemadmin@aquasense.test'")->fetchColumn() === 'system_admin',
         'Development Admin account receives the full-access role');
+    fresh_check((int) $pdo->query("SELECT COUNT(*) FROM alerts WHERE message='Simulated development alert for website and mobile notification testing.' AND status='ACTIVE'")->fetchColumn() === 1,
+        'Development seed includes one active simulated notification');
     echo PHP_EOL . $checks . " fresh-install checks passed.\n";
 } catch (Throwable $error) {
     fwrite(STDERR, $error::class . ': ' . $error->getMessage() . PHP_EOL);

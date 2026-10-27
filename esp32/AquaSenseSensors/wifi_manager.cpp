@@ -89,7 +89,7 @@ void networkUpdate(const uint32_t nowMs) {
   } else {
     if (previouslyConnected) {
       ++disconnectCount;
-      Serial.println(F("[WIFI] Disconnected; sensing continues"));
+      Serial.println(F("[WIFI] Disconnected; reconnection scheduled"));
       const uint32_t delayMs = currentRetryDelayMs();
       nextAttemptMs = nowMs + delayMs;
       recoveryState = WiFiRecoveryState::kRetryWait;

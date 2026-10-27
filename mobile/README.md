@@ -1,6 +1,6 @@
 # AQUASENSE+ Carinderia Owner App
 
-Flutter owner application for AQUASENSE+. Version **0.9.3+22** aligns the app
+Flutter owner application for AQUASENSE+. Version **0.9.4+23** aligns the app
 with the administrative website's AQUASENSE+ visual system while retaining the
 Mobile Phase 7 owner-only foundation and Phase 4 sensor contract. The app now
 uses the website's emerald, deep-green, mint, canvas, border, typography, form,
@@ -326,11 +326,10 @@ in production.
 
 ## Temporary network test material
 
-Keep `testing/` and `temporary-network-testing/` until the user explicitly
-requests removal. Their private Wi-Fi and Tailscale files are ignored by Git
-and denied through Apache. They are temporary references and are not consumed
-by production Flutter code. A temporary Tailscale APK still requires the
-computer, Apache, MariaDB, and both Tailscale clients to stay online.
+The explicitly temporary `temporary-network-testing/` directory and its local
+Tailscale/Wi-Fi APK artifacts were removed on 2026-10-27. The separate
+`testing/` directory remains available for controlled local development and is
+not consumed by production Flutter code.
 
 ## Mobile Phase 6 rice incentives
 

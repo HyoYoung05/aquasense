@@ -132,17 +132,21 @@ Admin (full website access):
   Email: systemadmin@aquasense.test
   Password: AquaSense!2026
 
-Barangay Administrator:
-  Email: admin@aquasense.test
-  Password: AquaSense!2026
-
-Barangay Environmental Staff:
-  Email: staff@aquasense.test
-  Password: AquaSense!2026
-
 The website uses an email address, not a separate username.
 Passwords are case-sensitive. These accounts are inserted by sample-data.sql.
 See credentials.txt locally in your editor for the separate login references.
+
+For the single mobile Owner demo, run:
+  C:\xampp\php\php.exe database\mobile-development.php --allow-demo-data
+
+Owner app login:
+  Email: owner@aquasense.test
+  Password: AquaSense!2026
+
+Run database\website-development.php --allow-demo-data on an existing local
+database to prepare the simulated active alert shared by the Admin notification
+bell and Owner app Alerts screen. Existing Barangay Administrator and
+Environmental Staff accounts are not disabled or modified.
 
 7. CONFIRM THE SETUP WORKS
 -------------------------

@@ -2,7 +2,22 @@
 
 ## Current Version
 
-0.9.3+22
+0.9.4+23
+
+### Maintenance - 2026-10-27
+
+- Removed the explicitly temporary `temporary-network-testing/` directory and
+  its local Tailscale configuration and APK artifacts.
+- Retained `testing/`; this cleanup does not change the application build.
+
+## 0.9.4+23 - 2026-10-27
+
+- Refreshes the active Alerts screen every three seconds.
+- Refreshes the active Monitoring screen every five seconds while retaining
+  dashboard pull-to-refresh to avoid excessive multi-endpoint polling.
+- Stops screen timers when the application is not active and refreshes
+  immediately when the owner returns to those screens.
+- Keeps pull-to-refresh and server-authoritative alert/telemetry state.
 
 ## 0.9.3+22 - 2026-10-24
 

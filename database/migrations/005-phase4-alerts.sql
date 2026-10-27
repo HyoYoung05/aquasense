@@ -31,5 +31,5 @@ INSERT INTO system_settings (setting_key,setting_value,description) VALUES
  ('flow_rate_min','0','Minimum expected flow in liters per minute.'),
  ('flow_rate_max','10','Maximum expected flow in liters per minute.'),
  ('overflow_threshold','100','Fill percentage that represents overflow.'),
- ('device_offline_timeout_minutes','10','Minutes without telemetry before a connected active device is offline.')
+ ('device_offline_timeout_minutes','5','Minutes without telemetry before a connected active device is offline.')
 ON DUPLICATE KEY UPDATE description=VALUES(description);

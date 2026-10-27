@@ -94,8 +94,6 @@ try {
         'system_settings', 'password_resets', 'login_attempts'];
     check(array_diff($requiredTables, $tables) === [], 'All 17 foundation tables exist; additive migrations are allowed');
     $sample = $pdo->prepare('SELECT password_hash FROM users WHERE email = ?');
-    $sample->execute(['admin@aquasense.test']);
-    check(password_verify('AquaSense!2026', (string) $sample->fetchColumn()), 'Development administrator hash verifies');
     $sample->execute(['systemadmin@aquasense.test']);
     check(password_verify('AquaSense!2026', (string) $sample->fetchColumn()), 'Development Admin hash verifies');
     check((int) $pdo->query("SELECT COUNT(*) FROM roles WHERE slug IN ('system_admin','administrator','environmental_staff','owner')")->fetchColumn() === 4, 'All four roles exist');

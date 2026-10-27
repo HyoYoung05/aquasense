@@ -17,7 +17,7 @@ return [
     'log_level' => 'warning',
     // Optional telemetry controls. The defaults accept normal 5-30 second device intervals.
     'telemetry_min_interval_seconds' => 2,
-    'telemetry_poll_seconds' => 8,
+    'telemetry_poll_seconds' => 5,
     'telemetry_distance_min_cm' => 2,
     'telemetry_distance_max_cm' => 400,
     // Development browser preview only. Set false for deployment.

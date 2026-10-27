@@ -46,10 +46,16 @@
 #ifndef AQUASENSE_HW_AHT2X_I2C_ADDRESS
 #define AQUASENSE_HW_AHT2X_I2C_ADDRESS 0x00
 #endif
+#ifndef AQUASENSE_DEVICE_CODE
+#define AQUASENSE_DEVICE_CODE "AQS-001"
+#endif
+#ifndef AQUASENSE_GREASE_TRAP_ID
+#define AQUASENSE_GREASE_TRAP_ID 12
+#endif
 
 namespace AquaSenseConfig {
 
-inline constexpr char FIRMWARE_VERSION[] = "0.8.2";
+inline constexpr char FIRMWARE_VERSION[] = "0.8.5";
 inline constexpr char POWER_MODE[] =
     "USB DEVELOPMENT - EXTERNAL DC NOT VERIFIED";
 inline constexpr bool EXTERNAL_DC_POWER_VERIFIED = false;
@@ -59,15 +65,18 @@ inline constexpr uint32_t STARTUP_DELAY_MS = 1000;
 inline constexpr uint32_t STATUS_INTERVAL_MS = 5000;
 inline constexpr uint32_t HEALTH_INTERVAL_MS = 30000;
 inline constexpr uint32_t SENSOR_INTERVAL_MS = 1000;
-inline constexpr uint32_t TELEMETRY_INTERVAL_MS = 15000;
+inline constexpr uint32_t TELEMETRY_INTERVAL_MS = 5000;
 inline constexpr uint32_t INITIAL_TELEMETRY_DELAY_MS = 5000;
 inline constexpr uint32_t QUEUE_DRAIN_INTERVAL_MS = 2500;
 inline constexpr size_t TELEMETRY_QUEUE_CAPACITY = 8;
 
-inline constexpr char DEVICE_CODE[] = "AQS-001";
-inline constexpr uint32_t GREASE_TRAP_ID = 12;
+// Device identity is installation-specific. Production builds override these
+// defaults from the ignored config.local.h file rather than editing source.
+inline constexpr char DEVICE_CODE[] = AQUASENSE_DEVICE_CODE;
+inline constexpr uint32_t GREASE_TRAP_ID = AQUASENSE_GREASE_TRAP_ID;
 
 inline constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 15000;
+inline constexpr uint32_t WIFI_STARTUP_GATE_MS = 60000;
 inline constexpr uint32_t WIFI_RETRY_BACKOFF_MS[] = {5000, 10000, 30000};
 inline constexpr size_t WIFI_RETRY_BACKOFF_COUNT =
     sizeof(WIFI_RETRY_BACKOFF_MS) / sizeof(WIFI_RETRY_BACKOFF_MS[0]);

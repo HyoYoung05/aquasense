@@ -1,10 +1,10 @@
 # AQUASENSE+ ESP32 Hardware — Final Phase 8
 
-Firmware **0.8.2** is the renewed six-sensor target in
+Firmware **0.8.5** is the renewed six-sensor target in
 `AquaSenseSensors/AquaSenseSensors.ino`. It preserves the Phase 1–7 sensor,
 telemetry, power, calibration, and bounded outage-recovery implementation. A
-2026-10-22 COM7 follow-up contains real connected-sensor and end-to-end
-evidence.
+2026-10-27 COM10 deployment uses the production HTTPS endpoint and keeps every
+invalid physical input explicit instead of sending fabricated telemetry.
 
 ```text
 HC-SR04 -> ESP32 -> Wi-Fi -> PHP API -> MySQL/MariaDB -> website / Flutter
@@ -12,8 +12,10 @@ HC-SR04 -> ESP32 -> Wi-Fi -> PHP API -> MySQL/MariaDB -> website / Flutter
 
 The ESP32 never accesses MySQL. Public sensor gates remain disabled by default;
 an ignored local hardware profile enables only paths verified on one prototype.
-The current COM7 profile enables DS18B20, SEN0189 raw ADC, AHT2x at `0x38`, and
-MQ-135 raw ADC. YF-S201 and ENS160 remain disabled pending hardware correction.
+The current private COM10 profile enables all six official sensors. ENS160 now
+checks both `0x52` and `0x53`; AHT2x remains disabled because it is not an
+official seventh sensor. Physical wiring and calibration still determine
+whether each enabled input becomes valid.
 
 ## Six physical modules
 
@@ -41,14 +43,25 @@ Firmware 0.8.0 compiled at 991,600 bytes flash and 51,200 bytes static RAM and
 was hash-verified on COM7. Its startup banner identifies `ESP32 Six-Sensor
 Firmware`, Wi-Fi connected, and live telemetry received HTTP 201 responses.
 
-Firmware 0.8.2 prints one `AQUASENSE+ SIX-SENSOR LIVE REPORT` every five
-seconds. The report always contains numbered sections for all six official
+Firmware 0.8.5 first waits for a Wi-Fi network configured in ignored
+`secrets.h`. It tries the available configured networks for a 60-second startup
+window and keeps retrying safely if none connects. Sensor initialization,
+sensor reads, telemetry capture, and `AQUASENSE+ SIX-SENSOR LIVE REPORT` output
+remain locked until the first successful Wi-Fi connection. After that first
+connection, one live report prints every five seconds and normal sensing
+continues while the existing reconnection logic handles later network drops.
+The report always contains numbered sections for all six official
 sensors. Disabled, unavailable, warming, and uncalibrated inputs remain visible
 with their real state. HC-SR04 still uses five samples and a median internally;
 the individual echo lines are hidden unless `VERBOSE_ULTRASONIC_SERIAL` is
 temporarily enabled. An uncalibrated local fill remains `UNKNOWN`; the PHP API
 continues to calculate the stored fill from the grease trap calibration. System
 health prints separately every 30 seconds.
+
+Valid sensor snapshots are offered to the PHP API every five seconds. The API
+evaluates threshold alerts in the same transaction that stores each accepted
+reading; failed or invalid measurements are never converted into fake safe
+values.
 
 When editing the ignored private mirror directly in VS Code, its local
 `.vscode/c_cpp_properties.json` must point to the generated Arduino compile

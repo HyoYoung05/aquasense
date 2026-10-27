@@ -56,11 +56,37 @@ for (const printButton of document.querySelectorAll('[data-print-page]')) {
     printButton.addEventListener('click', () => window.print());
 }
 
+const userRole = document.querySelector('[data-user-role]');
+const ownerEstablishment = document.querySelector('[data-owner-establishment]');
+if (userRole && ownerEstablishment) {
+    const establishmentSelect = ownerEstablishment.querySelector('select');
+    const syncOwnerEstablishment = () => {
+        const ownerSelected = userRole.value === 'owner';
+        ownerEstablishment.hidden = !ownerSelected;
+        if (establishmentSelect) establishmentSelect.required = ownerSelected;
+    };
+    userRole.addEventListener('change', syncOwnerEstablishment);
+    syncOwnerEstablishment();
+}
+
 const notificationStatus = document.querySelector('[data-notification-status]');
 if (notificationStatus) {
     const count = notificationStatus.querySelector('[data-notification-count]');
     const empty = notificationStatus.querySelector('[data-notification-empty]');
     const label = notificationStatus.querySelector('[data-notification-label]');
+
+    // Keep the bell usable even if another script later registers a click handler.
+    // Modified clicks retain normal browser behavior (new tab/window, etc.).
+    notificationStatus.addEventListener('click', (event) => {
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+            return;
+        }
+
+        const destination = notificationStatus.getAttribute('href');
+        if (!destination) return;
+        event.preventDefault();
+        window.location.assign(destination);
+    });
 
     const applyNotificationSummary = (summary) => {
         const total = Number.isFinite(Number(summary.total)) ? Math.max(0, Number(summary.total)) : 0;
@@ -94,6 +120,7 @@ if (notificationStatus) {
     };
 
     refreshNotificationSummary();
-    window.setInterval(refreshNotificationSummary, 15000);
+    // Alert badges are intentionally faster than normal telemetry views.
+    window.setInterval(refreshNotificationSummary, 3000);
     document.addEventListener('visibilitychange', refreshNotificationSummary);
 }

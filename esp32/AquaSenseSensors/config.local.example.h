@@ -3,6 +3,11 @@
 // Copy to config.local.h. That file is ignored by Git.
 // Set a gate to 1 only after checking the installed module and protection.
 
+// Match these values to the device and active assignment registered in the
+// AQUASENSE+ website before uploading firmware.
+#define AQUASENSE_DEVICE_CODE "AQS-001"
+#define AQUASENSE_GREASE_TRAP_ID 1
+
 #define AQUASENSE_HW_ENABLE_DS18B20 0
 
 #define AQUASENSE_HW_ENABLE_TURBIDITY 0

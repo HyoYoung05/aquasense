@@ -1,6 +1,66 @@
 # AQUASENSE+ Version History
 
-1.3.8
+1.4.2
+
+## Website/backend 1.4.2, Flutter owner app 0.9.4+23, and ESP32 firmware 0.8.4
+
+Date: 2026-10-27
+
+- Preserved existing Barangay Administrator and Environmental Staff accounts;
+  development setup helpers no longer disable or modify them.
+- Kept the fresh-development seed limited to one dedicated website Admin while
+  retaining the separate mobile Owner and shared simulated notification.
+- Reactivated the two legacy local test accounts that had been disabled during
+  the unreleased 1.4.1 development revision.
+
+## Website/backend 1.4.1, Flutter owner app 0.9.4+23, and ESP32 firmware 0.8.4
+
+Date: 2026-10-27
+
+- Reduced development logins to one full-access website Admin and one separate
+  mobile Owner, retaining the required website/Owner authorization boundary.
+- Retired and deactivated the Barangay Administrator and Environmental Staff
+  demo logins while preserving historical foreign-key and audit records.
+- Added one clearly simulated active Demo Kusina alert so the website bell and
+  Owner app Alerts screen can test the same notification safely.
+- Kept all demo provisioning explicitly development-only and blocked in
+  production mode.
+
+## Website/backend 1.4.0, Flutter owner app 0.9.4+23, and ESP32 firmware 0.8.4
+
+Date: 2026-10-27
+
+- Added Admin-only user account creation for Admin, Barangay Administrator,
+  Environmental Staff, and Karinderya Owner roles.
+- Added CSRF protection, strong-password validation, duplicate-email checks,
+  active-account defaults, and audit logging for every created account.
+- Owner accounts must be linked transactionally to an active, currently
+  unlinked establishment so mobile access has the correct data scope.
+
+## Website/backend 1.3.9, Flutter owner app 0.9.4+23, and ESP32 firmware 0.8.4
+
+Date: 2026-10-27
+
+- Reduced valid ESP32 telemetry capture/upload cadence to five seconds so new
+  server-side alert conditions can be evaluated promptly.
+- Set website monitoring and mobile monitoring refresh to five seconds.
+- Set website and mobile alert refresh to three seconds while visible. The
+  owner dashboard retains its efficient pull-to-refresh behavior.
+- Changed the default device freshness/offline boundary from ten minutes to
+  five minutes. Alert creation remains transactional with telemetry ingestion.
+- Restored a reliable full-size notification-bell hit area, added guarded
+  click navigation to Alerts, and versioned the shared JavaScript URL so
+  browsers cannot keep the older non-interactive header behavior cached.
+
+## Website/backend 1.3.8, Flutter owner app 0.9.3+22, and ESP32 firmware 0.8.3
+
+Date: 2026-10-27
+
+- Made the ESP32 device code and grease-trap identity overridable from the
+  ignored installation profile.
+- Added automatic ENS160 discovery at I2C addresses `0x52` and `0x53`.
+- Compiled and uploaded the production-API firmware only to COM10; invalid
+  connected inputs remain unavailable rather than generating fake telemetry.
 
 ## Website/backend 1.3.8 and Flutter owner app 0.9.3+22
 

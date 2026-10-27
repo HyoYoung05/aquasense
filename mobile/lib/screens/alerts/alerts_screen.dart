@@ -11,7 +11,7 @@ import '../../widgets/state_panel.dart';
 import 'alert_detail_screen.dart';
 
 class AlertsScreen extends StatefulWidget {
-  static const refreshInterval = Duration(seconds: 20);
+  static const refreshInterval = Duration(seconds: 3);
   final AuthService auth;
   final AlertsRepository? repository;
   const AlertsScreen({super.key, required this.auth, this.repository});

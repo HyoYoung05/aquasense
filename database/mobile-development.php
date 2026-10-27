@@ -36,6 +36,8 @@ try {
         $pdo->prepare('INSERT INTO users (role_id, full_name, email, password_hash) VALUES (?, ?, ?, ?)')
             ->execute([$roleId, 'Taylor Cruz (Demo)', 'owner@aquasense.test', password_hash('AquaSense!2026', PASSWORD_DEFAULT)]);
         $owner = ['id' => $pdo->lastInsertId()];
+    } else {
+        $pdo->prepare('UPDATE users SET is_active=1 WHERE id=?')->execute([$owner['id']]);
     }
     $pdo->prepare('UPDATE establishments SET owner_user_id = ? WHERE id = ?')->execute([$owner['id'], $site['id']]);
     if (in_array('--add-reading', $argv, true)) {

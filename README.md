@@ -4,12 +4,16 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 six-sensor firmware.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.3.8 adds a working unresolved-alert notification indicator while keeping the deployable six-sensor telemetry flow, calibrated-only sensor and alert gates, the full-access Admin role, and limited Barangay Administrator/Environmental Staff navigation.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.4.2 keeps one dedicated development-only Admin login for the website and one Owner login for the mobile app, both scoped to a shared simulated notification fixture, while preserving existing local accounts and production role boundaries.
+
+The authenticated website notification bell has a protected 44 px click area,
+opens the Alerts workspace, and uses versioned JavaScript assets so repaired
+interaction code is not hidden by an older browser cache.
 
 ## Current Version
 
 The repository includes the final [ESP32 Hardware Phase 8](esp32/README.md)
-firmware **0.8.2** in `esp32/AquaSenseSensors`. It preserves HC-SR04, Wi-Fi, and
+firmware **0.8.4** in `esp32/AquaSenseSensors`. It preserves HC-SR04, Wi-Fi, and
 retry-safe PHP telemetry, then adds independently valid drivers for DS18B20,
 SEN0189, YF-S201, the ENS160+AHT2x combination module, and MQ-135. Raw ADC
 values use dedicated database fields and are never mislabeled as NTU or gas
@@ -26,7 +30,7 @@ outages; it is cleared by reset or power loss and drops the oldest record when
 full.
 COM3 must not be used. There is no microSD, OLED,
 buzzer, or DHT22. The Flutter source is tracked under
-[`mobile/`](mobile/README.md) at version **0.9.3+22**. Generated APKs,
+[`mobile/`](mobile/README.md) at version **0.9.4+23**. Generated APKs,
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 The current Android development build is verified with Flutter **3.41.6**.
 
@@ -35,14 +39,13 @@ ESP32, then a
 local Wi-Fi router, then Apache/PHP, MariaDB, website, and Flutter APIs. The
 same configurable endpoint supports the separate production HTTPS target.
 
-Phase 8 is the final ESP32 hardware phase. Firmware **0.8.2** keeps the safe local
+Phase 8 is the final ESP32 hardware phase. Firmware **0.8.4** keeps the safe local
 hardware profile and a DS18B20 development pull-up fix after the six modules
 were connected, and applies the useful initialization details from the supplied
 combined-sensor sketch without adopting its obsolete GPIO27 flow pin or
-uncalibrated engineering-unit formulas. COM7 sends authenticated AQS-001
-telemetry to the PHP API.
-HC-SR04, DS18B20, SEN0189 raw ADC, AHT2x, and valid MQ-135 raw samples have
-reached MySQL; ENS160 and YF-S201 remain isolated pending correction.
+uncalibrated engineering-unit formulas. The private COM10 profile targets the
+production HTTPS API, and ENS160 checks both supported I2C addresses. Telemetry
+is sent only when the required HC-SR04 distance is valid.
 
 The locked GPIO map and target placements are documented without claiming
 installation. Physical latch/oil diversion is blocked because the paper has no
@@ -63,7 +66,7 @@ physical installation or field-acceptance item.
 See the [connected-sensor verification](esp32/PHYSICAL-VERIFICATION-2026-10-22.md)
 for the measured results and remaining corrections.
 
-**Version: 1.3.8**
+**Version: 1.4.2**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -248,11 +251,10 @@ Open [credentials.txt](credentials.txt) locally in your editor for the developme
 
 | Role | Email | Password |
 | --- | --- | --- |
-| Barangay Administrator | `admin@aquasense.test` | `AquaSense!2026` |
-| Barangay Environmental Staff | `staff@aquasense.test` | `AquaSense!2026` |
 | Admin | `systemadmin@aquasense.test` | `AquaSense!2026` |
+| Owner app | `owner@aquasense.test` | `AquaSense!2026` |
 
-`sample-data.sql` contains only PHP `password_hash()` output, not plaintext passwords in user records. Login uses `password_verify()` and rehashes passwords when the configured PHP default changes. The optional mobile development helper creates `owner@aquasense.test` with password `AquaSense!2026` and links fictional Demo Kusina. Owners cannot access the administrative website.
+These are two separate accounts because website personnel and mobile Owners have different permissions. `sample-data.sql` creates only the website Admin and contains only PHP `password_hash()` output. The mobile development helper creates `owner@aquasense.test`, links fictional Demo Kusina, and never grants website access. Existing `admin@aquasense.test` and `staff@aquasense.test` accounts from older installations are preserved unchanged and remain governed by their existing activation state.
 
 For an existing development database, apply migrations 009-013 and provision or
 repair the demo Admin account with:
@@ -261,7 +263,10 @@ repair the demo Admin account with:
 C:\xampp\php\php.exe database\website-development.php --allow-demo-data
 ```
 
-The helper refuses non-development environments. It does not create production users.
+The helper refuses non-development environments, leaves every existing user
+account unchanged, and creates or refreshes one clearly simulated active
+Demo Kusina alert. The website Admin bell and mobile Owner Alerts screen can
+therefore test the same notification. It does not create production users.
 
 ## Owner mobile API and Flutter app
 
@@ -279,7 +284,7 @@ For local development only, run from the website directory:
 C:\xampp\php\php.exe database\mobile-development.php --allow-demo-data --add-reading
 ```
 
-This also applies the migration, creates the fictional owner only if absent, links only unclaimed Demo Kusina, and optionally inserts a clearly simulated reading. It refuses conflicting ownership and never resets passwords. Existing production records must not use this demo helper. The helper is CLI-only and the database directory remains blocked by Apache.
+This also applies the migration, creates the single fictional Owner only if absent, links only unclaimed Demo Kusina, and optionally inserts a clearly simulated reading. Run the website development helper first to prepare the shared active notification. It refuses conflicting ownership and never resets passwords. Existing production records must not use either demo helper. Both helpers are CLI-only and the database directory remains blocked by Apache.
 
 Bearer tokens are random, stored only as hashes in MariaDB, and default to a 24-hour expiry (`mobile_token_lifetime_seconds` in PHP configuration). Active owner role, password fingerprint and current establishment ownership are enforced on each request. Staff session authentication remains separate. Only the four named endpoint files are exposed; the API root and documentation remain blocked.
 
@@ -291,7 +296,7 @@ Verify the new API with `C:\xampp\php\php.exe tests\mobile-api.php --allow-local
 
 - **Name:** `aquasense`
 - **Structure:** [database/schema.sql](database/schema.sql), 17 InnoDB tables with foreign keys, indexes, uniqueness constraints, timestamps, and numeric checks.
-- **Development records:** [database/sample-data.sql](database/sample-data.sql), four roles, three website accounts, one fictional establishment, one trap, one simulated device, one assignment, configurable settings, and setup ledger/audit entries.
+- **Development records:** [database/sample-data.sql](database/sample-data.sql), four roles, one website Admin account, one fictional establishment, one trap, one simulated device, one assignment, one simulated active notification, configurable settings, and setup ledger/audit entries. The mobile helper adds the separate Owner account.
 - **Configuration:** `config/config.php`; optional ignored overrides in `config/local.php`.
 - **Connection:** `config/database.php`, PDO, `utf8mb4`, exceptions, and native prepared statements.
 - **Time:** stored timestamps use UTC; the interface displays Asia/Manila time.
@@ -401,6 +406,7 @@ aquasense-web/
   logs/                        protected runtime errors, excluded from Git
   tests/
     foundation.php             HTTP and relational integrity checks
+    user-accounts.php          Admin account-provisioning and owner-link checks
     phase2.php                 Phase 2 authorization and data-integrity checks
     phase3.php                 Phase 3 ingestion and monitoring checks
     session-expiry.php         session inactivity verification
@@ -416,6 +422,10 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 - Full relational database foundation and fictional development seed.
 - PDO connection and separated local configuration.
 - Admin, Barangay Administrator, and Environmental Staff sign in with generic invalid-login feedback.
+- Full-access Admin users can create Admin, Barangay Administrator,
+  Environmental Staff, and Karinderya Owner accounts from User Accounts.
+  Owner creation requires an active unlinked establishment; all creation and
+  owner-link actions are audited.
 - Session regeneration on login, inactivity expiry, and current database role/activity checks on protected requests.
 - Secure POST logout with CSRF checks, session destruction, and old-session rejection.
 - Login throttling and account authentication audit events.
@@ -452,7 +462,7 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 
 - The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
 - PDF detail is limited to 500 rows and CSV detail to 10,000 rows; narrower filters are required for complete exports beyond those limits.
-- The Flutter Owner app is version `0.9.3+22`. Its responsive interface now
+- The Flutter Owner app is version `0.9.4+23`. Its responsive interface now
   follows the website's emerald, deep-green, mint, canvas, card, form, and
   navigation design system while remaining limited to owner workflows.
   Dashboard Quick Actions appear
