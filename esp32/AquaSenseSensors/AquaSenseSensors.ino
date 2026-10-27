@@ -31,6 +31,7 @@ uint32_t nextUploadAttemptMs = 0;
 uint8_t retryBackoffIndex = 0;
 bool networkConfigurationValid = false;
 bool sensorProcessingStarted = false;
+bool sensorProcessingPausedForWiFi = false;
 bool startupWiFiWindowExpired = false;
 uint32_t startupWiFiGateStartedMs = 0;
 UltrasonicReading latestReading{};
@@ -72,8 +73,20 @@ bool networkSettingsAreValid() {
                                url.startsWith("https://");
   const bool forbiddenLoopback = url.indexOf("localhost") >= 0 ||
                                  url.indexOf("127.0.0.1") >= 0;
-  return strlen(AquaSenseSecrets::WIFI_SSID_1) > 0U &&
-         String(AquaSenseSecrets::WIFI_SSID_1) != "YOUR_WIFI_NAME" &&
+  const char* configuredSsids[] = {
+      AquaSenseSecrets::WIFI_SSID_1, AquaSenseSecrets::WIFI_SSID_2,
+      AquaSenseSecrets::WIFI_SSID_3, AquaSenseSecrets::WIFI_SSID_4,
+      AquaSenseSecrets::WIFI_SSID_5, AquaSenseSecrets::WIFI_SSID_6,
+      AquaSenseSecrets::WIFI_SSID_7, AquaSenseSecrets::WIFI_SSID_8,
+      AquaSenseSecrets::WIFI_SSID_9, AquaSenseSecrets::WIFI_SSID_10};
+  bool hasConfiguredWiFi = false;
+  for (const char* ssid : configuredSsids) {
+    if (strlen(ssid) > 0U && String(ssid) != "YOUR_WIFI_NAME") {
+      hasConfiguredWiFi = true;
+      break;
+    }
+  }
+  return hasConfiguredWiFi &&
          supportedScheme && !forbiddenLoopback &&
          url.indexOf("YOUR_") < 0 && deviceCredentialIsValid() &&
          AquaSenseConfig::GREASE_TRAP_ID > 0U;
@@ -395,6 +408,29 @@ void loop() {
       delay(1);
       return;
     }
+  }
+  if (!networkConnected()) {
+    if (!sensorProcessingPausedForWiFi) {
+      sensorProcessingPausedForWiFi = true;
+      Serial.println(F("[WIFI] Connection lost; sensor reads and live reports are paused"));
+      Serial.println(F("[WIFI] Website/app retain the last server-accepted telemetry"));
+    }
+    if (nowMs - lastStatusMs >= AquaSenseConfig::STATUS_INTERVAL_MS) {
+      lastStatusMs = nowMs;
+      Serial.println(F("[WIFI] Reconnecting; last telemetry remains unchanged"));
+      printNetworkStatus();
+    }
+    delay(1);
+    return;
+  }
+  if (sensorProcessingPausedForWiFi) {
+    sensorProcessingPausedForWiFi = false;
+    lastSensorStartMs = nowMs - AquaSenseConfig::SENSOR_INTERVAL_MS;
+    nextTelemetryCaptureMs = nowMs +
+                             AquaSenseConfig::INITIAL_TELEMETRY_DELAY_MS;
+    lastStatusMs = nowMs;
+    lastHealthMs = nowMs;
+    Serial.println(F("[WIFI] Reconnected; fresh sensor processing resumed"));
   }
   temperatureSensorUpdate(nowMs, sensorData);
   turbiditySensorUpdate(nowMs, sensorData);

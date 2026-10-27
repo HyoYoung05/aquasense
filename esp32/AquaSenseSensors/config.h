@@ -55,7 +55,7 @@
 
 namespace AquaSenseConfig {
 
-inline constexpr char FIRMWARE_VERSION[] = "0.8.5";
+inline constexpr char FIRMWARE_VERSION[] = "0.8.6";
 inline constexpr char POWER_MODE[] =
     "USB DEVELOPMENT - EXTERNAL DC NOT VERIFIED";
 inline constexpr bool EXTERNAL_DC_POWER_VERIFIED = false;
@@ -75,8 +75,9 @@ inline constexpr size_t TELEMETRY_QUEUE_CAPACITY = 8;
 inline constexpr char DEVICE_CODE[] = AQUASENSE_DEVICE_CODE;
 inline constexpr uint32_t GREASE_TRAP_ID = AQUASENSE_GREASE_TRAP_ID;
 
-inline constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 15000;
+inline constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 12000;
 inline constexpr uint32_t WIFI_STARTUP_GATE_MS = 60000;
+inline constexpr uint32_t WIFI_STARTUP_ATTEMPT_BUDGET_MS = 55000;
 inline constexpr uint32_t WIFI_RETRY_BACKOFF_MS[] = {5000, 10000, 30000};
 inline constexpr size_t WIFI_RETRY_BACKOFF_COUNT =
     sizeof(WIFI_RETRY_BACKOFF_MS) / sizeof(WIFI_RETRY_BACKOFF_MS[0]);

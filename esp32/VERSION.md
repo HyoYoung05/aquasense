@@ -2,7 +2,23 @@
 
 ## Current version
 
-0.8.5
+0.8.6
+
+## 0.8.6 - Ten-network startup rotation - 2026-10-27
+
+- Expanded ignored `secrets.h` support from two to ten Wi-Fi slots without
+  logging SSIDs or passwords.
+- Rotates immediately through every configured slot during the 60-second
+  first-connection gate. A dynamic 55-second attempt budget is divided across
+  configured slots and capped at 12 seconds, allowing all ten options to be
+  attempted within the initial minute.
+- Restores normal bounded retry backoff after the startup window and identifies
+  only the successful slot number in Serial output.
+- Documents the ESP32 DevKit V1 requirement for a 2.4 GHz Wi-Fi network.
+- Pauses sensor acquisition, live reports, and new telemetry capture after a
+  later Wi-Fi disconnect. The applications retain the last accepted server
+  reading while Serial reports reconnection progress; fresh sensing resumes
+  automatically after a configured network reconnects.
 
 ## 0.8.5 - First-connection Wi-Fi startup gate - 2026-10-27
 

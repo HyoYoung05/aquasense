@@ -1,6 +1,6 @@
 # AQUASENSE+ ESP32 Hardware — Final Phase 8
 
-Firmware **0.8.5** is the renewed six-sensor target in
+Firmware **0.8.6** is the renewed six-sensor target in
 `AquaSenseSensors/AquaSenseSensors.ino`. It preserves the Phase 1–7 sensor,
 telemetry, power, calibration, and bounded outage-recovery implementation. A
 2026-10-27 COM10 deployment uses the production HTTPS endpoint and keeps every
@@ -43,13 +43,19 @@ Firmware 0.8.0 compiled at 991,600 bytes flash and 51,200 bytes static RAM and
 was hash-verified on COM7. Its startup banner identifies `ESP32 Six-Sensor
 Firmware`, Wi-Fi connected, and live telemetry received HTTP 201 responses.
 
-Firmware 0.8.5 first waits for a Wi-Fi network configured in ignored
-`secrets.h`. It tries the available configured networks for a 60-second startup
-window and keeps retrying safely if none connects. Sensor initialization,
+Firmware 0.8.6 first waits for one of up to ten Wi-Fi networks configured in
+ignored `secrets.h`. During the 60-second startup window it rotates immediately
+through every non-empty slot. The 55-second attempt budget is divided by the
+number of configured slots and capped at 12 seconds per network, so all ten
+options can be reached inside the initial minute. It then returns to normal
+bounded backoff if none connects. Sensor initialization,
 sensor reads, telemetry capture, and `AQUASENSE+ SIX-SENSOR LIVE REPORT` output
 remain locked until the first successful Wi-Fi connection. After that first
-connection, one live report prints every five seconds and normal sensing
-continues while the existing reconnection logic handles later network drops.
+connection, one live report prints every five seconds while Wi-Fi remains
+online. A later disconnect pauses sensor reads, live reports, and new telemetry
+capture; the website/app retain the last server-accepted reading while Serial
+shows reconnection status only. Fresh sensor processing resumes automatically
+after any configured network connects.
 The report always contains numbered sections for all six official
 sensors. Disabled, unavailable, warming, and uncalibrated inputs remain visible
 with their real state. HC-SR04 still uses five samples and a median internally;
@@ -94,6 +100,9 @@ Copy `secrets.example.h` to ignored `secrets.h` for Wi-Fi, endpoint, device
 key, and optional trusted CA. Copy `config.local.example.h` to ignored
 `config.local.h` for prototype-specific sensor gates and I2C addresses. Never
 commit either private file.
+
+The ESP32 radio supports 2.4 GHz Wi-Fi. Configure phone hotspots and routers to
+offer a 2.4 GHz band; a 5 GHz-only SSID cannot be joined by ESP32 DevKit V1.
 
 Before enabling each Phase 4 sensor in `config.local.h`:
 
