@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#103f3b">
+    <link rel="icon" type="image/png" href="<?= e(url('assets/images/barangay-san-antonio-logo.png')) ?>">
     <title><?= e($pageTitle) ?> &middot; AQUASENSE+</title>
     <link rel="stylesheet" href="<?= e(url('assets/css/style.css')) ?>?v=<?= e(APP_VERSION) ?>">
     <script src="<?= e(url('assets/js/app.js')) ?>" defer></script>
@@ -11,7 +12,7 @@
 <body class="auth-page <?= e($authPageClass ?? '') ?>">
 <a class="skip-link" href="#main-content">Skip to content</a>
 <header class="auth-page-header">
-    <a class="brand brand-light" href="<?= e(url()) ?>"><span class="brand-symbol"><?= icon('drop') ?></span><span>AQUASENSE<span class="brand-plus">+</span></span></a>
+    <a class="brand brand-light" href="<?= e(url()) ?>"><span class="brand-symbol"><img class="official-logo" src="<?= e(url('assets/images/barangay-san-antonio-logo.png')) ?>" alt="" width="512" height="512" decoding="async"></span><span>AQUASENSE<span class="brand-plus">+</span></span></a>
     <span class="tag">Administrative website</span>
     <span class="auth-environment"><?= e(ucfirst((string) $config['environment'])) ?> environment</span>
 </header>

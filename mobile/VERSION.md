@@ -2,7 +2,23 @@
 
 ## Current Version
 
-0.9.5+24
+0.9.7+26
+
+## 0.9.7+26 - 2026-10-29
+
+- Replaced the Incentives page-level History view dropdown with an expandable
+  Incentives navigation item.
+- Added nested Rice Incentive and Incentive History owner choices in the mobile
+  drawer, with an equivalent top-bar chooser for wide layouts.
+- Kept rice summaries/distribution history and transaction history as separate,
+  backend-authoritative views.
+
+## 0.9.6+25 - 2026-10-29
+
+- Fixed the active mobile drawer label and icon colors so they remain dark
+  green and readable against the pale mint selection background.
+- Applied the selected and unselected colors directly to every navigation
+  destination to prevent Material defaults from restoring white text.
 
 ## 0.9.5+24 - 2026-10-29
 

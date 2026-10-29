@@ -10,11 +10,19 @@ import '../../widgets/loading_widget.dart';
 import '../../widgets/state_panel.dart';
 import 'incentive_detail_screen.dart';
 
+enum IncentiveView { rice, history }
+
 class IncentivesScreen extends StatefulWidget {
   final AuthService auth;
   final IncentivesRepository? repository;
+  final IncentiveView view;
 
-  const IncentivesScreen({super.key, required this.auth, this.repository});
+  const IncentivesScreen({
+    super.key,
+    required this.auth,
+    this.repository,
+    this.view = IncentiveView.history,
+  });
 
   @override
   State<IncentivesScreen> createState() => _IncentivesScreenState();
@@ -25,7 +33,6 @@ class _IncentivesScreenState extends State<IncentivesScreen>
   late final IncentivesRepository _repository;
   IncentiveSummary? _summary;
   IncentiveStatusFilter _filter = IncentiveStatusFilter.all;
-  _HistoryView _historyView = _HistoryView.incentives;
   String? _error;
   String? _refreshError;
   bool _loading = false;
@@ -109,11 +116,12 @@ class _IncentivesScreenState extends State<IncentivesScreen>
     }
     final summary =
         _summary ?? const IncentiveSummary(units: [], transactions: []);
-    final records = _historyView == _HistoryView.incentives
-        ? summary.filtered(_filter)
-        : summary.transactions
+    final riceView = widget.view == IncentiveView.rice;
+    final records = riceView
+        ? summary.transactions
               .where((item) => item.status == 'DISTRIBUTED')
-              .toList(growable: false);
+              .toList(growable: false)
+        : summary.filtered(_filter);
     return RefreshIndicator(
       onRefresh: () => _load(refresh: true),
       child: ListView(
@@ -126,31 +134,34 @@ class _IncentivesScreenState extends State<IncentivesScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Rice incentive summary',
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w800),
+                  if (riceView)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Rice Incentive',
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w800),
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        onPressed: _loading ? null : () => _load(refresh: true),
-                        tooltip: 'Refresh incentives',
-                        icon: const Icon(Icons.refresh),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  if (summary.units.isEmpty)
+                        IconButton(
+                          onPressed: _loading
+                              ? null
+                              : () => _load(refresh: true),
+                          tooltip: 'Refresh incentives',
+                          icon: const Icon(Icons.refresh),
+                        ),
+                      ],
+                    ),
+                  if (riceView) const SizedBox(height: 10),
+                  if (riceView && summary.units.isEmpty)
                     const StatePanel.empty(
                       icon: Icons.card_giftcard_outlined,
                       title: 'No incentive records yet.',
                       message:
                           'Approved oil surrenders will appear here after the backend processes an incentive.',
                     )
-                  else
+                  else if (riceView)
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final width = constraints.maxWidth >= 620
@@ -169,27 +180,28 @@ class _IncentivesScreenState extends State<IncentivesScreen>
                         );
                       },
                     ),
-                  if (summary.latest case final latest?) ...[
-                    const SizedBox(height: 12),
-                    Card(
-                      child: ListTile(
-                        leading: const Icon(
-                          Icons.card_giftcard_outlined,
-                          color: emerald,
+                  if (riceView)
+                    if (summary.latest case final latest?) ...[
+                      const SizedBox(height: 12),
+                      Card(
+                        child: ListTile(
+                          leading: const Icon(
+                            Icons.card_giftcard_outlined,
+                            color: emerald,
+                          ),
+                          title: const Text(
+                            'Latest Reward',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          subtitle: Text(
+                            '${cleanQuantity(latest.rewardQuantity)} ${latest.rewardUnit} · '
+                            '${incentiveStatusLabel(latest.status)}',
+                          ),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => _open(latest),
                         ),
-                        title: const Text(
-                          'Latest Reward',
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        subtitle: Text(
-                          '${cleanQuantity(latest.rewardQuantity)} ${latest.rewardUnit} · '
-                          '${incentiveStatusLabel(latest.status)}',
-                        ),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => _open(latest),
                       ),
-                    ),
-                  ],
+                    ],
                   if (_refreshError != null) ...[
                     const SizedBox(height: 12),
                     MaterialBanner(
@@ -204,33 +216,29 @@ class _IncentivesScreenState extends State<IncentivesScreen>
                       ],
                     ),
                   ],
-                  const SizedBox(height: 24),
-                  DropdownButtonFormField<_HistoryView>(
-                    initialValue: _historyView,
-                    decoration: const InputDecoration(
-                      labelText: 'History view',
-                      prefixIcon: Icon(Icons.history_outlined),
-                    ),
-                    items: [
-                      for (final view in _HistoryView.values)
-                        DropdownMenuItem(value: view, child: Text(view.label)),
+                  SizedBox(height: riceView ? 24 : 0),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          riceView
+                              ? 'Rice distribution history'
+                              : 'Incentive History',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                      if (!riceView)
+                        IconButton(
+                          onPressed: _loading
+                              ? null
+                              : () => _load(refresh: true),
+                          tooltip: 'Refresh incentives',
+                          icon: const Icon(Icons.refresh),
+                        ),
                     ],
-                    onChanged: (view) {
-                      if (view == null) return;
-                      setState(() {
-                        _historyView = view;
-                        _filter = IncentiveStatusFilter.all;
-                      });
-                    },
                   ),
-                  const SizedBox(height: 18),
-                  Text(
-                    _historyView.heading,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  if (_historyView == _HistoryView.incentives) ...[
+                  if (!riceView) ...[
                     const SizedBox(height: 10),
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
@@ -254,12 +262,12 @@ class _IncentivesScreenState extends State<IncentivesScreen>
                   if (records.isEmpty)
                     StatePanel.empty(
                       icon: Icons.history_outlined,
-                      title: _historyView == _HistoryView.rice
+                      title: riceView
                           ? 'No rice distributions yet.'
                           : _filter == IncentiveStatusFilter.all
                           ? 'No incentive records yet.'
                           : 'No ${_filter.label.toLowerCase()} records',
-                      message: _historyView == _HistoryView.rice
+                      message: riceView
                           ? 'Rice history appears after Barangay personnel record a reward as distributed.'
                           : _filter == IncentiveStatusFilter.all
                           ? 'Incentive history will appear after the backend processes an approved surrender.'
@@ -267,7 +275,7 @@ class _IncentivesScreenState extends State<IncentivesScreen>
                     )
                   else
                     for (final item in records)
-                      if (_historyView == _HistoryView.rice)
+                      if (riceView)
                         _RiceHistoryCard(item: item, onTap: () => _open(item))
                       else
                         _TransactionCard(item: item, onTap: () => _open(item)),
@@ -279,15 +287,6 @@ class _IncentivesScreenState extends State<IncentivesScreen>
       ),
     );
   }
-}
-
-enum _HistoryView {
-  incentives('Incentives history', 'Incentive history'),
-  rice('Rice history', 'Rice distribution history');
-
-  final String label;
-  final String heading;
-  const _HistoryView(this.label, this.heading);
 }
 
 class _UnitSummaryCard extends StatelessWidget {

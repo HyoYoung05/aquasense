@@ -199,7 +199,7 @@ void main() {
     },
   );
 
-  testWidgets('screen displays summaries, history, and exact server values', (
+  testWidgets('rice incentive and incentive history are separate views', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(800, 3200);
@@ -210,25 +210,41 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: IncentivesScreen(auth: _auth(), repository: repo),
+          body: IncentivesScreen(
+            auth: _auth(),
+            repository: repo,
+            view: IncentiveView.rice,
+          ),
         ),
       ),
     );
     await tester.pumpAndSettle();
+    expect(find.text('Rice Incentive'), findsOneWidget);
     expect(find.text('Pending'), findsWidgets);
     expect(find.text('Distributed'), findsWidgets);
-    expect(find.text('INC-003'), findsOneWidget);
-    expect(find.text('Rice reward: 5.5 kg'), findsOneWidget);
-    expect(find.text('Pending Distribution'), findsWidgets);
-    await tester.tap(find.text('Incentives history'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Rice history').last);
-    await tester.pumpAndSettle();
     expect(find.text('Rice distribution history'), findsOneWidget);
     expect(find.text('Rice distributed: 250 g'), findsOneWidget);
     expect(find.text('INC-002'), findsOneWidget);
     expect(find.text('INC-003'), findsNothing);
     expect(find.text('INC-001'), findsNothing);
+    expect(find.byType(DropdownButtonFormField<IncentiveView>), findsNothing);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: IncentivesScreen(
+            auth: _auth(),
+            repository: repo,
+            view: IncentiveView.history,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Incentive History'), findsOneWidget);
+    expect(find.text('INC-003'), findsOneWidget);
+    expect(find.text('Rice reward: 5.5 kg'), findsOneWidget);
+    expect(find.text('Pending Distribution'), findsWidgets);
   });
 
   test('selected Incentives navigation colors remain readable', () {
@@ -237,6 +253,85 @@ void main() {
     expect(theme.iconTheme?.resolve(selected)?.color, emerald);
     expect(theme.labelTextStyle?.resolve(selected)?.color, forest);
     expect(theme.indicatorColor, mintSurface);
+  });
+
+  testWidgets('drawer expands Incentives into its two owner choices', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final auth = AuthService(
+      ApiService(
+        baseUrl: _baseUrl,
+        client: MockClient((request) async {
+          final data = request.url.pathSegments.last == 'profile.php'
+              ? {
+                  'user': {
+                    'id': 1,
+                    'full_name': 'Owner',
+                    'email': 'owner@example.test',
+                  },
+                }
+              : {
+                  'user': {
+                    'id': 1,
+                    'full_name': 'Owner',
+                    'email': 'owner@example.test',
+                  },
+                  'generated_at': '2026-10-29T00:00:00Z',
+                  'freshness_seconds': 600,
+                  'alerts': <Object>[],
+                  'establishments': <Object>[],
+                };
+          return http.Response(
+            jsonEncode({'success': true, 'data': data}),
+            200,
+          );
+        }),
+      ),
+      _Store(),
+    );
+    await auth.restore();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ownerTheme(),
+        home: HomeScreen(auth: auth, onLogout: () async {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.menu));
+    await tester.pumpAndSettle();
+
+    final drawer = find.byType(NavigationDrawer);
+    final homeLabel = tester.widget<Text>(
+      find.descendant(of: drawer, matching: find.text('Home')),
+    );
+    final monitoringLabel = tester.widget<Text>(
+      find.descendant(of: drawer, matching: find.text('Monitoring')),
+    );
+    expect(homeLabel.style?.color, forest);
+    expect(homeLabel.style?.fontWeight, FontWeight.w700);
+    expect(monitoringLabel.style?.color, ink);
+
+    await tester.tap(
+      find.descendant(of: drawer, matching: find.text('Incentives')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(of: drawer, matching: find.text('Rice Incentive')),
+      findsOneWidget,
+    );
+    final historyChoice = find.descendant(
+      of: drawer,
+      matching: find.text('Incentive History'),
+    );
+    expect(historyChoice, findsOneWidget);
+    await tester.tap(historyChoice);
+    await tester.pumpAndSettle();
+    expect(find.byType(NavigationDrawer), findsNothing);
+    expect(find.text('Incentive History'), findsWidgets);
   });
 
   testWidgets(
@@ -411,7 +506,7 @@ void main() {
     );
     await tester.tap(destination);
     await tester.pumpAndSettle();
-    expect(find.text('Rice incentive summary'), findsOneWidget);
+    expect(find.text('Rice Incentive'), findsWidgets);
     expect(incentives.calls, 1);
   });
 

@@ -6,8 +6,8 @@ $navLink = static function(string $key,string $symbol,string $label,string $path
 };
 ?>
 <aside class="sidebar" id="sidebar" aria-label="Main navigation">
-<a class="brand" href="<?= e(url('admin/dashboard.php')) ?>"><span class="brand-symbol"><?= icon('drop') ?></span><span>AQUASENSE<span class="brand-plus">+</span></span></a>
-<div class="workspace-label"><span class="workspace-mark">SA</span><div><strong>San Antonio</strong><span>Barangay workspace</span></div></div>
+<a class="brand" href="<?= e(url('admin/dashboard.php')) ?>"><span class="brand-symbol"><img class="official-logo" src="<?= e(url('assets/images/barangay-san-antonio-logo.png')) ?>" alt="" width="512" height="512" decoding="async"></span><span>AQUASENSE<span class="brand-plus">+</span></span></a>
+<div class="workspace-label"><span class="workspace-mark"><img class="official-logo" src="<?= e(url('assets/images/barangay-san-antonio-logo.png')) ?>" alt="" width="512" height="512" loading="lazy" decoding="async"></span><div><strong>San Antonio</strong><span>Barangay workspace</span></div></div>
 <nav aria-label="Primary"><p class="nav-label">OVERVIEW</p>
 <?= $navLink('dashboard','dashboard','Dashboard','admin/dashboard.php') ?>
 <?php if(is_system_admin($user)): ?>

@@ -68,6 +68,8 @@ const _destinations = [
 
 class _HomeScreenState extends State<HomeScreen> {
   int selectedIndex = 0;
+  IncentiveView _incentiveView = IncentiveView.rice;
+  bool _incentivesExpanded = false;
   final List<int> _destinationHistory = [0];
   DashboardSnapshot? snapshot;
   String? initialError;
@@ -131,8 +133,30 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     setState(() {
       selectedIndex = index;
+      if (index == 4) {
+        _incentiveView = IncentiveView.rice;
+        _incentivesExpanded = true;
+      }
       _destinationHistory.add(index);
     });
+  }
+
+  void _selectIncentiveView(IncentiveView view) {
+    setState(() {
+      _incentiveView = view;
+      _incentivesExpanded = true;
+      if (selectedIndex != 4) {
+        selectedIndex = 4;
+        _destinationHistory.add(4);
+      }
+    });
+  }
+
+  String get _pageTitle {
+    if (selectedIndex != 4) return _destinations[selectedIndex].label;
+    return _incentiveView == IncentiveView.rice
+        ? 'Rice Incentive'
+        : 'Incentive History';
   }
 
   void _selectPreviousDestination() {
@@ -166,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
                 Flexible(
                   child: Text(
-                    _destinations[selectedIndex].label,
+                    _pageTitle,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: forest,
@@ -200,6 +224,23 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             actions: [
+              if (wide && selectedIndex == 4)
+                PopupMenuButton<IncentiveView>(
+                  tooltip: 'Choose incentive view',
+                  initialValue: _incentiveView,
+                  onSelected: _selectIncentiveView,
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: IncentiveView.rice,
+                      child: Text('Rice Incentive'),
+                    ),
+                    PopupMenuItem(
+                      value: IncentiveView.history,
+                      child: Text('Incentive History'),
+                    ),
+                  ],
+                  icon: const Icon(Icons.arrow_drop_down),
+                ),
               IconButton(
                 tooltip: 'About',
                 onPressed: () => showAboutDialog(
@@ -224,11 +265,6 @@ class _HomeScreenState extends State<HomeScreen> {
           drawer: wide
               ? null
               : NavigationDrawer(
-                  selectedIndex: selectedIndex,
-                  onDestinationSelected: (index) {
-                    selectDestination(index);
-                    Navigator.of(context).pop();
-                  },
                   children: [
                     const Padding(
                       padding: EdgeInsets.fromLTRB(24, 24, 16, 18),
@@ -242,11 +278,36 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const Divider(),
-                    for (final item in _destinations)
-                      NavigationDrawerDestination(
-                        icon: Icon(item.icon),
-                        label: Text(item.label),
+                    for (var index = 0; index < 4; index++)
+                      _DrawerDestinationTile(
+                        icon: _destinations[index].icon,
+                        label: _destinations[index].label,
+                        selected: selectedIndex == index,
+                        onTap: () {
+                          selectDestination(index);
+                          Navigator.of(context).pop();
+                        },
                       ),
+                    _IncentiveDrawerGroup(
+                      expanded: _incentivesExpanded,
+                      selected: selectedIndex == 4,
+                      view: _incentiveView,
+                      onExpansionChanged: (expanded) =>
+                          setState(() => _incentivesExpanded = expanded),
+                      onSelected: (view) {
+                        _selectIncentiveView(view);
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                    _DrawerDestinationTile(
+                      icon: _destinations[5].icon,
+                      label: _destinations[5].label,
+                      selected: selectedIndex == 5,
+                      onTap: () {
+                        selectDestination(5);
+                        Navigator.of(context).pop();
+                      },
+                    ),
                   ],
                 ),
           body: SafeArea(
@@ -329,6 +390,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return IncentivesScreen(
         auth: widget.auth,
         repository: widget.incentivesRepository,
+        view: _incentiveView,
       );
     }
     if (selectedIndex == 5) return _profilePage();
@@ -422,6 +484,138 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
+}
+
+class _DrawerDestinationTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _DrawerDestinationTile({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+    child: Material(
+      color: selected ? mintSurface : Colors.transparent,
+      borderRadius: BorderRadius.circular(28),
+      child: ListTile(
+        selected: selected,
+        selectedColor: forest,
+        leading: Icon(icon, color: selected ? emerald : muted),
+        title: Text(
+          label,
+          style: TextStyle(
+            color: selected ? forest : ink,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        onTap: onTap,
+      ),
+    ),
+  );
+}
+
+class _IncentiveDrawerGroup extends StatelessWidget {
+  final bool expanded;
+  final bool selected;
+  final IncentiveView view;
+  final ValueChanged<bool> onExpansionChanged;
+  final ValueChanged<IncentiveView> onSelected;
+
+  const _IncentiveDrawerGroup({
+    required this.expanded,
+    required this.selected,
+    required this.view,
+    required this.onExpansionChanged,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+    child: Material(
+      color: selected ? mintSurface : Colors.transparent,
+      borderRadius: BorderRadius.circular(28),
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        initiallyExpanded: expanded,
+        onExpansionChanged: onExpansionChanged,
+        leading: Icon(
+          Icons.card_giftcard_outlined,
+          color: selected ? emerald : muted,
+        ),
+        title: Text(
+          'Incentives',
+          style: TextStyle(
+            color: selected ? forest : ink,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+        iconColor: emerald,
+        collapsedIconColor: muted,
+        shape: const Border(),
+        collapsedShape: const Border(),
+        childrenPadding: const EdgeInsets.fromLTRB(18, 0, 10, 8),
+        children: [
+          _IncentiveSubmenuTile(
+            label: 'Rice Incentive',
+            icon: Icons.rice_bowl_outlined,
+            selected: selected && view == IncentiveView.rice,
+            onTap: () => onSelected(IncentiveView.rice),
+          ),
+          _IncentiveSubmenuTile(
+            label: 'Incentive History',
+            icon: Icons.history_outlined,
+            selected: selected && view == IncentiveView.history,
+            onTap: () => onSelected(IncentiveView.history),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _IncentiveSubmenuTile extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _IncentiveSubmenuTile({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    dense: true,
+    minLeadingWidth: 22,
+    leading: Icon(icon, size: 19, color: selected ? emerald : muted),
+    title: Text(
+      label,
+      style: TextStyle(
+        color: selected ? forest : ink,
+        fontSize: 13,
+        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+      ),
+    ),
+    trailing: selected
+        ? const Icon(Icons.check, size: 17, color: emerald)
+        : null,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+    tileColor: selected ? Colors.white.withValues(alpha: .72) : null,
+    onTap: onTap,
+  );
 }
 
 class _WorkspaceMark extends StatelessWidget {

@@ -39,6 +39,15 @@ adapter. Remote resources and embedded PHP are disabled. A PDF contains the repo
 name, period, generator, filter summary, calculated summary, table, and page number.
 Its PDF-safe three-column metric grid and compact landscape detail table follow the
 same visual hierarchy as the Reports screen and browser print output.
+The Reports and Formal Compliance Report pages provide explicit Portrait PDF and
+Landscape PDF downloads. Portrait output uses two-column summary metrics and
+two-up label/value record cards so wide reports stay readable rather than being
+scaled down. Landscape output retains the wide detail table. Browser printing
+does not force page orientation; users can choose portrait or landscape in the
+browser print dialog, and portrait print CSS reflows report rows into labeled
+records.
+Both report pages also provide a CSV download for the currently selected report,
+period, filters, and establishment scope.
 PDF detail is capped at 500 rows; use CSV or narrower filters for larger raw
 telemetry ranges. Files are streamed to the authorized user and are not retained on
 the server.

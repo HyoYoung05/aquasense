@@ -1,5 +1,35 @@
 # AQUASENSE+ Version History
 
+1.4.5
+
+## Website/backend 1.4.5, Flutter owner app 0.9.7+26, and ESP32 firmware 0.8.6
+
+Date: 2026-10-29
+
+- Moved the mobile Incentives selector into an expandable navigation item with
+  Rice Incentive and Incentive History choices, removing the page dropdown.
+- Fixed mobile drawer selection contrast by explicitly rendering active labels
+  and icons in dark green against the pale mint background.
+- Adopted the Barangay San Antonio emblem as the official website brand mark,
+  workspace identity, and browser favicon without changing the green UI palette.
+- Added a CSV download action to the Formal Compliance Report so its active
+  period, filters, and establishment scope can be exported directly.
+
+1.4.4
+
+## Website/backend 1.4.4, Flutter owner app 0.9.5+24, and ESP32 firmware 0.8.6
+
+Date: 2026-10-29
+
+- Removed the forced landscape page rule from browser printing so the print
+  dialog can honor either portrait or landscape orientation.
+- Added explicit Portrait PDF and Landscape PDF download actions to Reports and
+  the Formal Compliance Report.
+- Added a dedicated portrait PDF layout with two-column summary metrics and
+  readable label/value record cards instead of shrinking a wide landscape table.
+- Added portrait browser-print reflow for report rows while retaining the wide
+  compact table for landscape output.
+
 1.4.3
 
 ## Website/backend 1.4.3, Flutter owner app 0.9.5+24, and ESP32 firmware 0.8.6

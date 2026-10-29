@@ -30,7 +30,7 @@ outages; it is cleared by reset or power loss and drops the oldest record when
 full.
 COM3 must not be used. There is no microSD, OLED,
 buzzer, or DHT22. The Flutter source is tracked under
-[`mobile/`](mobile/README.md) at version **0.9.5+24**. Generated APKs,
+[`mobile/`](mobile/README.md) at version **0.9.7+26**. Generated APKs,
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 The current Android development build is verified with Flutter **3.41.6**.
 
@@ -183,15 +183,16 @@ The 2026-09-30 AQS-001 development simulation used the real HTTP telemetry endpo
 
 ### Phase 7 reporting and export features
 
+- The official Barangay San Antonio emblem is used for website branding, the authenticated workspace identity, and the browser favicon while retaining the AQUASENSE+ green interface palette.
 - The central Reports workspace provides compliance overview, establishment detail, grease-trap monitoring, telemetry, alerts, oil surrender and evidence, incentive, rice distribution, rule history, device, Compliance Ledger, and technical Audit Log reports.
 - Report periods use the configured application timezone and support Today, Last 7 Days, Monday–Sunday week, Last 30 Days, This Month, and validated custom ranges.
 - Common establishment, trap, device, user, status/event, search, page-size, and whitelisted sort filters persist through pagination and export links.
-- CSV exports use standards-based escaping, neutralize spreadsheet formulas, avoid a mobile-visible UTF-8 marker, and separate report metadata, summary metrics, and detail columns into a clean spreadsheet structure. PDF and browser-print exports mirror the on-screen reporting workspace with a compact three-column summary and readable compliance table; PDF generation uses pinned Dompdf 3.1.6 with remote resources and embedded PHP disabled.
+- CSV exports use standards-based escaping, neutralize spreadsheet formulas, avoid a mobile-visible UTF-8 marker, and separate report metadata, summary metrics, and detail columns into a clean spreadsheet structure. CSV downloads are available from both Reports and the Formal Compliance Report. PDF exports offer explicit portrait and landscape downloads: portrait uses readable two-column record cards while landscape retains the compact wide table. Browser printing no longer forces an orientation and reflows report records when the print dialog uses portrait. PDF generation uses pinned Dompdf 3.1.6 with remote resources and embedded PHP disabled.
 - Large HTML results paginate at 25, 50, or 100 rows. CSV is capped at 10,000 rows and PDF detail at 500 rows, with clear truncation notices.
 - Oil and rice quantities remain grouped by unit; missing sensor data is shown honestly; downloaded files are point-in-time snapshots and are streamed without permanent storage.
 - `admin/compliance-report.php` provides a formal print view, while `admin/audit-logs.php` remains separate from the environmental Compliance Ledger.
 - Administrators and environmental staff may read reports. Owners cannot access global reporting or direct export routes. Successful exports are audited.
-- See [Reporting and exports](docs/REPORTING.md). The Phase 7 suite passes 34 reporting, validation, authorization, filter, pagination, export, unit, and audit checks.
+- See [Reporting and exports](docs/REPORTING.md). The Phase 7 suite passes 40 reporting, validation, authorization, filter, pagination, export, unit, and audit checks.
 ### Phase 8 release hardening
 
 - Added `development`, `test`, and `production` environments; canonical app URL, timezone, log level, storage, CORS, telemetry, export, and upload controls are configurable without hardcoded production hosts.
@@ -463,7 +464,7 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 
 - The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
 - PDF detail is limited to 500 rows and CSV detail to 10,000 rows; narrower filters are required for complete exports beyond those limits.
-- The Flutter Owner app is version `0.9.5+24`. Its responsive interface now
+- The Flutter Owner app is version `0.9.7+26`. Its responsive interface now
   follows the website's emerald, deep-green, mint, canvas, card, form, and
   navigation design system while remaining limited to owner workflows.
   Dashboard Quick Actions appear
@@ -472,8 +473,9 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
   from Home.
   The login form omits the redundant standalone login icon, while authenticated
   navigation shows the signed-in owner's API-provided name and email.
-  Incentives offers separate incentive and distributed-rice history views, and
-  its selected navigation label uses explicit accessible colors.
+  The Incentives navigation item expands to Rice Incentive and Incentive
+  History; the old page-level History view dropdown has been removed. Its
+  selected navigation label uses explicit accessible colors.
   Android declares and requests notification permission after an owner reaches
   the authenticated workspace. In-app Alerts remain the delivery mechanism
   until a production push provider is configured.

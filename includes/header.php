@@ -12,6 +12,7 @@ $notificationTitle = $notificationCount === 0
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#103f3b">
+    <link rel="icon" type="image/png" href="<?= e(url('assets/images/barangay-san-antonio-logo.png')) ?>">
     <title><?= e($pageTitle) ?> · AQUASENSE+</title>
     <link rel="stylesheet" href="<?= e(url('assets/css/style.css')) ?>?v=<?= e(APP_VERSION) ?>">
     <script src="<?= e(url('assets/js/app.js')) ?>?v=<?= e(APP_VERSION) ?>" defer></script>

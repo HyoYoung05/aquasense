@@ -51,7 +51,7 @@ try {
     $staff=p8_login($base,$emails['environmental_staff'],$password);p8_check(p8_http($staff,$base.'/admin/users.php')['status']===303,'Environmental staff cannot open administrator user directory');curl_close($staff);
     $owner=p8_login($base,$emails['owner'],$password);p8_check(curl_getinfo($owner,CURLINFO_RESPONSE_CODE)===200,'Owner remains denied from staff website login');curl_close($owner);
     foreach(['dashboard.php','establishments.php','grease-traps.php','devices.php','monitoring.php','alerts.php','oil-surrenders.php','incentives.php','incentive-rules.php','compliance-ledger.php','reports.php','settings.php','users.php'] as $route){$response=p8_http($admin,$base.'/admin/'.$route);p8_check($response['status']===200,'Authenticated release route works: '.$route);}
-    p8_check(p8_http(null,$base.'/assets/css/style.css')['status']===200&&p8_http(null,$base.'/assets/images/water-drop-splash.png')['status']===200,'Release CSS and water artwork assets load');
+    p8_check(p8_http(null,$base.'/assets/css/style.css')['status']===200&&p8_http(null,$base.'/assets/images/water-drop-splash.png')['status']===200&&p8_http(null,$base.'/assets/images/barangay-san-antonio-logo.png')['status']===200,'Release CSS, water artwork, and official Barangay logo assets load');
 
     for($i=0;$i<(int)$config['report_export_max_per_minute'];$i++){$pdo->prepare("INSERT INTO audit_logs(user_id,action,record_type,ip_address)VALUES(?,'REPORT_CSV_EXPORTED','phase8-test','127.0.0.1')")->execute([$ids['administrator']]);}
     p8_check(audit_rate_limit_reached($pdo,$ids['administrator'],['REPORT_CSV_EXPORTED','REPORT_PDF_EXPORTED'],60,(int)$config['report_export_max_per_minute']),'Report export throttling uses server-side audit history');
