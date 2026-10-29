@@ -30,7 +30,7 @@ outages; it is cleared by reset or power loss and drops the oldest record when
 full.
 COM3 must not be used. There is no microSD, OLED,
 buzzer, or DHT22. The Flutter source is tracked under
-[`mobile/`](mobile/README.md) at version **0.9.4+23**. Generated APKs,
+[`mobile/`](mobile/README.md) at version **0.9.5+24**. Generated APKs,
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 The current Android development build is verified with Flutter **3.41.6**.
 
@@ -176,6 +176,7 @@ The 2026-09-30 AQS-001 development simulation used the real HTTP telemetry endpo
 - Distribution requires explicit Admin or Barangay Administrator confirmation and records the distributor, timestamp, optional notes, audit event, and Compliance Ledger event. Phase 6 provides no casual reversal.
 - Owner Bearer clients can read unit-grouped earned, distributed, and pending totals plus their own transaction history through `GET /api/mobile/incentives.php`.
 - The append-only staff Compliance Ledger records registration, alert, surrender, and incentive lifecycle events and supports event, date, establishment, device, grease-trap, and transaction searches without edit or delete controls.
+- Authorized staff can preview or download owner-submitted photo evidence from an oil-surrender detail record through the protected controller; private storage paths remain undisclosed and downloads are audited.
 - Dashboard and establishment details use actual incentive records and preserve unlike units separately.
 - See [Incentive processing](docs/INCENTIVES.md), [Compliance Ledger](docs/COMPLIANCE_LEDGER.md), and [Owner Mobile API](docs/MOBILE_API.md).
 - The Phase 6 suite passes 41 rule, workflow, authorization, concurrency, rollback, ledger, API, and page integration checks.
@@ -185,7 +186,7 @@ The 2026-09-30 AQS-001 development simulation used the real HTTP telemetry endpo
 - The central Reports workspace provides compliance overview, establishment detail, grease-trap monitoring, telemetry, alerts, oil surrender and evidence, incentive, rice distribution, rule history, device, Compliance Ledger, and technical Audit Log reports.
 - Report periods use the configured application timezone and support Today, Last 7 Days, Monday–Sunday week, Last 30 Days, This Month, and validated custom ranges.
 - Common establishment, trap, device, user, status/event, search, page-size, and whitelisted sort filters persist through pagination and export links.
-- CSV exports use standards-based escaping and neutralize spreadsheet formulas. PDF exports use pinned Dompdf 3.1.6 with remote resources and embedded PHP disabled.
+- CSV exports use standards-based escaping, neutralize spreadsheet formulas, avoid a mobile-visible UTF-8 marker, and separate report metadata, summary metrics, and detail columns into a clean spreadsheet structure. PDF and browser-print exports mirror the on-screen reporting workspace with a compact three-column summary and readable compliance table; PDF generation uses pinned Dompdf 3.1.6 with remote resources and embedded PHP disabled.
 - Large HTML results paginate at 25, 50, or 100 rows. CSV is capped at 10,000 rows and PDF detail at 500 rows, with clear truncation notices.
 - Oil and rice quantities remain grouped by unit; missing sensor data is shown honestly; downloaded files are point-in-time snapshots and are streamed without permanent storage.
 - `admin/compliance-report.php` provides a formal print view, while `admin/audit-logs.php` remains separate from the environmental Compliance Ledger.
@@ -462,13 +463,17 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 
 - The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
 - PDF detail is limited to 500 rows and CSV detail to 10,000 rows; narrower filters are required for complete exports beyond those limits.
-- The Flutter Owner app is version `0.9.4+23`. Its responsive interface now
+- The Flutter Owner app is version `0.9.5+24`. Its responsive interface now
   follows the website's emerald, deep-green, mint, canvas, card, form, and
   navigation design system while remaining limited to owner workflows.
   Dashboard Quick Actions appear
   at the top of the owner dashboard, and swiping down refreshes its data.
   Android back gestures return through previously visited tabs before exiting
   from Home.
+  The login form omits the redundant standalone login icon, while authenticated
+  navigation shows the signed-in owner's API-provided name and email.
+  Incentives offers separate incentive and distributed-rice history views, and
+  its selected navigation label uses explicit accessible colors.
   Android declares and requests notification permission after an owner reaches
   the authenticated workspace. In-app Alerts remain the delivery mechanism
   until a production push provider is configured.

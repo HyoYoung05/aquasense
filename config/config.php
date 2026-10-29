@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-define('APP_VERSION', '1.4.2');
+define('APP_VERSION', '1.4.3');
 
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');

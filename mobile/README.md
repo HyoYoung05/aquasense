@@ -1,6 +1,6 @@
 # AQUASENSE+ Carinderia Owner App
 
-Flutter owner application for AQUASENSE+. Version **0.9.4+23** aligns the app
+Flutter owner application for AQUASENSE+. Version **0.9.5+24** aligns the app
 with the administrative website's AQUASENSE+ visual system while retaining the
 Mobile Phase 7 owner-only foundation and Phase 4 sensor contract. The app now
 uses the website's emerald, deep-green, mint, canvas, border, typography, form,
@@ -8,6 +8,12 @@ card, and navigation patterns across its responsive login and authenticated
 workspace. Quick Actions stay at the top, pull-down refresh remains enabled,
 and Android edge-back gestures follow tab history. A checked-in web launcher
 uses the ignored local API configuration for repeatable Chrome testing.
+The sign-in form no longer shows a redundant standalone login glyph, and the
+authenticated navigation identity displays the signed-in owner's full name,
+email address, and derived initials from the PHP API profile.
+The Incentives module provides a history dropdown that separates incentive
+processing records from completed rice-distribution history, and explicit
+selected navigation colors keep its icon and label readable.
 
 The app communicates only with the PHP API. It contains no SQL, MySQL package,
 or database credential.

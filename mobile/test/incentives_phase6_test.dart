@@ -11,6 +11,7 @@ import 'package:aquasense_mobile/services/api_service.dart';
 import 'package:aquasense_mobile/services/auth_service.dart';
 import 'package:aquasense_mobile/services/incentives_service.dart';
 import 'package:aquasense_mobile/services/oil_surrender_service.dart';
+import 'package:aquasense_mobile/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -219,6 +220,23 @@ void main() {
     expect(find.text('INC-003'), findsOneWidget);
     expect(find.text('Rice reward: 5.5 kg'), findsOneWidget);
     expect(find.text('Pending Distribution'), findsWidgets);
+    await tester.tap(find.text('Incentives history'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Rice history').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Rice distribution history'), findsOneWidget);
+    expect(find.text('Rice distributed: 250 g'), findsOneWidget);
+    expect(find.text('INC-002'), findsOneWidget);
+    expect(find.text('INC-003'), findsNothing);
+    expect(find.text('INC-001'), findsNothing);
+  });
+
+  test('selected Incentives navigation colors remain readable', () {
+    final theme = ownerTheme().navigationDrawerTheme;
+    final selected = {WidgetState.selected};
+    expect(theme.iconTheme?.resolve(selected)?.color, emerald);
+    expect(theme.labelTextStyle?.resolve(selected)?.color, forest);
+    expect(theme.indicatorColor, mintSurface);
   });
 
   testWidgets(

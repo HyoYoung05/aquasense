@@ -145,10 +145,23 @@ ThemeData ownerTheme() {
       unselectedIconTheme: IconThemeData(color: muted),
       unselectedLabelTextStyle: TextStyle(color: muted),
     ),
-    navigationDrawerTheme: const NavigationDrawerThemeData(
+    navigationDrawerTheme: NavigationDrawerThemeData(
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
       indicatorColor: mintSurface,
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(
+          color: states.contains(WidgetState.selected) ? emerald : muted,
+        ),
+      ),
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (states) => TextStyle(
+          color: states.contains(WidgetState.selected) ? forest : ink,
+          fontWeight: states.contains(WidgetState.selected)
+              ? FontWeight.w700
+              : FontWeight.w500,
+        ),
+      ),
     ),
     progressIndicatorTheme: const ProgressIndicatorThemeData(color: emerald),
     snackBarTheme: const SnackBarThemeData(

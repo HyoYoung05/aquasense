@@ -233,17 +233,6 @@ class _FormPanel extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    width: 47,
-                    height: 47,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: mintSurface,
-                      borderRadius: BorderRadius.circular(13),
-                    ),
-                    child: const Icon(Icons.login_rounded, color: emerald),
-                  ),
-                  const SizedBox(height: 24),
                   Text(
                     'Welcome back',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(

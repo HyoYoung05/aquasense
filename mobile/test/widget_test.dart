@@ -241,6 +241,7 @@ void main() {
     (tester) async {
       await tester.pumpWidget(OwnerApp(auth: auth));
       await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.login_rounded), findsNothing);
       await tester.ensureVisible(find.text('Sign in'));
       await tester.tap(find.text('Sign in'));
       await tester.pumpAndSettle();
@@ -269,6 +270,22 @@ void main() {
       expect(store.token, isNull);
     },
   );
+  testWidgets('navigation identity shows the authenticated owner profile', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await auth.login('owner@aquasense.test', 'correct');
+    await tester.pumpWidget(OwnerApp(auth: auth));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+    expect(find.text('Taylor Cruz'), findsOneWidget);
+    expect(find.text('owner@aquasense.test'), findsOneWidget);
+    expect(find.text('Karinderya Owner'), findsNothing);
+  });
   for (final size in [
     const Size(320, 568),
     const Size(390, 844),

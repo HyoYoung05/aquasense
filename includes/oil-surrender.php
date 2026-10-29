@@ -483,7 +483,7 @@ function phase5_photo(PDO $pdo, int $photoId): ?array
     return $query->fetch() ?: null;
 }
 
-function phase5_stream_photo(array $photo): never
+function phase5_stream_photo(array $photo, bool $download = false): never
 {
     $allowed = phase5_allowed_image_types();
     if (!isset($allowed[$photo['mime_type']])) {
@@ -498,9 +498,11 @@ function phase5_stream_photo(array $photo): never
         http_response_code(404);
         exit;
     }
+    $extension = $allowed[$photo['mime_type']];
+    $filename = 'aquasense-evidence-' . (int) $photo['id'] . '.' . $extension;
     header('Content-Type: ' . $photo['mime_type']);
     header('Content-Length: ' . (string) filesize($path));
-    header('Content-Disposition: inline; filename="evidence.' . $allowed[$photo['mime_type']] . '"');
+    header('Content-Disposition: ' . ($download ? 'attachment' : 'inline') . '; filename="' . $filename . '"');
     header('Cache-Control: private, no-store');
     header('X-Content-Type-Options: nosniff');
     readfile($path);

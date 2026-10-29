@@ -2,7 +2,19 @@
 
 ## Current Version
 
-0.9.4+23
+0.9.5+24
+
+## 0.9.5+24 - 2026-10-29
+
+- Removed the redundant standalone login icon block above the Welcome back
+  heading, tightening the small-screen sign-in layout.
+- Replaced the generic Karinderya Owner navigation identity with the
+  authenticated owner's full name, email address, and derived initials.
+- Added a history dropdown that separates incentive processing from completed
+  rice-distribution history.
+- Set explicit selected and unselected drawer icon/text colors so the
+  Incentives destination remains readable against its mint indicator.
+- Preserved owner-only navigation, profile details, and API authorization.
 
 ### Maintenance - 2026-10-27
 

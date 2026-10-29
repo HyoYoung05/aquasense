@@ -1,5 +1,29 @@
 # AQUASENSE+ Version History
 
+1.4.3
+
+## Website/backend 1.4.3, Flutter owner app 0.9.5+24, and ESP32 firmware 0.8.6
+
+Date: 2026-10-29
+
+- Reworked CSV downloads into clean metadata, summary, and detail sections and
+  removed the byte-order marker that appeared as stray characters in some mobile
+  spreadsheet viewers.
+- Rebuilt downloaded PDFs with a Dompdf-safe three-column summary grid so overview
+  metrics no longer expand into one full-width row each or unnecessarily push the
+  compliance table onto another page.
+- Aligned PDF and browser-print typography, spacing, metric cards, and landscape
+  detail tables with the on-screen Reporting and audit review layout.
+- Removed the redundant standalone icon block from the owner sign-in form and
+  changed authenticated navigation to show the real API-provided owner name,
+  email address, and initials instead of a generic account label.
+- Added an authorized Download photo action to oil-surrender evidence details;
+  downloads retain private storage isolation, use safe generated filenames,
+  force attachment delivery, and create a technical audit event.
+- Added an owner-app Incentives history dropdown separating processing records
+  from completed rice distributions and fixed unreadable selected navigation
+  icon/text colors.
+
 1.4.2
 
 ## Website/backend 1.4.2, Flutter owner app 0.9.4+23, and ESP32 firmware 0.8.4

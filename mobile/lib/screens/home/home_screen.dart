@@ -234,32 +234,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: EdgeInsets.fromLTRB(24, 24, 16, 18),
                       child: OwnerBrand(showPortalLabel: true),
                     ),
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.fromLTRB(28, 4, 20, 12),
-                      child: Row(
-                        children: [
-                          _WorkspaceMark(),
-                          SizedBox(width: 11),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Karinderya Owner',
-                                  style: TextStyle(
-                                    color: ink,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                Text(
-                                  'Personal monitoring workspace',
-                                  style: TextStyle(color: muted, fontSize: 10),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                      child: _OwnerWorkspaceLabel(
+                        fullName: widget.auth.user!.fullName,
+                        email: widget.auth.user!.email,
                       ),
                     ),
                     const Divider(),
@@ -285,8 +264,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     leading: Padding(
                       padding: const EdgeInsets.fromLTRB(12, 20, 12, 22),
                       child: extended
-                          ? const _OwnerWorkspaceLabel()
-                          : const _WorkspaceMark(),
+                          ? _OwnerWorkspaceLabel(
+                              fullName: widget.auth.user!.fullName,
+                              email: widget.auth.user!.email,
+                            )
+                          : _WorkspaceMark(
+                              fullName: widget.auth.user!.fullName,
+                            ),
                     ),
                     destinations: [
                       for (final item in _destinations)
@@ -441,7 +425,21 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _WorkspaceMark extends StatelessWidget {
-  const _WorkspaceMark();
+  final String fullName;
+
+  const _WorkspaceMark({required this.fullName});
+
+  String get initials {
+    final parts = fullName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return 'KO';
+    final first = parts.first.substring(0, 1);
+    final last = parts.length > 1 ? parts.last.substring(0, 1) : '';
+    return '$first$last'.toUpperCase();
+  }
 
   @override
   Widget build(BuildContext context) => Container(
@@ -453,9 +451,9 @@ class _WorkspaceMark extends StatelessWidget {
       border: Border.all(color: line),
       borderRadius: BorderRadius.circular(7),
     ),
-    child: const Text(
-      'KO',
-      style: TextStyle(
+    child: Text(
+      initials,
+      style: const TextStyle(
         color: forest,
         fontSize: 10,
         fontWeight: FontWeight.w800,
@@ -466,30 +464,37 @@ class _WorkspaceMark extends StatelessWidget {
 }
 
 class _OwnerWorkspaceLabel extends StatelessWidget {
-  const _OwnerWorkspaceLabel();
+  final String fullName;
+  final String email;
+
+  const _OwnerWorkspaceLabel({required this.fullName, required this.email});
 
   @override
-  Widget build(BuildContext context) => const SizedBox(
+  Widget build(BuildContext context) => SizedBox(
     width: 198,
     child: Row(
       children: [
-        _WorkspaceMark(),
-        SizedBox(width: 10),
+        _WorkspaceMark(fullName: fullName),
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Karinderya Owner',
-                style: TextStyle(
+                fullName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
                   color: ink,
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               Text(
-                'Owner workspace',
-                style: TextStyle(color: muted, fontSize: 9),
+                email,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: muted, fontSize: 9),
               ),
             ],
           ),

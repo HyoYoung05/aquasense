@@ -16,6 +16,11 @@ Barangay human review
         `--> REJECTED
 ```
 
+Authorized website staff can preview or download the protected photo from the
+oil-surrender detail page. Downloads are streamed by the authenticated controller
+with a generated filename and audit event; the private storage path is never
+exposed to the browser.
+
 An owner submission starts as `PENDING`. An administrator may claim it as
 `UNDER_REVIEW`, compare the submitted quantity and photo with readings around the
 submission time, then approve or reject it. Rejection requires a reason. All

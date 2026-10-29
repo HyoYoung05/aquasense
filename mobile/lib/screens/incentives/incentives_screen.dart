@@ -25,6 +25,7 @@ class _IncentivesScreenState extends State<IncentivesScreen>
   late final IncentivesRepository _repository;
   IncentiveSummary? _summary;
   IncentiveStatusFilter _filter = IncentiveStatusFilter.all;
+  _HistoryView _historyView = _HistoryView.incentives;
   String? _error;
   String? _refreshError;
   bool _loading = false;
@@ -108,7 +109,11 @@ class _IncentivesScreenState extends State<IncentivesScreen>
     }
     final summary =
         _summary ?? const IncentiveSummary(units: [], transactions: []);
-    final records = summary.filtered(_filter);
+    final records = _historyView == _HistoryView.incentives
+        ? summary.filtered(_filter)
+        : summary.transactions
+              .where((item) => item.status == 'DISTRIBUTED')
+              .toList(growable: false);
     return RefreshIndicator(
       onRefresh: () => _load(refresh: true),
       child: ListView(
@@ -200,44 +205,72 @@ class _IncentivesScreenState extends State<IncentivesScreen>
                     ),
                   ],
                   const SizedBox(height: 24),
+                  DropdownButtonFormField<_HistoryView>(
+                    initialValue: _historyView,
+                    decoration: const InputDecoration(
+                      labelText: 'History view',
+                      prefixIcon: Icon(Icons.history_outlined),
+                    ),
+                    items: [
+                      for (final view in _HistoryView.values)
+                        DropdownMenuItem(value: view, child: Text(view.label)),
+                    ],
+                    onChanged: (view) {
+                      if (view == null) return;
+                      setState(() {
+                        _historyView = view;
+                        _filter = IncentiveStatusFilter.all;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 18),
                   Text(
-                    'Incentive history',
+                    _historyView.heading,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        for (final filter in IncentiveStatusFilter.values)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: ChoiceChip(
-                              label: Text(filter.label),
-                              selected: _filter == filter,
-                              onSelected: (_) =>
-                                  setState(() => _filter = filter),
+                  if (_historyView == _HistoryView.incentives) ...[
+                    const SizedBox(height: 10),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          for (final filter in IncentiveStatusFilter.values)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text(filter.label),
+                                selected: _filter == filter,
+                                onSelected: (_) =>
+                                    setState(() => _filter = filter),
+                              ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                   const SizedBox(height: 12),
                   if (records.isEmpty)
                     StatePanel.empty(
                       icon: Icons.history_outlined,
-                      title: _filter == IncentiveStatusFilter.all
+                      title: _historyView == _HistoryView.rice
+                          ? 'No rice distributions yet.'
+                          : _filter == IncentiveStatusFilter.all
                           ? 'No incentive records yet.'
                           : 'No ${_filter.label.toLowerCase()} records',
-                      message: _filter == IncentiveStatusFilter.all
+                      message: _historyView == _HistoryView.rice
+                          ? 'Rice history appears after Barangay personnel record a reward as distributed.'
+                          : _filter == IncentiveStatusFilter.all
                           ? 'Incentive history will appear after the backend processes an approved surrender.'
                           : 'Try another history filter.',
                     )
                   else
                     for (final item in records)
-                      _TransactionCard(item: item, onTap: () => _open(item)),
+                      if (_historyView == _HistoryView.rice)
+                        _RiceHistoryCard(item: item, onTap: () => _open(item))
+                      else
+                        _TransactionCard(item: item, onTap: () => _open(item)),
                 ],
               ),
             ),
@@ -246,6 +279,15 @@ class _IncentivesScreenState extends State<IncentivesScreen>
       ),
     );
   }
+}
+
+enum _HistoryView {
+  incentives('Incentives history', 'Incentive history'),
+  rice('Rice history', 'Rice distribution history');
+
+  final String label;
+  final String heading;
+  const _HistoryView(this.label, this.heading);
 }
 
 class _UnitSummaryCard extends StatelessWidget {
@@ -368,6 +410,44 @@ class _TransactionCard extends StatelessWidget {
           ],
         ),
       ),
+    ),
+  );
+}
+
+class _RiceHistoryCard extends StatelessWidget {
+  final IncentiveTransaction item;
+  final VoidCallback onTap;
+
+  const _RiceHistoryCard({required this.item, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => Card(
+    margin: const EdgeInsets.only(bottom: 10),
+    child: ListTile(
+      onTap: onTap,
+      leading: const CircleAvatar(
+        backgroundColor: mintSurface,
+        foregroundColor: emerald,
+        child: Icon(Icons.rice_bowl_outlined),
+      ),
+      title: Text(
+        'Rice distributed: ${cleanQuantity(item.rewardQuantity)} ${item.rewardUnit}',
+        style: const TextStyle(color: forest, fontWeight: FontWeight.w800),
+      ),
+      subtitle: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(item.transactionCode),
+          Text(
+            item.distributedAt == null
+                ? 'Distribution date unavailable'
+                : readingTime(item.distributedAt!),
+          ),
+        ],
+      ),
+      isThreeLine: true,
+      trailing: const Icon(Icons.chevron_right, color: emerald),
     ),
   );
 }

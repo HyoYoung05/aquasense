@@ -28,11 +28,17 @@ from telemetry or treat missing readings as zero.
 `admin/report-export.php` repeats staff authorization and filter validation before
 querying. CSV output uses PHP's standard CSV writer and prefixes cells whose first
 meaningful character is `=`, `+`, `-`, or `@` to prevent spreadsheet formula
-execution. Detailed CSV export is capped at 10,000 rows.
+execution. The file starts with clean report metadata (without a byte-order marker
+that some mobile viewers display as text), followed by a two-column summary section
+and then the aligned detail header and rows. Detailed CSV export is capped at 10,000
+rows. CSV is intentionally data-only; column widths remain controlled by the
+spreadsheet application that opens it.
 
 PDF output uses Dompdf 3.1.6 through the isolated `includes/report-export.php`
 adapter. Remote resources and embedded PHP are disabled. A PDF contains the report
 name, period, generator, filter summary, calculated summary, table, and page number.
+Its PDF-safe three-column metric grid and compact landscape detail table follow the
+same visual hierarchy as the Reports screen and browser print output.
 PDF detail is capped at 500 rows; use CSV or narrower filters for larger raw
 telemetry ranges. Files are streamed to the authorized user and are not retained on
 the server.
