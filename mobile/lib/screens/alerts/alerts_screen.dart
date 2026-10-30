@@ -28,7 +28,6 @@ class _AlertsScreenState extends State<AlertsScreen>
   AlertSeverityFilter severity = AlertSeverityFilter.all;
   AlertDateRange range = AlertDateRange.last30Days;
   DateTimeRange? custom;
-  int? trapId;
   bool loading = true, refreshing = false, loadingMore = false;
   String? error, refreshError;
   @override
@@ -69,7 +68,7 @@ class _AlertsScreenState extends State<AlertsScreen>
     range: range,
     from: custom?.start,
     to: custom?.end,
-    greaseTrapId: trapId,
+    greaseTrapId: null,
     page: page,
   );
   Future<void> _load() async {
@@ -343,32 +342,6 @@ class _AlertsScreenState extends State<AlertsScreen>
               ],
               onChanged: (v) {
                 if (v != null) _setRange(v);
-              },
-            ),
-          ),
-          SizedBox(
-            width: 250,
-            child: DropdownButtonFormField<int?>(
-              isExpanded: true,
-              initialValue: trapId,
-              decoration: const InputDecoration(labelText: 'Grease Trap'),
-              items: [
-                const DropdownMenuItem(
-                  value: null,
-                  child: Text('All authorized traps'),
-                ),
-                for (final t in data!.traps)
-                  DropdownMenuItem(
-                    value: t.id,
-                    child: Text(
-                      '${t.name} · ${t.businessName}',
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-              ],
-              onChanged: (v) {
-                setState(() => trapId = v);
-                _load();
               },
             ),
           ),

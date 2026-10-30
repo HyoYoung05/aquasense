@@ -19,6 +19,16 @@ function user_account_roles(): array
     ];
 }
 
+function user_account_password_error(string $password): ?string
+{
+    if (strlen($password) < 12 || strlen($password) > 128
+        || !preg_match('/[a-z]/', $password) || !preg_match('/[A-Z]/', $password)
+        || !preg_match('/[0-9]/', $password) || !preg_match('/[^A-Za-z0-9]/', $password)) {
+        return 'Password must be 12 to 128 characters and include uppercase, lowercase, number, and symbol.';
+    }
+    return null;
+}
+
 function user_account_create(PDO $pdo, array $input, int $actorId): int
 {
     $readString = static fn (string $key): string => isset($input[$key]) && is_string($input[$key])
@@ -48,10 +58,8 @@ function user_account_create(PDO $pdo, array $input, int $actorId): int
     if (!isset($roles[$roleSlug])) {
         $errors[] = 'Select a valid account role.';
     }
-    if (strlen($password) < 12 || strlen($password) > 128
-        || !preg_match('/[a-z]/', $password) || !preg_match('/[A-Z]/', $password)
-        || !preg_match('/[0-9]/', $password) || !preg_match('/[^A-Za-z0-9]/', $password)) {
-        $errors[] = 'Password must be 12 to 128 characters and include uppercase, lowercase, number, and symbol.';
+    if ($passwordError = user_account_password_error($password)) {
+        $errors[] = $passwordError;
     }
     if (!hash_equals($password, $passwordConfirmation)) {
         $errors[] = 'Password confirmation does not match.';

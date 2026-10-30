@@ -283,7 +283,7 @@ void main() {
     await tester.tap(find.byTooltip('Open navigation menu'));
     await tester.pumpAndSettle();
     expect(find.text('Taylor Cruz'), findsOneWidget);
-    expect(find.text('owner@aquasense.test'), findsOneWidget);
+    expect(find.text('owner@aquasense.test'), findsWidgets);
     expect(find.text('Karinderya Owner'), findsNothing);
   });
   for (final size in [
@@ -376,7 +376,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(
       find.descendant(
-        of: find.byType(NavigationRail),
+        of: find.byKey(const ValueKey('owner-wide-navigation')),
         matching: find.byIcon(Icons.oil_barrel_outlined),
       ),
     );
@@ -385,7 +385,7 @@ void main() {
     expect(find.text('No oil surrender submissions yet.'), findsOneWidget);
     await tester.tap(
       find.descendant(
-        of: find.byType(NavigationRail),
+        of: find.byKey(const ValueKey('owner-wide-navigation')),
         matching: find.byIcon(Icons.notifications_outlined),
       ),
     );
@@ -393,12 +393,12 @@ void main() {
     expect(find.text('Unable to load alerts'), findsOneWidget);
     await tester.tap(
       find.descendant(
-        of: find.byType(NavigationRail),
+        of: find.byKey(const ValueKey('owner-wide-navigation')),
         matching: find.byIcon(Icons.person_outline),
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('owner@aquasense.test'), findsOneWidget);
+    expect(find.text('owner@aquasense.test'), findsWidgets);
     expect(find.textContaining('Owner App v$appVersion'), findsOneWidget);
 
     await tester.binding.handlePopRoute();

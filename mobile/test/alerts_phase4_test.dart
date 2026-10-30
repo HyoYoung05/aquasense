@@ -239,7 +239,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('No alert history is available yet.'), findsOneWidget);
   });
-  testWidgets('status severity and trap filters reach repository', (
+  testWidgets('status and severity filter the owner-only alert feed', (
     tester,
   ) async {
     final r = _Repo();
@@ -250,11 +250,9 @@ void main() {
     await tester.tap(find.text('Warning').last);
     await tester.pumpAndSettle();
     expect(r.severity, AlertSeverityFilter.warning);
-    await tester.tap(find.text('All authorized traps'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.textContaining('Main Trap').last);
-    await tester.pumpAndSettle();
-    expect(r.trap, 12);
+    expect(find.text('All authorized traps'), findsNothing);
+    expect(find.text('Grease Trap'), findsNothing);
+    expect(r.trap, isNull);
   });
   testWidgets('alert detail is read only and handles missing optional values', (
     tester,

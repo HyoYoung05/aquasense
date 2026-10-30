@@ -1,8 +1,20 @@
 # AQUASENSE+ Version History
 
-1.4.7
+1.4.8
 
-## Website/backend 1.4.7, Flutter owner app 0.9.9+28, and ESP32 firmware 0.8.6
+## Website/backend 1.4.8, Flutter owner app 0.9.11+30, and ESP32 firmware 0.8.6
+
+Date: 2026-10-31
+
+- Excluded `SIMULATED` development devices and their traps from every
+  owner-facing Monitoring, telemetry-history, Alert list, Alert summary, filter,
+  detail, and dashboard-alert query.
+- Preserved simulated records for the administrative website while preventing
+  the owner app from mixing demo fixtures with the owner's physical deployment.
+- Expanded the mobile API isolation suite to cover simulated and ended traps
+  and alerts attached to the same owner; all 60 checks pass.
+
+## Website/backend 1.4.7, Flutter owner app 0.9.11+30, and ESP32 firmware 0.8.6
 
 Date: 2026-10-31
 
@@ -16,6 +28,10 @@ Date: 2026-10-31
   preserving its existing monitoring and operations scope.
 - Reworked the mobile Incentives navigation into a nested tree with separate
   Rice Incentives and Rice History destinations and separated their content.
+- Kept that tree directly in both sidebars: the Incentives parent now only
+  expands or collapses its children, with no page or top-bar selector.
+- Kept the complete Incentives parent label on one line at narrow widths by
+  compacting its icon, spacing, and expand control.
 - Added validation, CSRF protection, message throttling, status history through
   retained messages, and secret-sharing guidance to the support workflow.
 

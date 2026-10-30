@@ -2,7 +2,23 @@
 
 ## Current Version
 
-0.9.9+28
+0.9.11+30
+
+## 0.9.11+30 - 2026-10-31
+
+- Compacted the Incentives sidebar parent icon, spacing, and expand control so
+  the complete label remains on one line on narrow screens.
+- Added a narrow-drawer regression assertion for single-line label rendering.
+- Updated the owner API contract so Monitoring and Alerts exclude same-owner
+  `SIMULATED` administrative fixtures as well as unowned or undeployed traps.
+
+## 0.9.10+29 - 2026-10-31
+
+- Moved the nested Rice Incentives and Rice History choices directly beneath
+  the Incentives item in both compact and wide sidebars.
+- Changed the Incentives parent into an expand/collapse control that does not
+  open a page until the owner selects a child destination.
+- Removed the remaining wide-layout top-bar Incentives selector.
 
 ## 0.9.9+28 - 2026-10-31
 

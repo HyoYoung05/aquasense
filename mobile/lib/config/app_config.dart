@@ -1,2 +1,2 @@
-const String appVersion = '0.9.9+28';
+const String appVersion = '0.9.11+30';
 const String appName = 'AQUASENSE+';

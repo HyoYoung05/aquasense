@@ -1,6 +1,6 @@
 ﻿# AQUASENSE+ Owner Mobile API
 
-Backend version: **1.2.0**
+Backend version: **1.4.8**
 
 The API root is deployment-configured. Production clients must use HTTPS. Every
 oil-surrender route requires the existing owner Bearer token:
@@ -19,7 +19,8 @@ database and never trusts a client-supplied owner or establishment ID.
 
 Returns only active grease traps under the bearer-token owner's active
 establishments that currently have an active device assignment. Unassigned
-traps, ended deployments, and every other owner's traps are excluded by the
+traps, ended deployments, `SIMULATED` development devices, and every other
+owner's traps are excluded by the
 backend rather than hidden by Flutter. Each entry contains the establishment/trap labels, assigned
 device metadata, backend-derived device and sensor state, stale flag, last seen,
 and the latest reading when one exists.
@@ -37,7 +38,7 @@ server-side.
 
 Required query: `grease_trap_id=<positive integer>`. The requested trap must
 belong to the authenticated owner and have an active device deployment;
-inaccessible or undeployed traps return 404.
+inaccessible, undeployed, and simulated traps return 404.
 
 Supported ranges are `1h`, `today`, `24h`, `7d`, `30d`, and `custom`. Custom
 ranges require `from=YYYY-MM-DD` and `to=YYYY-MM-DD`, use Asia/Manila calendar
@@ -54,7 +55,9 @@ null and must not be plotted as zero.
 `GET /api/mobile/alerts.php`
 
 Returns only alerts joined to the bearer owner's active establishments and
-grease traps. Filters are `status=UNRESOLVED|ALL|ACTIVE|ACKNOWLEDGED|RESOLVED`,
+non-simulated deployed grease traps. Simulated development alerts remain
+available to the administrative website but never appear in the owner list,
+summary, trap selector, or detail route. Filters are `status=UNRESOLVED|ALL|ACTIVE|ACKNOWLEDGED|RESOLVED`,
 `severity=ALL|INFO|WARNING|CRITICAL`, `range=today|7d|30d|custom`, optional owned
 `grease_trap_id`, and `page`. Custom dates use `from`/`to` in `YYYY-MM-DD` and
 may span at most 31 days. Each page contains at most 25 records, server summary

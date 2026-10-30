@@ -4,7 +4,7 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 six-sensor firmware.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.4.7 keeps one dedicated development-only Admin login for the website and one Owner login for the mobile app, both scoped to a shared simulated notification fixture, while preserving existing local accounts and production role boundaries.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.4.8 keeps one dedicated development-only Admin login for the website and one Owner login for the mobile app while preserving existing local accounts and production role boundaries. Simulated administrative fixtures are excluded from owner-facing Monitoring and Alerts.
 
 The authenticated website notification bell has a protected 44 px click area,
 opens the Alerts workspace, and uses versioned JavaScript assets so repaired
@@ -35,7 +35,7 @@ outages; it is cleared by reset or power loss and drops the oldest record when
 full.
 COM3 must not be used. There is no microSD, OLED,
 buzzer, or DHT22. The Flutter source is tracked under
-[`mobile/`](mobile/README.md) at version **0.9.9+28**. Generated APKs,
+[`mobile/`](mobile/README.md) at version **0.9.11+30**. Generated APKs,
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 The current Android development build is verified with Flutter **3.41.6**.
 
@@ -71,7 +71,7 @@ physical installation or field-acceptance item.
 See the [connected-sensor verification](esp32/PHYSICAL-VERIFICATION-2026-10-22.md)
 for the measured results and remaining corrections.
 
-**Version: 1.4.7**
+**Version: 1.4.8**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -272,8 +272,9 @@ C:\xampp\php\php.exe database\website-development.php --allow-demo-data
 
 The helper refuses non-development environments, leaves every existing user
 account unchanged, and creates or refreshes one clearly simulated active
-Demo Kusina alert. The website Admin bell and mobile Owner Alerts screen can
-therefore test the same notification. It does not create production users.
+Demo Kusina alert for the administrative website. Owner APIs intentionally
+exclude that simulated fixture, so mobile notification tests must use an alert
+from the owner's physical deployment. It does not create production users.
 
 ## Owner mobile API and Flutter app
 
@@ -295,9 +296,9 @@ This also applies the migration, creates the single fictional Owner only if abse
 
 Bearer tokens are random, stored only as hashes in MariaDB, and default to a 24-hour expiry (`mobile_token_lifetime_seconds` in PHP configuration). Active owner role, password fingerprint and current establishment ownership are enforced on each request. Staff session authentication remains separate. Only the four named endpoint files are exposed; the API root and documentation remain blocked.
 
-The dashboard derives status and freshness from database configuration. It returns only owned active establishments and their traps, marks simulated/stale records, and never fabricates telemetry when no readings exist. Owner surrender and incentive history are available through documented owner-scoped APIs. Local debug HTTP must be replaced with HTTPS for deployment.
+The dashboard derives status and freshness from database configuration. It returns only owned active establishments and non-simulated deployed traps, marks stale records, and never fabricates telemetry when no readings exist. Owner surrender and incentive history are available through documented owner-scoped APIs. Local debug HTTP must be replaced with HTTPS for deployment.
 
-Verify the new API with `C:\xampp\php\php.exe tests\mobile-api.php --allow-local-fixtures` (30 checks); existing website tests still pass (54 checks plus session expiry). Temporary test users, establishments, devices, readings and tokens are removed after the tests.
+Verify the new API with `C:\xampp\php\php.exe tests\mobile-api.php --allow-local-fixtures` (60 checks); temporary test users, establishments, devices, readings, alerts, and tokens are removed after the tests.
 
 ## Database
 
@@ -472,7 +473,7 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 
 - The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
 - PDF detail is limited to 500 rows and CSV detail to 10,000 rows; narrower filters are required for complete exports beyond those limits.
-- The Flutter Owner app is version `0.9.9+28`. Its responsive interface now
+- The Flutter Owner app is version `0.9.11+30`. Its responsive interface now
   follows the website's emerald, deep-green, mint, canvas, card, form, and
   navigation design system while remaining limited to owner workflows.
   Dashboard Quick Actions appear
@@ -481,12 +482,14 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
   from Home.
   The login form omits the redundant standalone login icon, while authenticated
   navigation shows the signed-in owner's API-provided name and email.
-  The Incentives navigation item uses a nested tree with separate Rice
-  Incentives and Rice History children; the old page-level dropdown has been
-  removed. Its selected navigation label uses explicit accessible colors.
+  The Incentives sidebar item expands in place into separate Rice Incentives
+  and Rice History children; the parent does not open a page, and the old page
+  and top-bar dropdowns have been removed. Its selected navigation label uses
+  explicit accessible colors and stays on one line at narrow sidebar widths.
   Mobile Monitoring now returns only actively deployed grease traps belonging
-  to the authenticated owner; unassigned, ended, and other-owner deployments
-  are rejected by the PHP API.
+  to the authenticated owner; unassigned, ended, simulated, and other-owner
+  deployments are rejected by the PHP API. Alerts use the same physical
+  deployment scope for lists, totals, filters, and details.
   Android declares and requests notification permission after an owner reaches
   the authenticated workspace. The new Settings page exposes notification and
   optional Android display-over-other-apps controls. In-app Alerts remain the

@@ -1,4 +1,4 @@
-# Shared API (backend 1.0.2)
+# Shared API (backend 1.4.8)
 
 Owner endpoints, device telemetry, staff monitoring, Phase 4 alerts, Phase 5 oil surrender endpoints, and the Phase 6 owner incentive endpoint are implemented. Existing PDO/configuration, users,
 roles, establishments, readings, audit and rate-limit records are reused.
@@ -29,7 +29,9 @@ JSON envelope: {"success":true,"data":{...}} or
 User: id, full_name, email. Establishment: id, business_name, traps.
 Trap: id, name, status, device_code (nullable), device_status, is_stale, reading.
 Reading is null or contains waste_level_percent, temperature_c, is_simulated,
-recorded_at (ISO 8601 UTC). Multiple owned active establishments/traps are returned.
+recorded_at (ISO 8601 UTC). Multiple owned active physical deployments may be
+returned; `SIMULATED` development devices are excluded from owner Monitoring,
+history, Alert counts, filters, lists, and details.
 
 All owner and establishment identity comes from bearer authentication and database
 relationships; arbitrary user_id/establishment_id query fields are ignored.

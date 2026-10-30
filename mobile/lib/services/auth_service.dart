@@ -172,6 +172,76 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> post(
+    String path, {
+    required Map<String, dynamic> body,
+  }) async {
+    final generation = _generation;
+    final token = _token;
+    if (state != AuthState.signedIn || token == null) {
+      throw const ApiException.unauthorized('Please sign in to continue.');
+    }
+    try {
+      final data = await api.post(path, token: token, body: body);
+      if (generation != _generation) {
+        throw const ApiException.unauthorized('The session changed.');
+      }
+      return data;
+    } on ApiException catch (exception) {
+      if (exception.type == ApiErrorType.unauthorized &&
+          generation == _generation) {
+        await _forget(notice: 'Your session expired. Please sign in again.');
+        notifyListeners();
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> changeEmail({
+    required String email,
+    required String currentPassword,
+  }) async {
+    final data = await post(
+      'account-email.php',
+      body: {'email': email.trim(), 'current_password': currentPassword},
+    );
+    final updated = data['user'];
+    if (updated is! Map<String, dynamic>) {
+      throw const ApiException(
+        'The server returned an unreadable account profile.',
+        type: ApiErrorType.serverError,
+      );
+    }
+    try {
+      user = OwnerUser.fromJson(updated);
+    } on FormatException {
+      throw const ApiException(
+        'The server returned an unreadable account profile.',
+        type: ApiErrorType.serverError,
+      );
+    }
+    notifyListeners();
+  }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String confirmation,
+  }) async {
+    await post(
+      'account-password.php',
+      body: {
+        'current_password': currentPassword,
+        'new_password': newPassword,
+        'password_confirmation': confirmation,
+      },
+    );
+    await _forget(
+      notice: 'Password updated. Sign in again with your new password.',
+    );
+    notifyListeners();
+  }
+
   Future<Map<String, dynamic>> postMultipart(
     String path, {
     required Map<String, String> fields,

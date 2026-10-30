@@ -181,7 +181,6 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, constraints) {
         final wide =
             constraints.maxWidth >= 760 && constraints.maxHeight >= 600;
-        final extended = constraints.maxWidth >= 1120;
         return Scaffold(
           appBar: AppBar(
             title: Row(
@@ -228,23 +227,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             actions: [
-              if (wide && selectedIndex == 4)
-                PopupMenuButton<IncentiveView>(
-                  tooltip: 'Choose incentive view',
-                  initialValue: _incentiveView,
-                  onSelected: _selectIncentiveView,
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(
-                      value: IncentiveView.rice,
-                      child: Text('Rice Incentives'),
-                    ),
-                    PopupMenuItem(
-                      value: IncentiveView.history,
-                      child: Text('Rice History'),
-                    ),
-                  ],
-                  icon: const Icon(Icons.arrow_drop_down),
-                ),
               IconButton(
                 tooltip: 'About',
                 onPressed: () => showAboutDialog(
@@ -327,32 +309,16 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               children: [
                 if (wide)
-                  NavigationRail(
+                  _WideNavigationSidebar(
+                    fullName: widget.auth.user!.fullName,
+                    email: widget.auth.user!.email,
                     selectedIndex: selectedIndex,
+                    incentiveView: _incentiveView,
+                    incentivesExpanded: _incentivesExpanded,
                     onDestinationSelected: selectDestination,
-                    extended: extended,
-                    minExtendedWidth: 230,
-                    labelType: extended
-                        ? NavigationRailLabelType.none
-                        : NavigationRailLabelType.selected,
-                    leading: Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 20, 12, 22),
-                      child: extended
-                          ? _OwnerWorkspaceLabel(
-                              fullName: widget.auth.user!.fullName,
-                              email: widget.auth.user!.email,
-                            )
-                          : _WorkspaceMark(
-                              fullName: widget.auth.user!.fullName,
-                            ),
-                    ),
-                    destinations: [
-                      for (final item in _destinations)
-                        NavigationRailDestination(
-                          icon: Icon(item.icon),
-                          label: Text(item.label),
-                        ),
-                    ],
+                    onIncentivesExpanded: (expanded) =>
+                        setState(() => _incentivesExpanded = expanded),
+                    onIncentiveSelected: _selectIncentiveView,
                   ),
                 if (wide) const VerticalDivider(width: 1),
                 Expanded(child: _selectedPage()),
@@ -408,7 +374,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if (selectedIndex == 5) return _profilePage();
     if (selectedIndex == 6) {
-      return SettingsScreen(permissionManager: widget.appPermissionManager);
+      return SettingsScreen(
+        auth: widget.auth,
+        permissionManager: widget.appPermissionManager,
+      );
     }
     return _profilePage();
   }
@@ -539,6 +508,65 @@ class _DrawerDestinationTile extends StatelessWidget {
   );
 }
 
+class _WideNavigationSidebar extends StatelessWidget {
+  final String fullName;
+  final String email;
+  final int selectedIndex;
+  final IncentiveView incentiveView;
+  final bool incentivesExpanded;
+  final ValueChanged<int> onDestinationSelected;
+  final ValueChanged<bool> onIncentivesExpanded;
+  final ValueChanged<IncentiveView> onIncentiveSelected;
+
+  const _WideNavigationSidebar({
+    required this.fullName,
+    required this.email,
+    required this.selectedIndex,
+    required this.incentiveView,
+    required this.incentivesExpanded,
+    required this.onDestinationSelected,
+    required this.onIncentivesExpanded,
+    required this.onIncentiveSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    key: const ValueKey('owner-wide-navigation'),
+    width: 230,
+    child: ListView(
+      padding: const EdgeInsets.fromLTRB(0, 20, 0, 16),
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 12, 18),
+          child: _OwnerWorkspaceLabel(fullName: fullName, email: email),
+        ),
+        const Divider(),
+        for (var index = 0; index < 4; index++)
+          _DrawerDestinationTile(
+            icon: _destinations[index].icon,
+            label: _destinations[index].label,
+            selected: selectedIndex == index,
+            onTap: () => onDestinationSelected(index),
+          ),
+        _IncentiveDrawerGroup(
+          expanded: incentivesExpanded,
+          selected: selectedIndex == 4,
+          view: incentiveView,
+          onExpansionChanged: onIncentivesExpanded,
+          onSelected: onIncentiveSelected,
+        ),
+        for (var index = 5; index < _destinations.length; index++)
+          _DrawerDestinationTile(
+            icon: _destinations[index].icon,
+            label: _destinations[index].label,
+            selected: selectedIndex == index,
+            onTap: () => onDestinationSelected(index),
+          ),
+      ],
+    ),
+  );
+}
+
 class _IncentiveDrawerGroup extends StatelessWidget {
   final bool expanded;
   final bool selected;
@@ -556,48 +584,81 @@ class _IncentiveDrawerGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
+    key: const ValueKey('incentives-navigation-tree'),
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-    child: Material(
-      color: Colors.transparent,
-      child: ExpansionTile(
-        initiallyExpanded: expanded,
-        onExpansionChanged: onExpansionChanged,
-        leading: Container(
-          width: 44,
-          height: 44,
-          decoration: const BoxDecoration(
-            color: mintSurface,
-            shape: BoxShape.circle,
+    child: Column(
+      children: [
+        Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(28),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+            minLeadingWidth: 36,
+            horizontalTitleGap: 8,
+            selected: selected,
+            selectedColor: forest,
+            leading: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: selected ? mintSurface : Colors.transparent,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.card_giftcard_outlined,
+                color: selected ? emerald : muted,
+              ),
+            ),
+            title: Text(
+              'Incentives',
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: selected ? forest : ink,
+                fontSize: 14,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+            trailing: Icon(
+              expanded ? Icons.expand_less : Icons.expand_more,
+              size: 20,
+              color: selected ? emerald : muted,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
+            onTap: () => onExpansionChanged(!expanded),
           ),
-          child: const Icon(Icons.card_giftcard_outlined, color: emerald),
         ),
-        title: Text(
-          'Incentives',
-          style: TextStyle(
-            color: selected ? forest : ink,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+        AnimatedCrossFade(
+          firstChild: const SizedBox(width: double.infinity),
+          secondChild: Padding(
+            padding: const EdgeInsets.fromLTRB(28, 0, 8, 8),
+            child: Column(
+              children: [
+                _IncentiveSubmenuTile(
+                  label: 'Rice Incentives',
+                  icon: Icons.rice_bowl_outlined,
+                  selected: selected && view == IncentiveView.rice,
+                  onTap: () => onSelected(IncentiveView.rice),
+                ),
+                _IncentiveSubmenuTile(
+                  label: 'Rice History',
+                  icon: Icons.history_outlined,
+                  selected: selected && view == IncentiveView.history,
+                  onTap: () => onSelected(IncentiveView.history),
+                ),
+              ],
+            ),
           ),
+          crossFadeState: expanded
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
+          duration: const Duration(milliseconds: 180),
+          sizeCurve: Curves.easeOut,
         ),
-        iconColor: emerald,
-        collapsedIconColor: muted,
-        shape: const Border(),
-        collapsedShape: const Border(),
-        childrenPadding: const EdgeInsets.fromLTRB(28, 0, 8, 8),
-        children: [
-          _IncentiveSubmenuTile(
-            label: 'Rice Incentives',
-            icon: Icons.rice_bowl_outlined,
-            selected: selected && view == IncentiveView.rice,
-            onTap: () => onSelected(IncentiveView.rice),
-          ),
-          _IncentiveSubmenuTile(
-            label: 'Rice History',
-            icon: Icons.history_outlined,
-            selected: selected && view == IncentiveView.history,
-            onTap: () => onSelected(IncentiveView.history),
-          ),
-        ],
-      ),
+      ],
     ),
   );
 }

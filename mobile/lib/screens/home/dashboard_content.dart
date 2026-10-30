@@ -503,24 +503,37 @@ class _QuickActions extends StatelessWidget {
     ],
   );
 
-  Widget _action(int index, IconData icon, String label) => OutlinedButton.icon(
+  Widget _action(int index, IconData icon, String label) => OutlinedButton(
     onPressed: () => onNavigate(index),
     style: OutlinedButton.styleFrom(
       backgroundColor: Colors.white,
       foregroundColor: ink,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      alignment: Alignment.centerLeft,
+      minimumSize: const Size(0, 52),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     ),
-    icon: Container(
-      width: 30,
-      height: 30,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: mintSurface,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Icon(icon, size: 18, color: emerald),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          key: ValueKey('quick-action-icon-$index'),
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: mintSurface,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: SizedBox.square(
+            dimension: 20,
+            child: Center(child: Icon(icon, size: 18, color: emerald)),
+          ),
+        ),
+        const SizedBox(width: 9),
+        Text(label, strutStyle: const StrutStyle(height: 1.1)),
+      ],
     ),
-    label: Text(label),
   );
 }
 

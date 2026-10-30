@@ -12,7 +12,7 @@ if (!is_string($siteBase) || !filter_var($siteBase, FILTER_VALIDATE_URL)) {
 }
 $base = rtrim($siteBase, '/') . '/api/mobile/';
 $checks = 0;
-$users = $sites = $traps = $devices = $assignments = $emails = [];
+    $users = $sites = $traps = $devices = $assignments = $emails = $cleanupEmails = [];
 $password = 'Test!' . bin2hex(random_bytes(12));
 function check(bool $ok, string $label): void {
     global $checks;
@@ -39,6 +39,7 @@ try {
     foreach (['owner', 'owner', 'administrator'] as $i => $role) {
         $email = 'mobile-test-' . bin2hex(random_bytes(6)) . '@example.test';
         $emails[] = $email;
+        $cleanupEmails[] = $email;
         $pdo->prepare('INSERT INTO users (role_id, full_name, email, password_hash) VALUES (?, ?, ?, ?)')
             ->execute([$roles[$role], 'Mobile fixture ' . $i, $email, password_hash($password, PASSWORD_DEFAULT)]);
         $users[] = (int) $pdo->lastInsertId();
@@ -51,7 +52,7 @@ try {
         $pdo->prepare('INSERT INTO grease_traps (establishment_id, trap_code, name, capacity_liters, low_threshold, medium_threshold, high_threshold, critical_threshold) VALUES (?, ?, ?, 50, 20, 50, 75, 90)')
             ->execute([$sites[$i], $code, 'Test grease trap']);
         $traps[] = (int) $pdo->lastInsertId();
-        $pdo->prepare("INSERT INTO devices (device_code, name, device_type) VALUES (?, 'Test device', 'SIMULATED')")->execute([$code]);
+        $pdo->prepare("INSERT INTO devices (device_code, name, device_type) VALUES (?, 'Test device', 'ESP32_TEST')")->execute([$code]);
         $devices[] = (int) $pdo->lastInsertId();
         $pdo->prepare('INSERT INTO device_assignments (device_id, grease_trap_id, started_at) VALUES (?, ?, UTC_TIMESTAMP())')->execute([$devices[$i], $traps[$i]]);
         $assignments[] = (int) $pdo->lastInsertId();
@@ -61,6 +62,28 @@ try {
         ->execute([$sites[0], $unassignedCode, 'Undeployed owner grease trap']);
     $unassignedTrap = (int) $pdo->lastInsertId();
     $traps[] = $unassignedTrap;
+    $simulatedCode = 'SIM-' . bin2hex(random_bytes(6));
+    $pdo->prepare('INSERT INTO grease_traps (establishment_id, trap_code, name, capacity_liters, low_threshold, medium_threshold, high_threshold, critical_threshold) VALUES (?, ?, ?, 50, 20, 50, 75, 90)')
+        ->execute([$sites[0], $simulatedCode, 'Same-owner simulated grease trap']);
+    $simulatedTrap = (int) $pdo->lastInsertId();
+    $traps[] = $simulatedTrap;
+    $pdo->prepare("INSERT INTO devices (device_code, name, device_type) VALUES (?, 'Same-owner simulated device', 'SIMULATED')")->execute([$simulatedCode]);
+    $simulatedDevice = (int) $pdo->lastInsertId();
+    $devices[] = $simulatedDevice;
+    $pdo->prepare('INSERT INTO device_assignments (device_id, grease_trap_id, started_at) VALUES (?, ?, UTC_TIMESTAMP())')->execute([$simulatedDevice, $simulatedTrap]);
+    $simulatedAssignment = (int) $pdo->lastInsertId();
+    $assignments[] = $simulatedAssignment;
+    $endedCode = 'END-' . bin2hex(random_bytes(6));
+    $pdo->prepare('INSERT INTO grease_traps (establishment_id, trap_code, name, capacity_liters, low_threshold, medium_threshold, high_threshold, critical_threshold) VALUES (?, ?, ?, 50, 20, 50, 75, 90)')
+        ->execute([$sites[0], $endedCode, 'Same-owner ended deployment']);
+    $endedTrap = (int) $pdo->lastInsertId();
+    $traps[] = $endedTrap;
+    $pdo->prepare("INSERT INTO devices (device_code, name, device_type) VALUES (?, 'Ended test device', 'ESP32_TEST')")->execute([$endedCode]);
+    $endedDevice = (int) $pdo->lastInsertId();
+    $devices[] = $endedDevice;
+    $pdo->prepare('INSERT INTO device_assignments (device_id, grease_trap_id, started_at, ended_at) VALUES (?, ?, DATE_SUB(UTC_TIMESTAMP(), INTERVAL 2 DAY), DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 DAY))')->execute([$endedDevice, $endedTrap]);
+    $endedAssignment = (int) $pdo->lastInsertId();
+    $assignments[] = $endedAssignment;
     check(call_api('dashboard.php')['status'] === 401, 'Anonymous dashboard rejected');
     check(call_api('profile.php', null, str_repeat('a', 64))['status'] === 401, 'Forged token rejected');
     check(call_api('login.php')['status'] === 405, 'Login requires POST');
@@ -74,6 +97,18 @@ try {
     $query->execute([$users[0]]);
     check($query->fetchColumn() === hash('sha256', $token), 'Database stores only token hash');
     check(call_api('profile.php', null, $token)['json']['data']['user']['id'] === $users[0], 'Token restores owner profile');
+    check(call_api('account-email.php', [])['status'] === 401, 'Anonymous owner email change rejected');
+    check(call_api('account-email.php', null, $token)['status'] === 405, 'Owner email change requires POST');
+    check(call_api('account-email.php', ['email' => 'invalid', 'current_password' => $password], $token)['status'] === 422, 'Owner email validation rejects invalid input');
+    check(call_api('account-email.php', ['email' => $emails[1], 'current_password' => $password], $token)['status'] === 422, 'Owner email change rejects an existing account address');
+    check(call_api('account-email.php', ['email' => 'unused-' . bin2hex(random_bytes(4)) . '@example.test', 'current_password' => 'wrong'], $token)['status'] === 422, 'Owner email change verifies the current password');
+    $updatedEmail = 'mobile-updated-' . bin2hex(random_bytes(6)) . '@example.test';
+    $emailChange = call_api('account-email.php', ['email' => $updatedEmail, 'current_password' => $password], $token);
+    check($emailChange['status'] === 200 && $emailChange['json']['data']['user']['email'] === $updatedEmail, 'Owner can change the mobile sign-in email');
+    check(call_api('profile.php', null, $token)['json']['data']['user']['email'] === $updatedEmail, 'Email change updates the active owner profile');
+    check(call_api('login.php', ['email' => $emails[0], 'password' => $password])['status'] === 401, 'Old owner email cannot sign in after change');
+    $emails[0] = $updatedEmail;
+    $cleanupEmails[] = $updatedEmail;
     check(call_api('monitoring.php')['status'] === 401, 'Anonymous mobile monitoring rejected');
     $monitoring = call_api('monitoring.php?user_id=' . $users[1], null, $token)['json']['data'];
     check(count($monitoring['traps']) === 1 && $monitoring['traps'][0]['grease_trap_id'] === $traps[0], 'Mobile monitoring returns only actively deployed traps owned by the bearer');
@@ -81,6 +116,8 @@ try {
     check(call_api('telemetry-history.php', null, $token)['status'] === 422, 'Mobile history requires a valid grease trap');
     check(call_api('telemetry-history.php?grease_trap_id=' . $traps[1], null, $token)['status'] === 404, 'Owner cannot read another owner history');
     check(call_api('telemetry-history.php?grease_trap_id=' . $unassignedTrap, null, $token)['status'] === 404, 'Owner cannot read history for an undeployed trap');
+    check(call_api('telemetry-history.php?grease_trap_id=' . $simulatedTrap, null, $token)['status'] === 404, 'Owner app cannot read a same-owner simulated trap');
+    check(call_api('telemetry-history.php?grease_trap_id=' . $endedTrap, null, $token)['status'] === 404, 'Owner app cannot read a same-owner ended deployment');
     $emptyHistory = call_api('telemetry-history.php?grease_trap_id=' . $traps[0] . '&range=1h', null, $token)['json']['data'];
     check($emptyHistory['total'] === 0 && $emptyHistory['readings'] === [], 'Empty owner telemetry history is honest');
     $data = call_api('dashboard.php?establishment_id=' . $sites[1] . '&user_id=' . $users[1], null, $token)['json']['data'];
@@ -99,16 +136,26 @@ try {
     $pdo->prepare("INSERT INTO alerts (device_assignment_id,alert_type,severity,message,status,first_triggered_at,last_triggered_at) VALUES (?, 'DEVICE_OFFLINE','WARNING','Other owner offline alert','ACTIVE',UTC_TIMESTAMP(),UTC_TIMESTAMP())")
         ->execute([$assignments[1]]);
     $otherAlertId = (int) $pdo->lastInsertId();
+    $pdo->prepare("INSERT INTO alerts (device_assignment_id,alert_type,severity,message,status,first_triggered_at,last_triggered_at) VALUES (?, 'DEVICE_OFFLINE','WARNING','Same-owner simulated alert','ACTIVE',UTC_TIMESTAMP(),UTC_TIMESTAMP())")
+        ->execute([$simulatedAssignment]);
+    $simulatedAlertId = (int) $pdo->lastInsertId();
+    $pdo->prepare("INSERT INTO alerts (device_assignment_id,alert_type,severity,message,status,first_triggered_at,last_triggered_at) VALUES (?, 'DEVICE_OFFLINE','WARNING','Same-owner ended-deployment alert','ACTIVE',UTC_TIMESTAMP(),UTC_TIMESTAMP())")
+        ->execute([$endedAssignment]);
+    $endedAlertId = (int) $pdo->lastInsertId();
     check(call_api('alerts.php')['status'] === 401, 'Anonymous owner alerts rejected');
     $alerts = call_api('alerts.php?status=ALL&severity=ALL&range=30d', null, $token)['json']['data'];
     check(count($alerts['alerts']) === 2 && $alerts['total'] === 2, 'Owner alert list returns owned active and history only');
     check($alerts['summary']['unresolved_count'] === 1 && $alerts['summary']['resolved_count'] === 1, 'Alert summary uses server-side complete counts');
     check($alerts['page_size'] === 25 && $alerts['pages'] === 1, 'Alert history is bounded and paginated');
     check(call_api('alerts.php?grease_trap_id=' . $traps[1], null, $token)['status'] === 404, 'Owner cannot filter alerts by another owner trap');
+    check(call_api('alerts.php?grease_trap_id=' . $simulatedTrap, null, $token)['status'] === 404, 'Owner cannot filter alerts by a same-owner simulated trap');
+    check(call_api('alerts.php?grease_trap_id=' . $endedTrap, null, $token)['status'] === 404, 'Owner cannot filter alerts by a same-owner ended deployment');
     $detail = call_api('alert.php?id=' . $ownedAlertId, null, $token);
     check($detail['status'] === 200 && $detail['json']['data']['alert']['device_code'] !== '', 'Owned alert detail returns owner-safe device context');
     check(!array_key_exists('resolution_note', $detail['json']['data']['alert']), 'Owner alert detail omits administrative resolution notes');
     check(call_api('alert.php?id=' . $otherAlertId, null, $token)['status'] === 404, 'Owner cannot read another owner alert detail');
+    check(call_api('alert.php?id=' . $simulatedAlertId, null, $token)['status'] === 404, 'Owner cannot read same-owner simulated alert detail');
+    check(call_api('alert.php?id=' . $endedAlertId, null, $token)['status'] === 404, 'Owner cannot read same-owner ended-deployment alert detail');
     check(call_api('alert.php?id=' . $ownedAlertId, [], $token)['status'] === 405, 'Owner alert detail is read-only');
     $resolved = call_api('alerts.php?status=RESOLVED&severity=WARNING&range=30d', null, $token)['json']['data'];
     check(count($resolved['alerts']) === 1 && $resolved['alerts'][0]['id'] === $resolvedAlertId, 'Resolved warning filter returns owned alert history');
@@ -138,9 +185,20 @@ try {
     check(call_api('profile.php', null, $token)['status'] === 401, 'Expired tokens rejected');
     $login = call_api('login.php', ['email' => $emails[0], 'password' => $password]);
     $token = $login['json']['data']['token'];
-    $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?')->execute([password_hash('Changed!Password', PASSWORD_DEFAULT), $users[0]]);
-    check(call_api('profile.php', null, $token)['status'] === 401, 'Password change revokes previous tokens');
-    check(call_api('logout.php', [], $token)['status'] === 200, 'Logout revokes token after account change');
+    check(call_api('account-password.php', [])['status'] === 401, 'Anonymous owner password change rejected');
+    check(call_api('account-password.php', null, $token)['status'] === 405, 'Owner password change requires POST');
+    check(call_api('account-password.php', ['current_password' => $password, 'new_password' => 'weak', 'password_confirmation' => 'weak'], $token)['status'] === 422, 'Owner password change enforces the shared password policy');
+    check(call_api('account-password.php', ['current_password' => $password, 'new_password' => 'NewPrivate!2026', 'password_confirmation' => 'Different!2026'], $token)['status'] === 422, 'Owner password confirmation must match');
+    check(call_api('account-password.php', ['current_password' => 'wrong', 'new_password' => 'NewPrivate!2026', 'password_confirmation' => 'NewPrivate!2026'], $token)['status'] === 422, 'Owner password change verifies the current password');
+    check(call_api('account-password.php', ['current_password' => $password, 'new_password' => $password, 'password_confirmation' => $password], $token)['status'] === 422, 'Owner password change rejects the current password as the replacement');
+    $newPassword = 'Changed!Password2026';
+    check(call_api('account-password.php', ['current_password' => $password, 'new_password' => $newPassword, 'password_confirmation' => $newPassword], $token)['status'] === 200, 'Owner can replace an administrator-issued password');
+    check(call_api('profile.php', null, $token)['status'] === 401, 'Password change revokes every previous mobile token');
+    check(call_api('login.php', ['email' => $emails[0], 'password' => $password])['status'] === 401, 'Old owner password cannot sign in after change');
+    $login = call_api('login.php', ['email' => $emails[0], 'password' => $newPassword]);
+    check($login['status'] === 200, 'Owner signs in with the replacement password');
+    $token = $login['json']['data']['token'];
+    check(call_api('logout.php', [], $token)['status'] === 200, 'Logout revokes the replacement-password token');
     check(call_api('logout.php', [], $token)['status'] === 200, 'Logout is idempotent');
     check(call_api('dashboard.php', null, $token)['status'] === 401, 'Logged-out token cannot access dashboard');
     $thresholds = ['low_threshold'=>20, 'medium_threshold'=>50, 'high_threshold'=>75, 'critical_threshold'=>90];
@@ -165,5 +223,5 @@ try {
         $pdo->prepare('DELETE FROM audit_logs WHERE user_id = ?')->execute([$id]);
         $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$id]);
     }
-    foreach ($emails as $email) $pdo->prepare('DELETE FROM login_attempts WHERE email_hash = ?')->execute([hash('sha256', $email)]);
+    foreach ($cleanupEmails as $email) $pdo->prepare('DELETE FROM login_attempts WHERE email_hash = ?')->execute([hash('sha256', $email)]);
 }

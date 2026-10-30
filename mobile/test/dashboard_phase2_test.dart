@@ -23,7 +23,11 @@ const ownerPayload = {
 };
 
 Future<void> pullToRefreshDashboard(WidgetTester tester) async {
-  await tester.drag(find.byType(ListView).first, const Offset(0, 500));
+  final dashboardList = find.descendant(
+    of: find.byType(RefreshIndicator),
+    matching: find.byType(ListView),
+  );
+  await tester.drag(dashboardList, const Offset(0, 500));
   await tester.pump();
   await tester.pumpAndSettle();
 }
@@ -423,6 +427,20 @@ void main() {
       lessThan(tester.getTopLeft(find.text('Demo Kusina').first).dy),
     );
     final monitoring = find.widgetWithText(OutlinedButton, 'Monitoring');
+    final iconCenters = <Offset>[
+      for (var index = 1; index <= 5; index++)
+        tester.getCenter(find.byKey(ValueKey('quick-action-icon-$index'))),
+    ];
+    for (final center in iconCenters) {
+      expect(center.dx, isNotNaN);
+      expect(center.dy, isNotNaN);
+    }
+    for (var index = 1; index <= 5; index++) {
+      expect(
+        tester.getSize(find.byKey(ValueKey('quick-action-icon-$index'))),
+        const Size(30, 30),
+      );
+    }
     await tester.tap(monitoring);
     expect(destination, 1);
     final profile = find.widgetWithText(OutlinedButton, 'Profile');

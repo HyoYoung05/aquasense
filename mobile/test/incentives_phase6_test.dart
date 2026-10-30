@@ -314,6 +314,12 @@ void main() {
     expect(homeLabel.style?.fontWeight, FontWeight.w700);
     expect(monitoringLabel.style?.color, ink);
 
+    final incentivesLabel = tester.widget<Text>(
+      find.descendant(of: drawer, matching: find.text('Incentives')),
+    );
+    expect(incentivesLabel.maxLines, 1);
+    expect(incentivesLabel.softWrap, isFalse);
+
     await tester.tap(
       find.descendant(of: drawer, matching: find.text('Incentives')),
     );
@@ -444,7 +450,7 @@ void main() {
     expect(repo.calls, 2);
   });
 
-  testWidgets('main navigation opens the functional Incentives module', (
+  testWidgets('wide sidebar expands Incentives before a child opens', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(1200, 1200);
@@ -499,11 +505,28 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final destination = find.descendant(
-      of: find.byType(NavigationRail),
-      matching: find.text('Incentives'),
+    final tree = find.byKey(const ValueKey('incentives-navigation-tree'));
+    final parent = find.descendant(of: tree, matching: find.text('Incentives'));
+    final riceChild = find.descendant(
+      of: tree,
+      matching: find.text('Rice Incentives'),
     );
-    await tester.tap(destination);
+    final historyChild = find.descendant(
+      of: tree,
+      matching: find.text('Rice History'),
+    );
+    expect(tree, findsOneWidget);
+    expect(riceChild.hitTestable(), findsNothing);
+    expect(historyChild.hitTestable(), findsNothing);
+    expect(find.byType(PopupMenuButton<IncentiveView>), findsNothing);
+
+    await tester.tap(parent);
+    await tester.pumpAndSettle();
+    expect(riceChild.hitTestable(), findsOneWidget);
+    expect(historyChild.hitTestable(), findsOneWidget);
+    expect(incentives.calls, 0);
+
+    await tester.tap(riceChild.hitTestable());
     await tester.pumpAndSettle();
     expect(find.text('Rice Incentives'), findsWidgets);
     expect(incentives.calls, 1);

@@ -46,12 +46,12 @@ function mobile_alerts(int $ownerId, array $input): array
     }
     [$start, $end] = mobile_alert_date_bounds($range, $input['from'] ?? null, $input['to'] ?? null);
     $pdo = db();
-    $trapsQ = $pdo->prepare('SELECT g.id,g.name,e.business_name FROM grease_traps g JOIN establishments e ON e.id=g.establishment_id WHERE e.owner_user_id=? AND e.is_active=1 AND g.is_active=1 ORDER BY e.business_name,g.name');
+    $trapsQ = $pdo->prepare("SELECT DISTINCT g.id,g.name,e.business_name FROM grease_traps g JOIN establishments e ON e.id=g.establishment_id JOIN device_assignments a ON a.grease_trap_id=g.id AND a.ended_at IS NULL JOIN devices d ON d.id=a.device_id AND d.device_type <> 'SIMULATED' WHERE e.owner_user_id=? AND e.is_active=1 AND g.is_active=1 ORDER BY e.business_name,g.name");
     $trapsQ->execute([$ownerId]); $traps = $trapsQ->fetchAll();
     foreach ($traps as &$trap) $trap['id'] = (int) $trap['id']; unset($trap);
     if ($trapId !== null && !in_array((int)$trapId, array_column($traps, 'id'), true)) return ['unauthorized_trap'=>true];
 
-    $base = ' FROM alerts al JOIN device_assignments a ON a.id=al.device_assignment_id JOIN devices d ON d.id=a.device_id JOIN grease_traps g ON g.id=a.grease_trap_id JOIN establishments e ON e.id=g.establishment_id WHERE e.owner_user_id=? AND e.is_active=1 AND g.is_active=1';
+    $base = " FROM alerts al JOIN device_assignments a ON a.id=al.device_assignment_id AND a.ended_at IS NULL JOIN devices d ON d.id=a.device_id AND d.device_type <> 'SIMULATED' JOIN grease_traps g ON g.id=a.grease_trap_id JOIN establishments e ON e.id=g.establishment_id WHERE e.owner_user_id=? AND e.is_active=1 AND g.is_active=1";
     $where = ' AND al.last_triggered_at>=? AND al.last_triggered_at<?'; $params = [$ownerId,$start->format('Y-m-d H:i:s'),$end->format('Y-m-d H:i:s')];
     if ($status === 'UNRESOLVED') $where .= " AND al.status IN ('ACTIVE','ACKNOWLEDGED')";
     elseif ($status !== 'ALL') { $where .= ' AND al.status=?'; $params[]=$status; }
@@ -68,6 +68,6 @@ function mobile_alerts(int $ownerId, array $input): array
 
 function mobile_alert_detail(int $ownerId, int $id): ?array
 {
-    $q=db()->prepare('SELECT al.id,al.alert_type,al.severity,al.status,al.message,al.sensor_name,al.sensor_value,al.threshold_value,al.trigger_count,al.first_triggered_at,al.last_triggered_at,al.acknowledged_at,al.resolved_at,e.id establishment_id,e.business_name,g.id grease_trap_id,g.name grease_trap_name,d.device_code FROM alerts al JOIN device_assignments a ON a.id=al.device_assignment_id JOIN devices d ON d.id=a.device_id JOIN grease_traps g ON g.id=a.grease_trap_id JOIN establishments e ON e.id=g.establishment_id WHERE al.id=? AND e.owner_user_id=? AND e.is_active=1 AND g.is_active=1');
+    $q=db()->prepare("SELECT al.id,al.alert_type,al.severity,al.status,al.message,al.sensor_name,al.sensor_value,al.threshold_value,al.trigger_count,al.first_triggered_at,al.last_triggered_at,al.acknowledged_at,al.resolved_at,e.id establishment_id,e.business_name,g.id grease_trap_id,g.name grease_trap_name,d.device_code FROM alerts al JOIN device_assignments a ON a.id=al.device_assignment_id AND a.ended_at IS NULL JOIN devices d ON d.id=a.device_id AND d.device_type <> 'SIMULATED' JOIN grease_traps g ON g.id=a.grease_trap_id JOIN establishments e ON e.id=g.establishment_id WHERE al.id=? AND e.owner_user_id=? AND e.is_active=1 AND g.is_active=1");
     $q->execute([$id,$ownerId]);$row=$q->fetch();return $row?mobile_alert_row($row):null;
 }
