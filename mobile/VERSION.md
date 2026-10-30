@@ -2,7 +2,33 @@
 
 ## Current Version
 
-0.9.7+26
+0.9.9+28
+
+## 0.9.9+28 - 2026-10-31
+
+- Changed Incentives into a visual tree in the mobile drawer.
+- Added the exact nested choices Rice Incentives and Rice History beneath the
+  Incentives parent, including a connecting tree line and independent selection.
+- Kept summaries and current reward information in Rice Incentives and moved
+  the transaction list and filters exclusively to Rice History.
+
+### Verification
+
+- `flutter analyze`: no issues.
+- `flutter test`: 118 passed, 0 failed, 0 skipped.
+- The focused Incentives suite passes all 18 navigation, separation, filtering,
+  refresh, authentication, and service checks.
+
+## 0.9.8+27 - 2026-10-30
+
+- Added a Settings destination that displays current notification and optional
+  Android display-over-other-apps permission status.
+- Added permission actions that request notifications, open Android's special
+  overlay access page, and refresh their state when the owner returns to the app.
+- Restricted Monitoring and telemetry history through the PHP API to only the
+  authenticated owner's grease traps with an active device deployment.
+- Kept overlay access optional; normal in-app Alerts continue to work without it
+  and production background delivery still requires a notification provider.
 
 ## 0.9.7+26 - 2026-10-29
 

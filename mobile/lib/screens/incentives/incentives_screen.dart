@@ -117,11 +117,7 @@ class _IncentivesScreenState extends State<IncentivesScreen>
     final summary =
         _summary ?? const IncentiveSummary(units: [], transactions: []);
     final riceView = widget.view == IncentiveView.rice;
-    final records = riceView
-        ? summary.transactions
-              .where((item) => item.status == 'DISTRIBUTED')
-              .toList(growable: false)
-        : summary.filtered(_filter);
+    final records = summary.filtered(_filter);
     return RefreshIndicator(
       onRefresh: () => _load(refresh: true),
       child: ListView(
@@ -139,7 +135,7 @@ class _IncentivesScreenState extends State<IncentivesScreen>
                       children: [
                         Expanded(
                           child: Text(
-                            'Rice Incentive',
+                            'Rice Incentives',
                             style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(fontWeight: FontWeight.w800),
                           ),
@@ -216,19 +212,17 @@ class _IncentivesScreenState extends State<IncentivesScreen>
                       ],
                     ),
                   ],
-                  SizedBox(height: riceView ? 24 : 0),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          riceView
-                              ? 'Rice distribution history'
-                              : 'Incentive History',
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w800),
+                  if (!riceView) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Rice History',
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w800),
+                          ),
                         ),
-                      ),
-                      if (!riceView)
                         IconButton(
                           onPressed: _loading
                               ? null
@@ -236,9 +230,8 @@ class _IncentivesScreenState extends State<IncentivesScreen>
                           tooltip: 'Refresh incentives',
                           icon: const Icon(Icons.refresh),
                         ),
-                    ],
-                  ),
-                  if (!riceView) ...[
+                      ],
+                    ),
                     const SizedBox(height: 10),
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
@@ -257,28 +250,21 @@ class _IncentivesScreenState extends State<IncentivesScreen>
                         ],
                       ),
                     ),
-                  ],
-                  const SizedBox(height: 12),
-                  if (records.isEmpty)
-                    StatePanel.empty(
-                      icon: Icons.history_outlined,
-                      title: riceView
-                          ? 'No rice distributions yet.'
-                          : _filter == IncentiveStatusFilter.all
-                          ? 'No incentive records yet.'
-                          : 'No ${_filter.label.toLowerCase()} records',
-                      message: riceView
-                          ? 'Rice history appears after Barangay personnel record a reward as distributed.'
-                          : _filter == IncentiveStatusFilter.all
-                          ? 'Incentive history will appear after the backend processes an approved surrender.'
-                          : 'Try another history filter.',
-                    )
-                  else
-                    for (final item in records)
-                      if (riceView)
-                        _RiceHistoryCard(item: item, onTap: () => _open(item))
-                      else
+                    const SizedBox(height: 12),
+                    if (records.isEmpty)
+                      StatePanel.empty(
+                        icon: Icons.history_outlined,
+                        title: _filter == IncentiveStatusFilter.all
+                            ? 'No incentive records yet.'
+                            : 'No ${_filter.label.toLowerCase()} records',
+                        message: _filter == IncentiveStatusFilter.all
+                            ? 'Incentive history will appear after the backend processes an approved surrender.'
+                            : 'Try another history filter.',
+                      )
+                    else
+                      for (final item in records)
                         _TransactionCard(item: item, onTap: () => _open(item)),
+                  ],
                 ],
               ),
             ),
@@ -409,44 +395,6 @@ class _TransactionCard extends StatelessWidget {
           ],
         ),
       ),
-    ),
-  );
-}
-
-class _RiceHistoryCard extends StatelessWidget {
-  final IncentiveTransaction item;
-  final VoidCallback onTap;
-
-  const _RiceHistoryCard({required this.item, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) => Card(
-    margin: const EdgeInsets.only(bottom: 10),
-    child: ListTile(
-      onTap: onTap,
-      leading: const CircleAvatar(
-        backgroundColor: mintSurface,
-        foregroundColor: emerald,
-        child: Icon(Icons.rice_bowl_outlined),
-      ),
-      title: Text(
-        'Rice distributed: ${cleanQuantity(item.rewardQuantity)} ${item.rewardUnit}',
-        style: const TextStyle(color: forest, fontWeight: FontWeight.w800),
-      ),
-      subtitle: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(item.transactionCode),
-          Text(
-            item.distributedAt == null
-                ? 'Distribution date unavailable'
-                : readingTime(item.distributedAt!),
-          ),
-        ],
-      ),
-      isThreeLine: true,
-      trailing: const Icon(Icons.chevron_right, color: emerald),
     ),
   );
 }

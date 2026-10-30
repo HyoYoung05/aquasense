@@ -1,5 +1,39 @@
 # AQUASENSE+ Version History
 
+1.4.7
+
+## Website/backend 1.4.7, Flutter owner app 0.9.9+28, and ESP32 firmware 0.8.6
+
+Date: 2026-10-31
+
+- Changed the main page heading from Administrative dashboard to Dashboard.
+- Added role context to the workspace header: System Admin, Admin, or
+  Environmental Management appears beside Barangay San Antonio.
+- Added migration 014 and an audited Device Support conversation workflow.
+  Barangay Admin accounts can report registered-device problems and exchange
+  replies with the System Admin; System Admin can triage and resolve requests.
+- Kept Device Support hidden and server-blocked for Environmental Management,
+  preserving its existing monitoring and operations scope.
+- Reworked the mobile Incentives navigation into a nested tree with separate
+  Rice Incentives and Rice History destinations and separated their content.
+- Added validation, CSRF protection, message throttling, status history through
+  retained messages, and secret-sharing guidance to the support workflow.
+
+1.4.6
+
+## Website/backend 1.4.6, Flutter owner app 0.9.8+27, and ESP32 firmware 0.8.6
+
+Date: 2026-10-30
+
+- Enforced owner and active-deployment scope in mobile Monitoring at the PHP
+  API boundary; unassigned, ended, and other-owner grease traps are excluded.
+- Applied the same owner/deployment authorization to mobile telemetry-history
+  requests so changing a grease-trap ID cannot expose an undeployed trap.
+- Added an owner Settings destination with live notification and optional
+  Android display-over-other-apps permission state and system permission actions.
+- Declared Android overlay permission as optional; it does not replace normal
+  notification access or a production background notification provider.
+
 1.4.5
 
 ## Website/backend 1.4.5, Flutter owner app 0.9.7+26, and ESP32 firmware 0.8.6

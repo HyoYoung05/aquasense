@@ -28,7 +28,7 @@ item. Do not launch with an unexplained failure.
 
 ## Database and recovery
 
-- [ ] Schema, migrations 001-010, and reference data imported successfully.
+- [ ] Schema, migrations 001-014, and reference data imported successfully.
 - [ ] Foreign keys, unique constraints, and required indexes match the release.
 - [ ] Thresholds/calibration and official incentive rules were approved and entered.
 - [ ] Encrypted off-host database plus evidence backup completed.

@@ -1,6 +1,6 @@
 # AQUASENSE+ Carinderia Owner App
 
-Flutter owner application for AQUASENSE+. Version **0.9.7+26** aligns the app
+Flutter owner application for AQUASENSE+. Version **0.9.9+28** aligns the app
 with the administrative website's AQUASENSE+ visual system while retaining the
 Mobile Phase 7 owner-only foundation and Phase 4 sensor contract. The app now
 uses the website's emerald, deep-green, mint, canvas, border, typography, form,
@@ -11,10 +11,15 @@ uses the ignored local API configuration for repeatable Chrome testing.
 The sign-in form no longer shows a redundant standalone login glyph, and the
 authenticated navigation identity displays the signed-in owner's full name,
 email address, and derived initials from the PHP API profile.
-The Incentives navigation item expands to the owner-only **Rice Incentive** and
-**Incentive History** choices. The old History view dropdown inside the page is
-removed, and explicit navigation colors keep every active drawer icon and label
-readable against the mint indicator instead of inheriting white text.
+The Incentives navigation item is a tree that expands to the owner-only
+**Rice Incentives** and **Rice History** choices. Summaries and current rewards
+remain in Rice Incentives; transaction filters and records are isolated in Rice
+History. The old page dropdown is removed, and explicit navigation colors keep
+every active drawer icon and label readable against the mint indicator.
+Monitoring is enforced by the PHP API to return only the authenticated owner's
+actively deployed grease traps. Settings now shows notification and optional
+Android display-over-other-apps permission status and opens the corresponding
+system permission controls.
 
 The app communicates only with the PHP API. It contains no SQL, MySQL package,
 or database credential.
@@ -185,8 +190,10 @@ offline cache.
 ## Mobile Phase 3 Monitoring
 
 Monitoring is available from the dashboard Quick Actions and the authenticated
-navigation shell. It supports every owner-authorized grease trap returned by
-the API and displays:
+navigation shell. It supports only actively deployed grease traps owned by the
+authenticated account. The PHP API excludes unassigned traps, ended
+deployments, and traps belonging to other owners; the Flutter selector cannot
+broaden that server-authorized scope. Each returned trap displays:
 
 - Establishment, grease-trap name, assigned device, firmware when present,
   device state, last seen, and latest telemetry time
@@ -203,7 +210,7 @@ and offline devices remain different states. Last-known values stay visible
 with an offline/stale explanation. Flutter does not calculate threshold
 conditions or independently decide whether a device is online.
 
-The monitoring screen refreshes current status every 20 seconds while visible.
+The monitoring screen refreshes current status every five seconds while visible.
 It cancels its single timer on disposal or while the application is inactive,
 resumes on return, and also supports pull-to-refresh and a refresh button.
 Failed refreshes keep the last successful values and valid secure session.
@@ -241,6 +248,10 @@ Android notification permission is declared and requested once the owner enters
 the authenticated workspace. The permission prepares installed Android builds
 for notifications; in-app Alerts remain the active delivery mechanism until a
 production push provider and background delivery service are configured.
+The Settings screen reports the current permission state and lets the owner
+enable notifications or open Android's optional display-over-other-apps access.
+Overlay access is not required for normal in-app alerts and does not replace a
+production notification delivery provider.
 
 ## Mobile Phase 5 Oil Surrender
 
@@ -297,6 +308,7 @@ navigation rail on wider displays:
 - Incentives: Mobile Phase 6 reward summary, pending/distributed totals,
   filters, transaction history, and read-only detail
 - Profile: owner name, email, establishments, app version, and logout
+- Settings: notification and optional Android display-over-other-apps access
 
 The shell uses centralized authentication state, reusable loading/error/empty
 panels, manual retry, and root replacement on sign-out. The Login screen remains
@@ -310,6 +322,8 @@ scrollable with the keyboard open and blocks repeated submission.
 - `CAMERA` permission: enabled for Phase 5 evidence capture
 - `POST_NOTIFICATIONS` permission: declared and requested at runtime on Android
   after successful authentication
+- `SYSTEM_ALERT_WINDOW` permission: declared as optional and enabled only when
+  the owner explicitly allows display over other apps in Android settings
 - Debug manifest: permits explicit local cleartext HTTP
 - Main/release manifest: does not enable cleartext traffic
 
@@ -377,6 +391,16 @@ The app is a release candidate because a real public API hostname, production
 signing key, final application-ID decision, and installed-device/public
 end-to-end acceptance are deployment inputs that are not available in this
 repository.
+
+## Verification for 0.9.9+28
+
+- `flutter analyze`: no issues
+- `flutter test`: 118 passed, 0 failed, 0 skipped
+- Android debug APK assembly passed; its merged manifest contains both
+  `POST_NOTIFICATIONS` and optional `SYSTEM_ALERT_WINDOW` permissions
+- PHP syntax checks passed for the owner-monitoring authorization and fixture
+  changes. The live PHP integration suite requires the configured MariaDB
+  service to be running.
 
 ## Verification for 0.8.0+14
 

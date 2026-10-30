@@ -63,6 +63,21 @@ function can_manage_operations(array $user): bool
     return in_array($user['role_slug'] ?? '', ['system_admin', 'administrator'], true);
 }
 
+function can_use_device_support(array $user): bool
+{
+    return in_array($user['role_slug'] ?? '', ['system_admin', 'administrator'], true);
+}
+
+function workspace_role_label(array $user): string
+{
+    return match ($user['role_slug'] ?? '') {
+        'system_admin' => 'System Admin',
+        'administrator' => 'Admin',
+        'environmental_staff' => 'Environmental Management',
+        default => (string) ($user['role_name'] ?? 'Staff'),
+    };
+}
+
 function attempt_login(string $email, string $password): ?string
 {
     global $config;

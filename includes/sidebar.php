@@ -19,6 +19,7 @@ $navLink = static function(string $key,string $symbol,string $label,string $path
 <p class="nav-label">OPERATIONS</p>
 <?= $navLink('monitoring','activity','Monitoring','admin/monitoring.php') ?>
 <?= $navLink('alerts','bell','Alerts','admin/alerts.php') ?>
+<?php if(can_use_device_support($user)): ?><?= $navLink('device-support','mail',is_system_admin($user)?'Support Inbox':'Device Support','admin/device-support.php') ?><?php endif; ?>
 <?= $navLink('oil-surrenders','oil','Oil Surrenders','admin/oil-surrenders.php') ?>
 <?= $navLink('incentives','gift','Incentives','admin/incentives.php') ?>
 <?= $navLink('compliance-ledger','ledger','Compliance Ledger','admin/compliance-ledger.php') ?>

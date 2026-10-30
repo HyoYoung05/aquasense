@@ -197,3 +197,22 @@ a.notification-status{
     isolation:isolate;z-index:2;pointer-events:auto;cursor:pointer;touch-action:manipulation;
 }
 a.notification-status>*{pointer-events:none}
+
+/* Role identity and Admin-to-System-Admin device support. */
+.topbar-workspace strong{color:var(--green-dark);font-weight:700}
+.support-overview{align-items:start}
+.support-thread{overflow:visible}
+.support-messages{display:flex;flex-direction:column;gap:12px;padding:0 22px 22px}
+.support-message{max-width:78%;padding:14px 16px;border:1px solid var(--line);border-radius:4px 14px 14px 14px;background:#f6f8f6}
+.support-message.from-system{align-self:flex-end;border-radius:14px 4px 14px 14px;background:#eaf4ef;border-color:#cfe4d9}
+.support-message>div{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:8px}
+.support-message strong{font-size:12px;color:var(--green-dark)}
+.support-message span{font-size:10px;color:var(--muted);text-align:right}
+.support-message p{margin:0;color:var(--ink);font-size:12px;line-height:1.65;overflow-wrap:anywhere}
+.support-reply{max-width:none}
+.support-priority-normal{background:#edf1ee;color:#566660}
+.support-priority-high,.status-open{background:#fff4da;color:#8b671f}
+.support-priority-urgent{background:#fde9e7;color:#9b3c37}
+.status-in-progress{background:#e8f1f8;color:#315f79}
+.status-closed{background:#f0f1f1;color:#66706d}
+@media(max-width:760px){.topbar-workspace{max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.support-message{max-width:94%}.support-message>div{align-items:flex-start;flex-direction:column;gap:3px}.support-message span{text-align:left}}

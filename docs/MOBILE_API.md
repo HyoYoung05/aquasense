@@ -17,8 +17,10 @@ database and never trusts a client-supplied owner or establishment ID.
 
 `GET /api/mobile/monitoring.php`
 
-Returns every active grease trap under the bearer-token owner's active
-establishments. Each entry contains the establishment/trap labels, assigned
+Returns only active grease traps under the bearer-token owner's active
+establishments that currently have an active device assignment. Unassigned
+traps, ended deployments, and every other owner's traps are excluded by the
+backend rather than hidden by Flutter. Each entry contains the establishment/trap labels, assigned
 device metadata, backend-derived device and sensor state, stale flag, last seen,
 and the latest reading when one exists.
 
@@ -34,7 +36,8 @@ server-side.
 `GET /api/mobile/telemetry-history.php`
 
 Required query: `grease_trap_id=<positive integer>`. The requested trap must
-belong to the authenticated owner; inaccessible traps return 404.
+belong to the authenticated owner and have an active device deployment;
+inaccessible or undeployed traps return 404.
 
 Supported ranges are `1h`, `today`, `24h`, `7d`, `30d`, and `custom`. Custom
 ranges require `from=YYYY-MM-DD` and `to=YYYY-MM-DD`, use Asia/Manila calendar

@@ -16,7 +16,7 @@ Tailscale, a LAN address, Windows Task Scheduler, or phpMyAdmin.
 
 1. Create a dedicated empty database and least-privilege database account.
 2. Import `database/schema.sql`.
-3. Import migrations `001` through `010` in numeric order.
+3. Import migrations `001` through `014` in numeric order.
 4. Import `database/reference-data.sql`. It creates only the four role labels.
 5. Do **not** import `database/sample-data.sql` or run development helpers.
 6. Run `composer install --no-dev --classmap-authoritative`.
@@ -34,15 +34,15 @@ Tailscale, a LAN address, Windows Task Scheduler, or phpMyAdmin.
 10. Configure cron, web-server denials, TLS, monitoring, backups, Flutter, and ESP32.
 11. Complete `docs/PRODUCTION_CHECKLIST.md` on staging and again on production.
 
-## Upgrade from 0.9.0
+## Upgrade an existing installation
 
-Back up the database and private evidence together, deploy the 1.0.0 files, run
-`composer install --no-dev --classmap-authoritative`, and reapply migration 008
-(it is idempotent). Phase 8 adds no schema migration. Add the new environment
-variables, update web-server rules for `api/health.php`, clear PHP opcode cache,
-run smoke checks, then enable traffic. Roll back code to the recorded commit if
-smoke checks fail; restore the backup only if data was changed outside the normal
-application workflow.
+Back up the database and private evidence together, deploy the current files,
+run `composer install --no-dev --classmap-authoritative`, and apply every
+numbered migration newer than the installed schema. Version 1.4.7 requires
+`014-device-support.sql`. Update environment variables and web-server rules,
+clear PHP opcode cache, run smoke checks, then enable traffic. Roll back code to
+the recorded commit if smoke checks fail; restore the backup only if data was
+changed outside the normal application workflow.
 
 ## Environment variables
 

@@ -199,7 +199,7 @@ void main() {
     },
   );
 
-  testWidgets('rice incentive and incentive history are separate views', (
+  testWidgets('rice incentives and rice history are separate views', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(800, 3200);
@@ -219,12 +219,11 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Rice Incentive'), findsOneWidget);
+    expect(find.text('Rice Incentives'), findsOneWidget);
     expect(find.text('Pending'), findsWidgets);
     expect(find.text('Distributed'), findsWidgets);
-    expect(find.text('Rice distribution history'), findsOneWidget);
-    expect(find.text('Rice distributed: 250 g'), findsOneWidget);
-    expect(find.text('INC-002'), findsOneWidget);
+    expect(find.text('Rice History'), findsNothing);
+    expect(find.text('INC-002'), findsNothing);
     expect(find.text('INC-003'), findsNothing);
     expect(find.text('INC-001'), findsNothing);
     expect(find.byType(DropdownButtonFormField<IncentiveView>), findsNothing);
@@ -241,7 +240,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Incentive History'), findsOneWidget);
+    expect(find.text('Rice History'), findsOneWidget);
     expect(find.text('INC-003'), findsOneWidget);
     expect(find.text('Rice reward: 5.5 kg'), findsOneWidget);
     expect(find.text('Pending Distribution'), findsWidgets);
@@ -320,18 +319,18 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(
-      find.descendant(of: drawer, matching: find.text('Rice Incentive')),
+      find.descendant(of: drawer, matching: find.text('Rice Incentives')),
       findsOneWidget,
     );
     final historyChoice = find.descendant(
       of: drawer,
-      matching: find.text('Incentive History'),
+      matching: find.text('Rice History'),
     );
     expect(historyChoice, findsOneWidget);
     await tester.tap(historyChoice);
     await tester.pumpAndSettle();
     expect(find.byType(NavigationDrawer), findsNothing);
-    expect(find.text('Incentive History'), findsWidgets);
+    expect(find.text('Rice History'), findsWidgets);
   });
 
   testWidgets(
@@ -506,7 +505,7 @@ void main() {
     );
     await tester.tap(destination);
     await tester.pumpAndSettle();
-    expect(find.text('Rice Incentive'), findsWidgets);
+    expect(find.text('Rice Incentives'), findsWidgets);
     expect(incentives.calls, 1);
   });
 

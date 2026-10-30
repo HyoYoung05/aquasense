@@ -424,8 +424,8 @@ HC-SR04 distance field and grease-trap calibration remain available.
 
 PHASE 8 / PRODUCTION RELEASE
 ----------------------------
-For a local development install: import schema.sql, migrations 001 through 013, then sample-data.sql.
-For production: import schema.sql, migrations 001 through 013, then reference-data.sql. Never import sample-data.sql.
+For a local development install: import schema.sql, migrations 001 through 014, then sample-data.sql.
+For production: import schema.sql, migrations 001 through 014, then reference-data.sql. Never import sample-data.sql.
 Production also requires an HTTPS AQUASENSE_APP_URL, environment-managed database credentials, private upload/log paths, Composer dependencies, cron for scripts/check_offline_devices.php, backups, monitoring, and the first full-access Admin CLI.
 Read docs/DEPLOYMENT.md and complete docs/PRODUCTION_CHECKLIST.md before go-live.
 The application reads process environment variables; a .env file is not required or automatically parsed.

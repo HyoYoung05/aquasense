@@ -87,8 +87,8 @@ function mobile_monitoring(int $ownerId): array
         r.ultrasonic_distance_cm,r.waste_level_percent,r.temperature_c,r.turbidity_ntu,r.turbidity_raw_adc,r.flow_rate_lpm,r.flow_pulse_count,r.gas_value,r.odor_value,r.gas_raw_adc,r.ambient_temperature_c,r.humidity_percent,r.ens160_aqi,r.tvoc_ppb,r.eco2_ppm,
         r.level_status,r.is_simulated,r.is_test,r.recorded_at
         FROM establishments e JOIN grease_traps g ON g.establishment_id=e.id AND g.is_active=1
-        LEFT JOIN device_assignments a ON a.grease_trap_id=g.id AND a.ended_at IS NULL
-        LEFT JOIN devices d ON d.id=a.device_id
+        JOIN device_assignments a ON a.grease_trap_id=g.id AND a.ended_at IS NULL
+        JOIN devices d ON d.id=a.device_id
         LEFT JOIN sensor_readings r ON r.id=(SELECT sr.id FROM sensor_readings sr WHERE sr.device_assignment_id=a.id AND sr.recorded_at<=UTC_TIMESTAMP() ORDER BY sr.recorded_at DESC,sr.id DESC LIMIT 1)
         WHERE e.owner_user_id=? AND e.is_active=1 ORDER BY e.business_name,g.name");
     $query->execute([$ownerId]);
@@ -162,7 +162,7 @@ function mobile_monitoring(int $ownerId): array
 
 function mobile_monitoring_history(int $ownerId, int $trapId, string $range, ?string $from, ?string $to, int $page): ?array
 {
-    $ownerTrap = db()->prepare('SELECT g.id FROM grease_traps g JOIN establishments e ON e.id=g.establishment_id WHERE g.id=? AND e.owner_user_id=? AND e.is_active=1 AND g.is_active=1');
+    $ownerTrap = db()->prepare('SELECT DISTINCT g.id FROM grease_traps g JOIN establishments e ON e.id=g.establishment_id JOIN device_assignments a ON a.grease_trap_id=g.id AND a.ended_at IS NULL WHERE g.id=? AND e.owner_user_id=? AND e.is_active=1 AND g.is_active=1');
     $ownerTrap->execute([$trapId, $ownerId]);
     if (!$ownerTrap->fetchColumn()) {
         return null;

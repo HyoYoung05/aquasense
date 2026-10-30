@@ -56,6 +56,11 @@ try {
         $pdo->prepare('INSERT INTO device_assignments (device_id, grease_trap_id, started_at) VALUES (?, ?, UTC_TIMESTAMP())')->execute([$devices[$i], $traps[$i]]);
         $assignments[] = (int) $pdo->lastInsertId();
     }
+    $unassignedCode = 'TEST-' . bin2hex(random_bytes(6));
+    $pdo->prepare('INSERT INTO grease_traps (establishment_id, trap_code, name, capacity_liters, low_threshold, medium_threshold, high_threshold, critical_threshold) VALUES (?, ?, ?, 50, 20, 50, 75, 90)')
+        ->execute([$sites[0], $unassignedCode, 'Undeployed owner grease trap']);
+    $unassignedTrap = (int) $pdo->lastInsertId();
+    $traps[] = $unassignedTrap;
     check(call_api('dashboard.php')['status'] === 401, 'Anonymous dashboard rejected');
     check(call_api('profile.php', null, str_repeat('a', 64))['status'] === 401, 'Forged token rejected');
     check(call_api('login.php')['status'] === 405, 'Login requires POST');
@@ -71,10 +76,11 @@ try {
     check(call_api('profile.php', null, $token)['json']['data']['user']['id'] === $users[0], 'Token restores owner profile');
     check(call_api('monitoring.php')['status'] === 401, 'Anonymous mobile monitoring rejected');
     $monitoring = call_api('monitoring.php?user_id=' . $users[1], null, $token)['json']['data'];
-    check(count($monitoring['traps']) === 1 && $monitoring['traps'][0]['grease_trap_id'] === $traps[0], 'Mobile monitoring is scoped to the bearer-token owner');
+    check(count($monitoring['traps']) === 1 && $monitoring['traps'][0]['grease_trap_id'] === $traps[0], 'Mobile monitoring returns only actively deployed traps owned by the bearer');
     check($monitoring['traps'][0]['sensor_state'] === 'AWAITING SENSOR DATA', 'Monitoring distinguishes a missing reading from zero');
     check(call_api('telemetry-history.php', null, $token)['status'] === 422, 'Mobile history requires a valid grease trap');
     check(call_api('telemetry-history.php?grease_trap_id=' . $traps[1], null, $token)['status'] === 404, 'Owner cannot read another owner history');
+    check(call_api('telemetry-history.php?grease_trap_id=' . $unassignedTrap, null, $token)['status'] === 404, 'Owner cannot read history for an undeployed trap');
     $emptyHistory = call_api('telemetry-history.php?grease_trap_id=' . $traps[0] . '&range=1h', null, $token)['json']['data'];
     check($emptyHistory['total'] === 0 && $emptyHistory['readings'] === [], 'Empty owner telemetry history is honest');
     $data = call_api('dashboard.php?establishment_id=' . $sites[1] . '&user_id=' . $users[1], null, $token)['json']['data'];

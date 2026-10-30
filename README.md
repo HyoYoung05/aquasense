@@ -4,11 +4,16 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 six-sensor firmware.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.4.2 keeps one dedicated development-only Admin login for the website and one Owner login for the mobile app, both scoped to a shared simulated notification fixture, while preserving existing local accounts and production role boundaries.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.4.7 keeps one dedicated development-only Admin login for the website and one Owner login for the mobile app, both scoped to a shared simulated notification fixture, while preserving existing local accounts and production role boundaries.
 
 The authenticated website notification bell has a protected 44 px click area,
 opens the Alerts workspace, and uses versioned JavaScript assets so repaired
 interaction code is not hidden by an older browser cache.
+
+The authenticated header identifies the active website role as System Admin,
+Admin, or Environmental Management. Barangay Admin accounts have a dedicated,
+audited Device Support conversation with the System Admin for registered-device
+problems. Environmental Management cannot see or directly open that workflow.
 
 ## Current Version
 
@@ -30,7 +35,7 @@ outages; it is cleared by reset or power loss and drops the oldest record when
 full.
 COM3 must not be used. There is no microSD, OLED,
 buzzer, or DHT22. The Flutter source is tracked under
-[`mobile/`](mobile/README.md) at version **0.9.7+26**. Generated APKs,
+[`mobile/`](mobile/README.md) at version **0.9.9+28**. Generated APKs,
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 The current Android development build is verified with Flutter **3.41.6**.
 
@@ -66,7 +71,7 @@ physical installation or field-acceptance item.
 See the [connected-sensor verification](esp32/PHYSICAL-VERIFICATION-2026-10-22.md)
 for the measured results and remaining corrections.
 
-**Version: 1.4.2**
+**Version: 1.4.7**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -237,7 +242,7 @@ These are the standard steps for a healthy XAMPP installation. See **Current mac
 5. Open [phpMyAdmin](http://localhost/phpmyadmin/).
 6. Create a database named **aquasense**, using `utf8mb4_unicode_ci`.
 7. Select **aquasense**, choose **Import**, select `database/schema.sql`, and click **Import/Go**. The SQL creates tables in the database selected by the importer, so production hosts may use their assigned database name without editing the schema.
-8. Apply migrations `001-mobile-tokens.sql` through `013-remove-ultrasonic-bench-test.sql` in numeric order.
+8. Apply migrations `001-mobile-tokens.sql` through `014-device-support.sql` in numeric order.
 9. For local development, import `database/sample-data.sql`. For a production-style empty database, import `database/reference-data.sql` instead; it creates roles but no users or passwords.
 10. Run `composer install` in the project directory to install the locked PDF dependency.
 11. If your local database credentials differ, copy `config/local.example.php` to `config/local.php` and adjust the settings. Set every development database value in the ignored file; the committed application has no database username, database name, or password defaults.
@@ -258,7 +263,7 @@ Open [credentials.txt](credentials.txt) locally in your editor for the developme
 
 These are two separate accounts because website personnel and mobile Owners have different permissions. `sample-data.sql` creates only the website Admin and contains only PHP `password_hash()` output. The mobile development helper creates `owner@aquasense.test`, links fictional Demo Kusina, and never grants website access. Existing `admin@aquasense.test` and `staff@aquasense.test` accounts from older installations are preserved unchanged and remain governed by their existing activation state.
 
-For an existing development database, apply migrations 009-013 and provision or
+For an existing development database, apply migrations 009-014 and provision or
 repair the demo Admin account with:
 
 ```powershell
@@ -278,7 +283,7 @@ history, alerts, protected oil-surrender evidence, and incentive APIs under
 [Flutter Owner app](mobile/README.md) implements Mobile Phases 1 through 5,
 including authenticated oil surrender submission and review-state history.
 
-For an existing or fresh installation, select the `aquasense` database and import migrations 001 through 013 in order. Do not rerun the full schema on an existing database.
+For an existing or fresh installation, select the `aquasense` database and import migrations 001 through 014 in order. Do not rerun the full schema on an existing database.
 
 For local development only, run from the website directory:
 
@@ -297,7 +302,7 @@ Verify the new API with `C:\xampp\php\php.exe tests\mobile-api.php --allow-local
 ## Database
 
 - **Name:** `aquasense`
-- **Structure:** [database/schema.sql](database/schema.sql), 17 InnoDB tables with foreign keys, indexes, uniqueness constraints, timestamps, and numeric checks.
+- **Structure:** [database/schema.sql](database/schema.sql), 19 InnoDB tables with foreign keys, indexes, uniqueness constraints, timestamps, and numeric checks.
 - **Development records:** [database/sample-data.sql](database/sample-data.sql), four roles, one website Admin account, one fictional establishment, one trap, one simulated device, one assignment, one simulated active notification, configurable settings, and setup ledger/audit entries. The mobile helper adds the separate Owner account.
 - **Configuration:** `config/config.php`; optional ignored overrides in `config/local.php`.
 - **Connection:** `config/database.php`, PDO, `utf8mb4`, exceptions, and native prepared statements.
@@ -315,6 +320,8 @@ Environment overrides: `AQUASENSE_DB_HOST`, `AQUASENSE_DB_PORT`, `AQUASENSE_DB_N
 | `grease_traps` | Each trap belongs to an establishment and stores capacity, ordered thresholds, and optional empty/full ultrasonic calibration. |
 | `devices` | Unique human-readable device code, hashed API credential, firmware, activation state, and telemetry-based last-seen time. Plaintext credentials are displayed only when generated. |
 | `device_assignments` | Links devices to traps over time. Unique generated columns allow only one current device per trap and one current trap per device. End an assignment before reassigning; retain historical rows. |
+| `device_support_requests` | Audited device-problem tickets created by Barangay Admin and triaged by System Admin, with device, priority, status, assignee, and resolution timestamps. |
+| `device_support_messages` | Retained two-way support messages. Environmental Management has no application access to this conversation. |
 | `sensor_readings` | Structured distance, derived/reported fill, optional future sensors, state, device/server times, simulation flags, and retry identifiers. Assignment history identifies the device, trap, and establishment consistently. |
 | `alerts` | Belongs to an assignment and optionally a reading; includes type, severity, status, and acknowledging/resolving users. Offline alerts need not have a reading. |
 | `oil_surrenders` | Owner-scoped submission with UUID retry protection, optional trap/device and related telemetry, controlled review status, reviewer attribution, decision timestamps, remarks, and concurrency version. |
@@ -366,6 +373,7 @@ aquasense-web/
     migrations/011-...sql      remaining sensor telemetry fields
     migrations/012-...sql      calibrated alert gates
     migrations/013-...sql      retired bench identity cleanup
+    migrations/014-...sql      Admin-to-System-Admin device support
   docs/ESP32_API.md            ESP32 request, authentication, and retry contract
   public/
     index.php                  public entry redirect
@@ -464,7 +472,7 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 
 - The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
 - PDF detail is limited to 500 rows and CSV detail to 10,000 rows; narrower filters are required for complete exports beyond those limits.
-- The Flutter Owner app is version `0.9.7+26`. Its responsive interface now
+- The Flutter Owner app is version `0.9.9+28`. Its responsive interface now
   follows the website's emerald, deep-green, mint, canvas, card, form, and
   navigation design system while remaining limited to owner workflows.
   Dashboard Quick Actions appear
@@ -473,12 +481,16 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
   from Home.
   The login form omits the redundant standalone login icon, while authenticated
   navigation shows the signed-in owner's API-provided name and email.
-  The Incentives navigation item expands to Rice Incentive and Incentive
-  History; the old page-level History view dropdown has been removed. Its
-  selected navigation label uses explicit accessible colors.
+  The Incentives navigation item uses a nested tree with separate Rice
+  Incentives and Rice History children; the old page-level dropdown has been
+  removed. Its selected navigation label uses explicit accessible colors.
+  Mobile Monitoring now returns only actively deployed grease traps belonging
+  to the authenticated owner; unassigned, ended, and other-owner deployments
+  are rejected by the PHP API.
   Android declares and requests notification permission after an owner reaches
-  the authenticated workspace. In-app Alerts remain the delivery mechanism
-  until a production push provider is configured.
+  the authenticated workspace. The new Settings page exposes notification and
+  optional Android display-over-other-apps controls. In-app Alerts remain the
+  delivery mechanism until a production push provider is configured.
   Reward calculations and distribution controls remain exclusively in the PHP
   backend/Barangay site.
   See the [mobile production checklist](docs/MOBILE_PRODUCTION_CHECKLIST.md).
