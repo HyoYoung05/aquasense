@@ -1,4 +1,4 @@
-# Shared API (backend 1.4.8)
+# Shared API (backend 1.4.9)
 
 Owner endpoints, device telemetry, staff monitoring, Phase 4 alerts, Phase 5 oil surrender endpoints, and the Phase 6 owner incentive endpoint are implemented. Existing PDO/configuration, users,
 roles, establishments, readings, audit and rate-limit records are reused.
@@ -12,6 +12,8 @@ source. Native Android requests do not need browser CORS.
 | --- | --- | --- | --- |
 | POST | login.php | JSON email/password | token, expires_at (UTC), user |
 | GET | profile.php | Bearer authorization | user |
+| POST | account-email.php | Bearer + email/current_password | updated user |
+| POST | account-password.php | Bearer + current/new/confirmation | message; all tokens revoked |
 | GET | dashboard.php | Bearer authorization | user, establishments, generated_at, freshness_seconds |
 | GET | monitoring.php | Bearer authorization | owned traps, current device/sensor state |
 | GET | telemetry-history.php?grease_trap_id= | Bearer; range/page query | owned bounded telemetry history |

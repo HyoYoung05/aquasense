@@ -2,7 +2,27 @@
 
 ## Current Version
 
-0.9.11+30
+0.9.12+31
+
+## 0.9.12+31 - 2026-11-01
+
+- Aligned all dashboard Quick Action icons with equal 30 px containers,
+  centered glyphs, consistent button height, padding, and label baselines.
+- Removed the Alerts grease-trap selector. Alerts now load only the
+  authenticated owner's server-authorized physical-deployment feed.
+- Reorganized Settings into Account, Security, and App permissions categories.
+- Added verified owner email changes and strong password replacement using the
+  current or administrator-issued temporary password. Password replacement
+  clears all mobile sessions and returns the owner to sign-in.
+- Added widget coverage for account changes, permission controls, owner-only
+  Alerts, and Quick Action icon sizing.
+
+### Verification
+
+- `flutter analyze`: no issues.
+- `flutter test`: 120 passed.
+- Focused Dashboard, Alerts, and Settings suites: 30 passed.
+- PHP owner mobile integration suite: 77 checks passed.
 
 ## 0.9.11+30 - 2026-10-31
 

@@ -1,6 +1,26 @@
 # AQUASENSE+ Version History
 
-1.4.8
+1.4.9
+
+## Website/backend 1.4.9, Flutter owner app 0.9.12+31, and ESP32 firmware 0.8.6
+
+Date: 2026-11-01
+
+- Added owner-authenticated email and password update endpoints. Both require
+  the current password; password replacement follows the shared strong-password
+  policy and revokes every existing owner mobile token.
+- Categorized the owner app Settings screen into Account, Security, and App
+  permissions so a Karinderya owner can replace an administrator-issued
+  temporary password and change the sign-in email.
+- Removed the grease-trap selector from owner Alerts. The client now always
+  requests the server-authorized owner alert feed without an owner/trap scope
+  override.
+- Standardized every dashboard Quick Action to one centered 30 px icon slot,
+  consistent button height, padding, and label alignment.
+- Retained the owner-only physical-deployment enforcement from 1.4.8 and
+  expanded the mobile API suite to 77 passing checks.
+- Flutter static analysis and all 120 widget/service tests pass; the focused
+  Dashboard, Alerts, and Settings group accounts for 30 of those tests.
 
 ## Website/backend 1.4.8, Flutter owner app 0.9.11+30, and ESP32 firmware 0.8.6
 

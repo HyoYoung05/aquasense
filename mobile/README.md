@@ -1,6 +1,6 @@
 # AQUASENSE+ Carinderia Owner App
 
-Flutter owner application for AQUASENSE+. Version **0.9.11+30** aligns the app
+Flutter owner application for AQUASENSE+. Version **0.9.12+31** aligns the app
 with the administrative website's AQUASENSE+ visual system while retaining the
 Mobile Phase 7 owner-only foundation and Phase 4 sensor contract. The app now
 uses the website's emerald, deep-green, mint, canvas, border, typography, form,
@@ -20,9 +20,12 @@ every active drawer icon and label readable against the mint indicator. The
 complete Incentives label stays on one line at narrow sidebar widths.
 Monitoring is enforced by the PHP API to return only the authenticated owner's
 actively deployed, non-simulated grease traps. Owner Alerts use the same scope,
-so administrative demo traps and alerts cannot appear in the app. Settings now shows notification and optional
-Android display-over-other-apps permission status and opens the corresponding
-system permission controls.
+so administrative demo traps and alerts cannot appear in the app. Alerts has no
+trap-scope selector and always uses the bearer owner's server-authorized feed.
+Settings is categorized into Account, Security, and App permissions. Owners can
+change their sign-in email, replace an administrator-issued temporary password,
+review notification and optional Android display-over-other-apps status, and
+open the corresponding system permission controls.
 
 The app communicates only with the PHP API. It contains no SQL, MySQL package,
 or database credential.
@@ -113,6 +116,8 @@ The app uses the finalized PHP routes:
 
 - `POST login.php` with email and password
 - `GET profile.php` to validate or restore a bearer session
+- `POST account-email.php` to change the owner sign-in email after current-password verification
+- `POST account-password.php` to replace the owner password and revoke all mobile sessions
 - `GET dashboard.php` for server-assigned establishments, grease traps,
   devices, latest telemetry, and active alerts
 - `GET monitoring.php` for owner-scoped current device and sensor monitoring
@@ -238,9 +243,10 @@ shows backend-provided unresolved counts, critical/warning totals, ACTIVE,
 ACKNOWLEDGED, and RESOLVED records, and readable labels for all current alert
 types. Unknown future types or severities remain displayable without crashing.
 
-Owners can filter by status, severity, Today, 7 Days, 30 Days, a custom range of
-at most 31 days, and an authorized grease trap. The PHP API returns 25 newest
-records per page. Its trap selector, summary, list, and detail all exclude
+Owners can filter by status, severity, Today, 7 Days, 30 Days, and a custom
+range of at most 31 days. The app does not expose an all-traps or grease-trap
+selector; it always requests the bearer owner's server-authorized feed. The PHP
+API returns 25 newest records per page. Its summary, list, and detail all exclude
 simulated administrative fixtures. Alert detail includes owner-safe site, device, sensor, trigger,
 threshold, count, and lifecycle timestamps. It does not expose administrative
 notes or acknowledge/resolve/reopen/delete controls.
@@ -397,10 +403,12 @@ signing key, final application-ID decision, and installed-device/public
 end-to-end acceptance are deployment inputs that are not available in this
 repository.
 
-## Verification for 0.9.11+30
+## Verification for 0.9.12+31
 
 - `flutter analyze`: no issues
-- `flutter test`: 118 passed, 0 failed, 0 skipped
+- `flutter test`: 120 passed, 0 failed, 0 skipped
+- Focused Dashboard, Alerts, and Settings widget suites: 30 passed
+- PHP owner mobile integration suite: 77 checks passed
 - Android debug APK assembly passed; its merged manifest contains both
   `POST_NOTIFICATIONS` and optional `SYSTEM_ALERT_WINDOW` permissions
 - PHP syntax checks passed for the owner-monitoring authorization and fixture

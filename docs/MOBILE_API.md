@@ -1,6 +1,6 @@
 ﻿# AQUASENSE+ Owner Mobile API
 
-Backend version: **1.4.8**
+Backend version: **1.4.9**
 
 The API root is deployment-configured. Production clients must use HTTPS. Every
 oil-surrender route requires the existing owner Bearer token:
@@ -12,6 +12,23 @@ Accept: application/json
 
 Tokens identify the owner. The server derives allowed establishments from the
 database and never trusts a client-supplied owner or establishment ID.
+
+## Owner account settings
+
+`POST /api/mobile/account-email.php`
+
+Accepts `email` and `current_password`. The new address must be valid, different,
+and unused. A successful change updates the active profile without widening the
+owner's establishment or grease-trap scope.
+
+`POST /api/mobile/account-password.php`
+
+Accepts `current_password`, `new_password`, and `password_confirmation`. The
+replacement must follow the shared 12-128 character strong-password policy and
+must differ from the current password. Success revokes every owner mobile token,
+so the app clears its local session and requires sign-in with the new password.
+Repeated failed current-password checks are rate-limited and account changes are
+audited without recording password values.
 
 ## Current monitoring
 
@@ -57,9 +74,10 @@ null and must not be plotted as zero.
 Returns only alerts joined to the bearer owner's active establishments and
 non-simulated deployed grease traps. Simulated development alerts remain
 available to the administrative website but never appear in the owner list,
-summary, trap selector, or detail route. Filters are `status=UNRESOLVED|ALL|ACTIVE|ACKNOWLEDGED|RESOLVED`,
+summary, authorized trap metadata, or detail route. Filters are `status=UNRESOLVED|ALL|ACTIVE|ACKNOWLEDGED|RESOLVED`,
 `severity=ALL|INFO|WARNING|CRITICAL`, `range=today|7d|30d|custom`, optional owned
-`grease_trap_id`, and `page`. Custom dates use `from`/`to` in `YYYY-MM-DD` and
+`grease_trap_id`, and `page`. The current owner app omits `grease_trap_id` and
+does not render a trap selector. Custom dates use `from`/`to` in `YYYY-MM-DD` and
 may span at most 31 days. Each page contains at most 25 records, server summary
 counts, pagination metadata, and the owner's selectable traps.
 

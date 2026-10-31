@@ -4,7 +4,7 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 six-sensor firmware.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.4.8 keeps one dedicated development-only Admin login for the website and one Owner login for the mobile app while preserving existing local accounts and production role boundaries. Simulated administrative fixtures are excluded from owner-facing Monitoring and Alerts.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.4.9 keeps one dedicated development-only Admin login for the website and one Owner login for the mobile app while preserving existing local accounts and production role boundaries. Simulated administrative fixtures are excluded from owner-facing Monitoring and Alerts, and owners can securely replace their sign-in email or temporary password from the app.
 
 The authenticated website notification bell has a protected 44 px click area,
 opens the Alerts workspace, and uses versioned JavaScript assets so repaired
@@ -35,7 +35,7 @@ outages; it is cleared by reset or power loss and drops the oldest record when
 full.
 COM3 must not be used. There is no microSD, OLED,
 buzzer, or DHT22. The Flutter source is tracked under
-[`mobile/`](mobile/README.md) at version **0.9.11+30**. Generated APKs,
+[`mobile/`](mobile/README.md) at version **0.9.12+31**. Generated APKs,
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 The current Android development build is verified with Flutter **3.41.6**.
 
@@ -71,7 +71,7 @@ physical installation or field-acceptance item.
 See the [connected-sensor verification](esp32/PHYSICAL-VERIFICATION-2026-10-22.md)
 for the measured results and remaining corrections.
 
-**Version: 1.4.8**
+**Version: 1.4.9**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -298,7 +298,7 @@ Bearer tokens are random, stored only as hashes in MariaDB, and default to a 24-
 
 The dashboard derives status and freshness from database configuration. It returns only owned active establishments and non-simulated deployed traps, marks stale records, and never fabricates telemetry when no readings exist. Owner surrender and incentive history are available through documented owner-scoped APIs. Local debug HTTP must be replaced with HTTPS for deployment.
 
-Verify the new API with `C:\xampp\php\php.exe tests\mobile-api.php --allow-local-fixtures` (60 checks); temporary test users, establishments, devices, readings, alerts, and tokens are removed after the tests.
+Verify the API with `C:\xampp\php\php.exe tests\mobile-api.php --allow-local-fixtures` (77 checks); temporary test users, establishments, devices, readings, alerts, and tokens are removed after the tests.
 
 ## Database
 
@@ -473,11 +473,12 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 
 - The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
 - PDF detail is limited to 500 rows and CSV detail to 10,000 rows; narrower filters are required for complete exports beyond those limits.
-- The Flutter Owner app is version `0.9.11+30`. Its responsive interface now
+- The Flutter Owner app is version `0.9.12+31`. Its responsive interface now
   follows the website's emerald, deep-green, mint, canvas, card, form, and
   navigation design system while remaining limited to owner workflows.
-  Dashboard Quick Actions appear
-  at the top of the owner dashboard, and swiping down refreshes its data.
+  Dashboard Quick Actions appear at the top of the owner dashboard with equal,
+  centered icon slots and consistent button alignment, and swiping down
+  refreshes its data.
   Android back gestures return through previously visited tabs before exiting
   from Home.
   The login form omits the redundant standalone login icon, while authenticated
@@ -489,10 +490,13 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
   Mobile Monitoring now returns only actively deployed grease traps belonging
   to the authenticated owner; unassigned, ended, simulated, and other-owner
   deployments are rejected by the PHP API. Alerts use the same physical
-  deployment scope for lists, totals, filters, and details.
+  deployment scope for lists, totals, filters, and details, and no longer show
+  a grease-trap scope selector in the owner app.
   Android declares and requests notification permission after an owner reaches
   the authenticated workspace. The new Settings page exposes notification and
-  optional Android display-over-other-apps controls. In-app Alerts remain the
+  optional Android display-over-other-apps controls. It also groups Account,
+  Security, and permissions settings and lets owners change their sign-in email
+  or replace an administrator-issued temporary password. In-app Alerts remain the
   delivery mechanism until a production push provider is configured.
   Reward calculations and distribution controls remain exclusively in the PHP
   backend/Barangay site.
