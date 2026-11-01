@@ -422,8 +422,9 @@ class _MonitoringScreenState extends State<MonitoringScreen>
               const SizedBox(height: 18),
               _InlineState(
                 icon: Icons.history,
-                text:
-                    'Device Offline · values shown are the last known readings from ${readingTime(reading.recordedAt)}.',
+                text: offline
+                    ? 'Device Offline - values shown are the last known readings from ${readingTime(reading.recordedAt)}.'
+                    : 'Device Online - sensor telemetry is stale; values shown are from ${readingTime(reading.recordedAt)}.',
               ),
             ],
             if (reading?.isTest == true || reading?.isSimulated == true) ...[

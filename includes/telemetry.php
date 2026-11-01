@@ -99,6 +99,80 @@ function phase3_telemetry_payload(array $body, array $config, DateTimeImmutable 
     ];
 }
 
+function phase3_heartbeat_payload(array $body): array
+{
+    $allowed = ['device_id', 'firmware_version'];
+    if (array_is_list($body) || array_diff(array_keys($body), $allowed)) {
+        throw new TelemetryException(422, 'unknown_field', 'The heartbeat payload contains an unsupported field.');
+    }
+    if (!isset($body['device_id']) || !is_string($body['device_id'])
+        || !preg_match('/^[A-Za-z0-9_-]{1,60}$/D', $body['device_id'])) {
+        throw new TelemetryException(422, 'invalid_device_id', 'device_id is required and must be a registered device code.');
+    }
+    $firmware = $body['firmware_version'] ?? null;
+    if ($firmware !== null && (!is_string($firmware)
+        || !preg_match('/^[A-Za-z0-9._+\-]{1,40}$/D', $firmware))) {
+        throw new TelemetryException(422, 'invalid_firmware_version', 'firmware_version has an invalid format.');
+    }
+    return ['device_id' => $body['device_id'], 'firmware_version' => $firmware];
+}
+
+function phase3_record_heartbeat(PDO $pdo, array $body, string $deviceKey): array
+{
+    if (!preg_match('/^[a-f0-9]{64}$/iD', $deviceKey)) {
+        throw new TelemetryException(401, 'missing_or_invalid_key', 'A valid device credential is required.');
+    }
+    $data = phase3_heartbeat_payload($body);
+    $received = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+    $at = $received->format('Y-m-d H:i:s');
+    $pdo->beginTransaction();
+    try {
+        $query = $pdo->prepare(
+            'SELECT id,device_code,api_key_hash,is_active FROM devices WHERE device_code=? FOR UPDATE'
+        );
+        $query->execute([$data['device_id']]);
+        $device = $query->fetch();
+        if (!$device) throw new TelemetryException(404, 'unknown_device', 'Unknown device.');
+        if (!(bool) $device['is_active']) {
+            throw new TelemetryException(403, 'inactive_device', 'Device access is inactive.');
+        }
+        if (!$device['api_key_hash']
+            || !hash_equals((string) $device['api_key_hash'], hash('sha256', $deviceKey))) {
+            throw new TelemetryException(401, 'invalid_key', 'A valid device credential is required.');
+        }
+        $update = $data['firmware_version'] === null
+            ? $pdo->prepare('UPDATE devices SET last_seen_at=? WHERE id=?')
+            : $pdo->prepare('UPDATE devices SET last_seen_at=?,firmware_version=? WHERE id=?');
+        $update->execute($data['firmware_version'] === null
+            ? [$at, $device['id']]
+            : [$at, $data['firmware_version'], $device['id']]);
+        $assignment = $pdo->prepare(
+            'SELECT id FROM device_assignments WHERE device_id=? AND ended_at IS NULL LIMIT 1'
+        );
+        $assignment->execute([$device['id']]);
+        $assignmentId = $assignment->fetchColumn();
+        if ($assignmentId !== false) {
+            phase4_resolve_recovered(
+                $pdo,
+                (int) $assignmentId,
+                ['DEVICE_OFFLINE'],
+                $at,
+                'Device heartbeat received; connectivity restored automatically.'
+            );
+        }
+        $pdo->commit();
+        return [
+            'http_status' => 200,
+            'device_id' => $device['device_code'],
+            'connection_status' => 'ONLINE',
+            'received_at' => $received->format(DATE_ATOM),
+        ];
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        throw $error;
+    }
+}
+
 function phase3_ingest_telemetry(PDO $pdo, array $body, string $deviceKey, bool $simulated = false): array
 {
     global $config;
@@ -124,7 +198,8 @@ function phase3_ingest_telemetry(PDO $pdo, array $body, string $deviceKey, bool 
             $q=$pdo->prepare('SELECT id,payload_hash,received_at FROM sensor_readings WHERE device_assignment_id=? AND ('.implode(' OR ',$conditions).') LIMIT 1');$q->execute($parameters);$duplicate=$q->fetch();
             if($duplicate){if($duplicate['payload_hash']!==null&&!hash_equals($duplicate['payload_hash'],$payloadHash)) throw new TelemetryException(409,'idempotency_conflict','The reading identifier was already used for different telemetry.');$pdo->commit();$duplicateTime=new DateTimeImmutable($duplicate['received_at'],new DateTimeZone('UTC'));return ['http_status'=>200,'duplicate'=>true,'reading_id'=>(int)$duplicate['id'],'device_id'=>$device['device_code'],'grease_trap_id'=>$data['grease_trap_id'],'received_at'=>$duplicateTime->format(DATE_ATOM)];}
         }
-        if($device['last_seen_at']!==null && $received->getTimestamp()-strtotime($device['last_seen_at'].' UTC')<$config['telemetry_min_interval_seconds']) throw new TelemetryException(429,'rate_limited','Wait before the next reading.');
+        $latestReading=$pdo->prepare('SELECT MAX(received_at) FROM sensor_readings WHERE device_assignment_id=?');$latestReading->execute([$assignment['assignment_id']]);$latestReceived=$latestReading->fetchColumn();
+        if(!$simulated&&$latestReceived!==false&&$latestReceived!==null&&$received->getTimestamp()-strtotime($latestReceived.' UTC')<$config['telemetry_min_interval_seconds']) throw new TelemetryException(429,'rate_limited','Wait before the next reading.');
         $overflow=$pdo->query("SELECT setting_value FROM system_settings WHERE setting_key='overflow_threshold'")->fetchColumn();if($overflow===false||!is_numeric($overflow))throw new RuntimeException('Missing overflow threshold.');
         $level=phase3_calculate_level($data['ultrasonic_distance'],$assignment,(float)$overflow);
         $q=$pdo->prepare('INSERT INTO sensor_readings (device_assignment_id,ultrasonic_distance_cm,waste_level_percent,device_reported_percent,temperature_c,turbidity_ntu,turbidity_raw_adc,flow_rate_lpm,flow_pulse_count,gas_value,odor_value,gas_raw_adc,ambient_temperature_c,humidity_percent,ens160_aqi,tvoc_ppb,eco2_ppm,level_status,is_simulated,is_test,reading_uuid,sequence_number,payload_hash,recorded_at,received_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');

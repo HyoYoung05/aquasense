@@ -18,6 +18,7 @@ class StatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reading = trap.reading;
+    final offline = trap.deviceStatus != 'ONLINE';
     final stale = trap.isStale || snapshotExpired;
     final status = snapshotExpired ? 'REFRESH NEEDED' : trap.status;
     final urgent = const {
@@ -68,8 +69,10 @@ class StatusCard extends StatelessWidget {
                   spacing: 12,
                   children: [
                     Icon(
-                      stale
+                      offline
                           ? Icons.cloud_off_outlined
+                          : stale
+                          ? Icons.history
                           : urgent || warning
                           ? Icons.warning_amber_rounded
                           : Icons.check_circle_outline,
@@ -90,8 +93,10 @@ class StatusCard extends StatelessWidget {
                 Text(
                   reading == null
                       ? 'No sensor data has been received yet.'
-                      : stale
+                      : offline
                       ? 'Device offline. Values below are the last known readings.'
+                      : stale
+                      ? 'Device online. Sensor values below are the last known readings.'
                       : urgent || warning
                       ? 'Attention is required. Inspect the grease trap.'
                       : 'Latest condition reported by the AQUASENSE+ server.',

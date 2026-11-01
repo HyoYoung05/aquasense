@@ -66,6 +66,8 @@ function phase2_validate_establishment(array $input): array
     phase2_required($data['business_name'], 'Business name', 190, $errors);
     phase2_required($data['owner_name'], 'Owner name', 150, $errors);
     phase2_required($data['address'], 'Address', 500, $errors);
+    phase2_required($data['contact_number'] ?? '', 'Contact number', 30, $errors);
+    phase2_required($data['email'] ?? '', 'Email', 190, $errors);
     if ($data['email'] !== null && (mb_strlen($data['email']) > 190 || !filter_var($data['email'], FILTER_VALIDATE_EMAIL))) $errors[] = 'Enter a valid email address.';
     if ($data['notes'] !== null && mb_strlen($data['notes']) > 4000) $errors[] = 'Notes must be 4,000 characters or fewer.';
     phase2_validate_contact($data['contact_number'], $errors);

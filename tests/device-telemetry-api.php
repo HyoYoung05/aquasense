@@ -92,7 +92,7 @@ try {
     check($d['api_key_hash']===hash('sha256',$key) && $d['last_seen_at']!==null,'Only key hash stored; heartbeat updated on acceptance');
     check(request_test($path,'POST',$json,$key)['status'] === 429,'Rapid repeated telemetry is limited');
     foreach ([[11.25,75,'HIGH'],[7.5,90,'CRITICAL']] as [$cm,$pct,$state]) {
-        $pdo->prepare('UPDATE devices SET last_seen_at=NULL WHERE id=?')->execute([$device]);
+        $pdo->prepare('UPDATE sensor_readings SET received_at=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 1 MINUTE) WHERE device_assignment_id=?')->execute([$assignment]);
         $reply=request_test($path,'POST',json_encode(array_replace($body,['ultrasonic_distance'=>$cm,'waste_level_percent'=>$pct,'status'=>$state])),$key);
         check($reply['status']===201 && $reply['json']['data']['status']===$state,'Server computes '.$state.' before full');
     }
@@ -108,7 +108,8 @@ try {
     check(mobile_dashboard($uid)['establishments'][0]['traps'][0]['status']==='CRITICAL','Shared PHP reader can serve website telemetry later');
     $pdo->prepare('UPDATE sensor_readings SET recorded_at=DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 DAY) WHERE device_assignment_id=?')->execute([$assignment]);
     $r=mobile_dashboard($uid)['establishments'][0]['traps'][0];
-    check($r['is_stale'] && $r['status']==='OFFLINE','Missing fresh sensor data becomes offline');
+    check($r['is_stale'] && $r['device_status']==='ONLINE' && $r['status']==='STALE SENSOR DATA',
+        'Missing fresh sensor data stays distinct from an online device heartbeat');
     $pdo->prepare('UPDATE devices SET is_active=0 WHERE id=?')->execute([$device]);
     check(request_test($path,'POST',$json,$key)['status']===403,'Disabled device blocked');
     $pdo->prepare('UPDATE devices SET is_active=1 WHERE id=?')->execute([$device]);

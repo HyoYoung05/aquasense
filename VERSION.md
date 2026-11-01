@@ -1,6 +1,61 @@
 # AQUASENSE+ Version History
 
-1.4.9
+1.4.13
+
+## Website/backend 1.4.13, Flutter owner app 0.9.13+32, and ESP32 firmware 0.8.7
+
+Date: 2026-11-01
+
+- Added an authenticated device heartbeat that updates `devices.last_seen_at`
+  without inserting a sensor reading or inventing zero sensor values.
+- ESP32 firmware now reports connectivity every 30 seconds independently of
+  HC-SR04 and optional-sensor validity, so a reachable device displays ONLINE
+  while unavailable sensors remain individually unavailable.
+- A successful heartbeat resolves an active DEVICE_OFFLINE alert and records
+  the running firmware version. Physical telemetry rate limiting remains based
+  on the latest sensor reading rather than the heartbeat timestamp.
+- Verified firmware 0.8.7 on COM10 against the local XAMPP API: Wi-Fi connected,
+  the heartbeat returned HTTP 200, AQS-001 advanced `last_seen_at`, and no fake
+  telemetry row was created.
+- Expanded Phase 3 regression coverage to 42 passing checks, including invalid
+  credentials, inactive/unknown devices, heartbeat storage, and no fake data.
+- Owner Dashboard and Monitoring now label an old reading as STALE SENSOR DATA
+  while the heartbeat is current; OFFLINE is reserved for an expired heartbeat.
+
+## Website/backend 1.4.12, Flutter owner app 0.9.12+31, and ESP32 firmware 0.8.6
+
+Date: 2026-11-01
+
+- Replaced the Reports free-text Status / event field with a selectable
+  dropdown matching the behavior and styling of the other report filters.
+- Supplies relevant choices for telemetry, alerts, oil surrenders, incentives,
+  distribution, rules, devices, and establishment standing. Compliance-ledger
+  event types and technical-audit actions are populated from recorded data.
+- Added correct `NOT_CONNECTED` device filtering and event-type filtering for
+  the Establishment detail report.
+- Added Phase 7 coverage for report-specific choices and rendered dropdown
+  markup.
+
+## Website/backend 1.4.11, Flutter owner app 0.9.12+31, and ESP32 firmware 0.8.6
+
+Date: 2026-11-01
+
+- Made establishment Contact Number and Email required in both register and
+  edit forms, including the required-field markers and native field metadata.
+- Enforced both requirements in the shared server-side establishment validator;
+  email format and the existing safe phone-character/length rules remain active.
+- Added Phase 2 regression checks proving blank contact numbers and email
+  addresses are rejected before an establishment record can be created.
+
+## Website/backend 1.4.10, Flutter owner app 0.9.12+31, and ESP32 firmware 0.8.6
+
+Date: 2026-11-01
+
+- Vertically centered the Dashboard report shortcut and current-date label in
+  one responsive action row.
+- Removed the date label's inherited top offset inside the Dashboard heading,
+  kept its clock/text on one line, and preserved the existing narrow-screen
+  behavior where the date is hidden and the report button can use full width.
 
 ## Website/backend 1.4.9, Flutter owner app 0.9.12+31, and ESP32 firmware 0.8.6
 

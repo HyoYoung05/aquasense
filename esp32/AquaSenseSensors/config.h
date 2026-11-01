@@ -55,7 +55,7 @@
 
 namespace AquaSenseConfig {
 
-inline constexpr char FIRMWARE_VERSION[] = "0.8.6";
+inline constexpr char FIRMWARE_VERSION[] = "0.8.7";
 inline constexpr char POWER_MODE[] =
     "USB DEVELOPMENT - EXTERNAL DC NOT VERIFIED";
 inline constexpr bool EXTERNAL_DC_POWER_VERIFIED = false;
@@ -64,6 +64,8 @@ inline constexpr uint32_t SERIAL_BAUD = 115200;
 inline constexpr uint32_t STARTUP_DELAY_MS = 1000;
 inline constexpr uint32_t STATUS_INTERVAL_MS = 5000;
 inline constexpr uint32_t HEALTH_INTERVAL_MS = 30000;
+inline constexpr uint32_t HEARTBEAT_INTERVAL_MS = 30000;
+inline constexpr uint32_t HEARTBEAT_RETRY_MS = 10000;
 inline constexpr uint32_t SENSOR_INTERVAL_MS = 1000;
 inline constexpr uint32_t TELEMETRY_INTERVAL_MS = 5000;
 inline constexpr uint32_t INITIAL_TELEMETRY_DELAY_MS = 5000;

@@ -4,7 +4,7 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 six-sensor firmware.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.4.9 keeps one dedicated development-only Admin login for the website and one Owner login for the mobile app while preserving existing local accounts and production role boundaries. Simulated administrative fixtures are excluded from owner-facing Monitoring and Alerts, and owners can securely replace their sign-in email or temporary password from the app.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.4.13 keeps one dedicated development-only Admin login for the website and one Owner login for the mobile app while preserving existing local accounts and production role boundaries. Simulated administrative fixtures are excluded from owner-facing Monitoring and Alerts, owners can securely replace their sign-in email or temporary password from the app, the Dashboard report/date controls share one aligned responsive action row, establishment registration requires a validated contact number and email address, Reports provides report-specific Status / event dropdown choices, and authenticated ESP32 heartbeats separate device connectivity from sensor validity.
 
 The authenticated website notification bell has a protected 44 px click area,
 opens the Alerts workspace, and uses versioned JavaScript assets so repaired
@@ -18,7 +18,7 @@ problems. Environmental Management cannot see or directly open that workflow.
 ## Current Version
 
 The repository includes the final [ESP32 Hardware Phase 8](esp32/README.md)
-firmware **0.8.4** in `esp32/AquaSenseSensors`. It preserves HC-SR04, Wi-Fi, and
+firmware **0.8.7** in `esp32/AquaSenseSensors`. It preserves HC-SR04, Wi-Fi, and
 retry-safe PHP telemetry, then adds independently valid drivers for DS18B20,
 SEN0189, YF-S201, the ENS160+AHT2x combination module, and MQ-135. Raw ADC
 values use dedicated database fields and are never mislabeled as NTU or gas
@@ -35,7 +35,7 @@ outages; it is cleared by reset or power loss and drops the oldest record when
 full.
 COM3 must not be used. There is no microSD, OLED,
 buzzer, or DHT22. The Flutter source is tracked under
-[`mobile/`](mobile/README.md) at version **0.9.12+31**. Generated APKs,
+[`mobile/`](mobile/README.md) at version **0.9.13+32**. Generated APKs,
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 The current Android development build is verified with Flutter **3.41.6**.
 
@@ -44,7 +44,7 @@ ESP32, then a
 local Wi-Fi router, then Apache/PHP, MariaDB, website, and Flutter APIs. The
 same configurable endpoint supports the separate production HTTPS target.
 
-Phase 8 is the final ESP32 hardware phase. Firmware **0.8.4** keeps the safe local
+Phase 8 is the final ESP32 hardware phase. Firmware **0.8.7** keeps the safe local
 hardware profile and a DS18B20 development pull-up fix after the six modules
 were connected, and applies the useful initialization details from the supplied
 combined-sensor sketch without adopting its obsolete GPIO27 flow pin or
@@ -71,7 +71,7 @@ physical installation or field-acceptance item.
 See the [connected-sensor verification](esp32/PHYSICAL-VERIFICATION-2026-10-22.md)
 for the measured results and remaining corrections.
 
-**Version: 1.4.9**
+**Version: 1.4.13**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -133,7 +133,10 @@ The server enforces the same boundaries on direct URLs. Hiding a sidebar item is
 
 - `POST api/device/telemetry.php` accepts HC-SR04 distance plus optional future sensor values using a hashed per-device credential.
 - Raw ultrasonic distance is authoritative; PHP calculates fill percentage and level state from each grease trap's empty/full calibration and saved thresholds.
-- Valid readings update `last_seen_at`; configured freshness determines ONLINE/OFFLINE state throughout the website.
+- Authenticated device heartbeats update `last_seen_at` independently of sensor
+  readings; configured freshness determines ONLINE/OFFLINE state throughout the
+  website and owner app. Invalid sensors remain unavailable and never force a
+  network-connected device offline or create fake telemetry.
 - UUID or sequence identifiers prevent duplicate inserts when an ESP32 retries the same reading.
 - Authenticated Monitoring provides live polling every eight seconds, summary/detail views, bounded history filters, pagination, and actual-data charts.
 - The Flutter owner API exposes bearer-scoped current monitoring and telemetry
@@ -197,7 +200,7 @@ The 2026-09-30 AQS-001 development simulation used the real HTTP telemetry endpo
 - Oil and rice quantities remain grouped by unit; missing sensor data is shown honestly; downloaded files are point-in-time snapshots and are streamed without permanent storage.
 - `admin/compliance-report.php` provides a formal print view, while `admin/audit-logs.php` remains separate from the environmental Compliance Ledger.
 - Administrators and environmental staff may read reports. Owners cannot access global reporting or direct export routes. Successful exports are audited.
-- See [Reporting and exports](docs/REPORTING.md). The Phase 7 suite passes 40 reporting, validation, authorization, filter, pagination, export, unit, and audit checks.
+- See [Reporting and exports](docs/REPORTING.md). The Phase 7 suite passes 42 reporting, validation, authorization, filter, pagination, export, unit, and audit checks.
 ### Phase 8 release hardening
 
 - Added `development`, `test`, and `production` environments; canonical app URL, timezone, log level, storage, CORS, telemetry, export, and upload controls are configurable without hardcoded production hosts.
@@ -473,7 +476,7 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 
 - The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
 - PDF detail is limited to 500 rows and CSV detail to 10,000 rows; narrower filters are required for complete exports beyond those limits.
-- The Flutter Owner app is version `0.9.12+31`. Its responsive interface now
+- The Flutter Owner app is version `0.9.13+32`. Its responsive interface now
   follows the website's emerald, deep-green, mint, canvas, card, form, and
   navigation design system while remaining limited to owner workflows.
   Dashboard Quick Actions appear at the top of the owner dashboard with equal,

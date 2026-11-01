@@ -2,7 +2,16 @@
 
 ## Current Version
 
-0.9.12+31
+0.9.13+32
+
+## 0.9.13+32 - 2026-11-01
+
+- Separated device connectivity from sensor-reading freshness throughout the
+  owner Dashboard and Monitoring views.
+- A current ESP32 heartbeat keeps the device ONLINE while old sensor values are
+  labeled STALE SENSOR DATA with explicit "Device online" guidance.
+- Retained OFFLINE only for an expired device heartbeat and preserved the last
+  known sensor values without presenting them as current.
 
 ## 0.9.12+31 - 2026-11-01
 

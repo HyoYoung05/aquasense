@@ -1,6 +1,7 @@
 # AQUASENSE+ ESP32 Telemetry API
 
-Firmware 0.6.0 sends structured sensor telemetry through PHP. The ESP32 never connects to MySQL.
+Firmware 0.8.7 sends structured sensor telemetry and an independent authenticated
+connectivity heartbeat through PHP. The ESP32 never connects to MySQL.
 
 ## Endpoint
 
@@ -10,6 +11,26 @@ Firmware 0.6.0 sends structured sensor telemetry through PHP. The ESP32 never co
 - Production example: `https://YOUR-DOMAIN/api/device/telemetry.php`
 
 Configure the complete URL once in the firmware's private configuration. Do not hardcode a developer LAN address throughout the sketch. Production must use HTTPS.
+
+## Connectivity heartbeat
+
+- Method: `POST`
+- Path: `/api/device/heartbeat.php`
+- Interval: 30 seconds while Wi-Fi is connected
+- Authentication: the same `X-Device-Key` as telemetry
+
+```json
+{
+  "device_id": "AQS-001",
+  "firmware_version": "0.8.7"
+}
+```
+
+The heartbeat updates `devices.last_seen_at`, records the firmware version, and
+resolves an active DEVICE_OFFLINE alert. It never inserts a `sensor_readings`
+row. Consequently, a connected ESP32 remains ONLINE even when one or all sensors
+are disconnected, invalid, warming up, or uncalibrated; those sensor values stay
+unavailable instead of being replaced with zero.
 
 Firmware 0.6.0 stores the URL, Wi-Fi credentials, AQS-001 device key, and
 optional trusted CA in ignored `esp32/AquaSenseSensors/secrets.h`. The committed

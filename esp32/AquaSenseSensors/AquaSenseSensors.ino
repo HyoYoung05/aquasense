@@ -28,6 +28,7 @@ uint32_t reportSequence = 0;
 uint32_t telemetryQueueSequence = 0;
 uint32_t nextTelemetryCaptureMs = 0;
 uint32_t nextUploadAttemptMs = 0;
+uint32_t nextHeartbeatMs = 0;
 uint8_t retryBackoffIndex = 0;
 bool networkConfigurationValid = false;
 bool sensorProcessingStarted = false;
@@ -40,6 +41,8 @@ SensorData sensorData{};
 uint32_t telemetryAcceptedCount = 0;
 uint32_t telemetryFailureCount = 0;
 uint32_t telemetryPermanentDiscardCount = 0;
+uint32_t heartbeatAcceptedCount = 0;
+uint32_t heartbeatFailureCount = 0;
 uint32_t networkFailureCount = 0;
 uint32_t timeoutCount = 0;
 uint32_t http4xxCount = 0;
@@ -164,6 +167,28 @@ void handleTelemetryUpload(const uint32_t nowMs) {
   nextUploadAttemptMs = millis() + delayMs;
   Serial.printf("[API] Next upload attempt in %lu ms; sensing continues\n",
                 static_cast<unsigned long>(delayMs));
+}
+
+void handleHeartbeat(const uint32_t nowMs) {
+  if (!networkConfigurationValid || !networkConnected() ||
+      !timeReached(nowMs, nextHeartbeatMs)) return;
+  nextHeartbeatMs = nowMs + AquaSenseConfig::HEARTBEAT_INTERVAL_MS;
+  const TelemetryResult result = sendDeviceHeartbeat();
+  Serial.printf("[HEARTBEAT] Outcome: %s | HTTP/result=%d\n",
+                telemetryOutcomeName(result.outcome), result.httpStatus);
+  if (result.outcome == TelemetryOutcome::kAccepted) {
+    ++heartbeatAcceptedCount;
+    return;
+  }
+  ++heartbeatFailureCount;
+  uint32_t retryMs = result.retryAfterMs > 0U
+                         ? result.retryAfterMs
+                         : AquaSenseConfig::HEARTBEAT_RETRY_MS;
+  if (result.outcome == TelemetryOutcome::kHttp4xx ||
+      result.outcome == TelemetryOutcome::kLocalConfigurationFailure) {
+    retryMs = AquaSenseConfig::CONFIGURATION_RETRY_MS;
+  }
+  nextHeartbeatMs = millis() + retryMs;
 }
 
 void updateSensorFailureCounters(const UltrasonicReading& reading) {
@@ -323,6 +348,9 @@ void printSystemHealth(const uint32_t nowMs) {
                 static_cast<unsigned long>(timeoutCount),
                 static_cast<unsigned long>(http4xxCount),
                 static_cast<unsigned long>(http5xxCount));
+  Serial.printf("Heartbeat: success=%lu | failures=%lu\n",
+                static_cast<unsigned long>(heartbeatAcceptedCount),
+                static_cast<unsigned long>(heartbeatFailureCount));
   Serial.printf("Queue: depth=%u/%u | high-water=%u | dropped-oldest=%lu | permanent-discards=%lu\n",
                 static_cast<unsigned int>(telemetryQueue.size()),
                 static_cast<unsigned int>(telemetryQueue.capacity()),
@@ -352,6 +380,7 @@ void beginSensorProcessing(const uint32_t nowMs) {
   nextTelemetryCaptureMs = nowMs +
                            AquaSenseConfig::INITIAL_TELEMETRY_DELAY_MS;
   nextUploadAttemptMs = nextTelemetryCaptureMs;
+  nextHeartbeatMs = nowMs;
   lastHealthMs = nowMs;
   sensorProcessingStarted = true;
   Serial.printf("[STARTUP] Wi-Fi connected after %lu ms; sensor processing unlocked\n",
@@ -428,6 +457,7 @@ void loop() {
     lastSensorStartMs = nowMs - AquaSenseConfig::SENSOR_INTERVAL_MS;
     nextTelemetryCaptureMs = nowMs +
                              AquaSenseConfig::INITIAL_TELEMETRY_DELAY_MS;
+    nextHeartbeatMs = nowMs;
     lastStatusMs = nowMs;
     lastHealthMs = nowMs;
     Serial.println(F("[WIFI] Reconnected; fresh sensor processing resumed"));
@@ -438,6 +468,7 @@ void loop() {
   environmentSensorsUpdate(nowMs, sensorData);
   gasSensorUpdate(nowMs, sensorData);
   updateOptionalSensorFailureCounters();
+  handleHeartbeat(millis());
   if (nowMs - lastSensorStartMs >= AquaSenseConfig::SENSOR_INTERVAL_MS) {
     lastSensorStartMs = nowMs;
     ++sensorSequence;

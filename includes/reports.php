@@ -102,6 +102,37 @@ function phase7_report_options(PDO $pdo): array
     ];
 }
 
+function phase7_report_status_options(PDO $pdo, string $report): array
+{
+    $sets = [
+        'overview' => ['ACTIVE', 'INACTIVE'],
+        'traps' => ['NORMAL', 'LOW', 'MEDIUM', 'HIGH', 'WARNING', 'CRITICAL', 'OVERFLOW'],
+        'telemetry' => ['NORMAL', 'LOW', 'MEDIUM', 'HIGH', 'WARNING', 'CRITICAL', 'OVERFLOW'],
+        'alerts' => [
+            'ACTIVE', 'ACKNOWLEDGED', 'RESOLVED', 'INFO', 'WARNING', 'CRITICAL',
+            'HIGH_LEVEL', 'CRITICAL_LEVEL', 'OVERFLOW_WARNING', 'OVERFLOW',
+            'HIGH_TEMPERATURE', 'EMULSION_WARNING', 'HIGH_TURBIDITY',
+            'ABNORMAL_FLOW', 'DEVICE_OFFLINE',
+        ],
+        'surrenders' => ['PENDING', 'UNDER_REVIEW', 'APPROVED', 'REJECTED'],
+        'incentives' => ['CALCULATED', 'APPROVED_FOR_DISTRIBUTION', 'DISTRIBUTED', 'CANCELLED'],
+        'distribution' => ['CALCULATED', 'APPROVED_FOR_DISTRIBUTION', 'DISTRIBUTED', 'CANCELLED'],
+        'rules' => ['ACTIVE', 'INACTIVE'],
+        'devices' => ['ONLINE', 'OFFLINE', 'NOT_CONNECTED', 'INACTIVE'],
+    ];
+    if (in_array($report, ['ledger', 'establishment'], true)) {
+        $values = $pdo->query('SELECT DISTINCT event_type FROM compliance_ledger ORDER BY event_type')->fetchAll(PDO::FETCH_COLUMN);
+    } elseif ($report === 'audit') {
+        $values = $pdo->query('SELECT DISTINCT action FROM audit_logs ORDER BY action')->fetchAll(PDO::FETCH_COLUMN);
+    } else {
+        $values = $sets[$report] ?? [];
+    }
+    return array_map(static function (string $value): array {
+        $label = ucwords(strtolower(str_replace('_', ' ', $value)));
+        return ['value' => $value, 'label' => $label];
+    }, array_values(array_unique(array_filter($values, 'is_string'))));
+}
+
 function phase7_establishment_detail(PDO $pdo,array $f): array
 {
     $id=(int)$f['establishment_id'];if($id<1)throw new Phase7ReportValidationException('Select an establishment for the detail report.');$start=$f['period']['start_utc'];$end=$f['period']['end_utc'];
@@ -183,7 +214,7 @@ function phase7_report_data(PDO $pdo,array $f,bool $export=false,int $exportLimi
             $date='COALESCE(d.last_seen_at,d.created_at)';phase7_add_common_filters($f,$date,$where,$params,['device_id'=>'d.id','establishment_id'=>'e.id','grease_trap_id'=>'g.id']);
             if($f['search']!==''){$where[]='(d.device_code LIKE ? OR d.name LIKE ? OR e.business_name LIKE ?)';array_push($params,...array_fill(0,3,'%'.$f['search'].'%'));}
             $timeout=(int)$pdo->query("SELECT setting_value FROM system_settings WHERE setting_key='device_offline_timeout_minutes'")->fetchColumn();
-            if($f['status']){$state="CASE WHEN d.is_active=0 THEN 'INACTIVE' WHEN d.last_seen_at IS NULL THEN 'NOT CONNECTED' WHEN d.last_seen_at>=DATE_SUB(UTC_TIMESTAMP(),INTERVAL $timeout MINUTE) THEN 'ONLINE' ELSE 'OFFLINE' END";$where[]="$state=?";$params[]=$f['status'];}
+            if($f['status']){$state="CASE WHEN d.is_active=0 THEN 'INACTIVE' WHEN d.last_seen_at IS NULL THEN 'NOT CONNECTED' WHEN d.last_seen_at>=DATE_SUB(UTC_TIMESTAMP(),INTERVAL $timeout MINUTE) THEN 'ONLINE' ELSE 'OFFLINE' END";$where[]="$state=?";$params[]=$f['status']==='NOT_CONNECTED'?'NOT CONNECTED':$f['status'];}
             $columns=['created_at'=>'Registered','device_code'=>'Device','name'=>'Name','firmware_version'=>'Firmware','business_name'=>'Establishment','trap_code'=>'Grease trap','last_seen_at'=>'Last contact','latest_reading_at'=>'Latest reading','latest_fill'=>'Latest fill (%)','state'=>'Connection','is_active_label'=>'Registration'];
             $select="d.created_at,d.device_code,d.name,d.firmware_version,e.business_name,g.trap_code,d.last_seen_at,sr.recorded_at latest_reading_at,sr.waste_level_percent latest_fill,CASE WHEN d.is_active=0 THEN 'INACTIVE' WHEN d.last_seen_at IS NULL THEN 'NOT CONNECTED' WHEN d.last_seen_at>=DATE_SUB(UTC_TIMESTAMP(),INTERVAL $timeout MINUTE) THEN 'ONLINE' ELSE 'OFFLINE' END state,IF(d.is_active=1,'ACTIVE','INACTIVE') is_active_label";
             $result=phase7_fetch($pdo,$select,'FROM devices d LEFT JOIN device_assignments da ON da.device_id=d.id AND da.ended_at IS NULL LEFT JOIN grease_traps g ON g.id=da.grease_trap_id LEFT JOIN establishments e ON e.id=g.establishment_id LEFT JOIN sensor_readings sr ON sr.id=(SELECT x.id FROM sensor_readings x WHERE x.device_assignment_id=da.id ORDER BY x.recorded_at DESC,x.id DESC LIMIT 1)',$where,$params,'d.device_code ASC',$f,$export,$exportLimit);break;
@@ -202,6 +233,7 @@ function phase7_report_data(PDO $pdo,array $f,bool $export=false,int $exportLimi
         case 'establishment':
             if(!$f['establishment_id'])throw new Phase7ReportValidationException('Select an establishment for the detail report.');
             $date='cl.event_timestamp';phase7_add_common_filters($f,$date,$where,$params,['establishment_id'=>'e.id']);
+            if($f['status']){$where[]='cl.event_type=?';$params[]=$f['status'];}
             $columns=['event_timestamp'=>'Event time','event_type'=>'Event type','business_name'=>'Establishment','description'=>'Description','related_record_type'=>'Record type','related_record_id'=>'Record ID'];
             $result=phase7_fetch($pdo,'cl.event_timestamp,cl.event_type,e.business_name,cl.description,cl.related_record_type,cl.related_record_id','FROM compliance_ledger cl JOIN establishments e ON e.id=cl.establishment_id',$where,$params,'cl.event_timestamp DESC,cl.id DESC',$f,$export,$exportLimit);break;
         default:

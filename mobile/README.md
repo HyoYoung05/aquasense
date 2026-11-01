@@ -1,6 +1,6 @@
 # AQUASENSE+ Carinderia Owner App
 
-Flutter owner application for AQUASENSE+. Version **0.9.12+31** aligns the app
+Flutter owner application for AQUASENSE+. Version **0.9.13+32** aligns the app
 with the administrative website's AQUASENSE+ visual system while retaining the
 Mobile Phase 7 owner-only foundation and Phase 4 sensor contract. The app now
 uses the website's emerald, deep-green, mint, canvas, border, typography, form,
@@ -26,6 +26,10 @@ Settings is categorized into Account, Security, and App permissions. Owners can
 change their sign-in email, replace an administrator-issued temporary password,
 review notification and optional Android display-over-other-apps status, and
 open the corresponding system permission controls.
+Device connectivity now comes from the independent ESP32 heartbeat. Old sensor
+telemetry is labeled **STALE SENSOR DATA** while a current heartbeat keeps the
+device **ONLINE**, preventing owners from mistaking a sensor issue for a device
+or network outage.
 
 The app communicates only with the PHP API. It contains no SQL, MySQL package,
 or database credential.

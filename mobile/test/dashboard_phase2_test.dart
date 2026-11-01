@@ -363,6 +363,37 @@ void main() {
     expect(find.text('Last sensor update'), findsOneWidget);
   });
 
+  testWidgets(
+    'online device does not become offline when sensor data is stale',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DashboardContent(
+            snapshot: snapshot(
+              dashboard: dashboardPayload(
+                deviceStatus: 'ONLINE',
+                condition: 'STALE SENSOR DATA',
+                stale: true,
+              ),
+            ),
+            refreshing: false,
+            refreshError: null,
+            onRefresh: () async {},
+            onNavigate: (_) {},
+          ),
+        ),
+      );
+      expect(find.text('STALE SENSOR DATA'), findsOneWidget);
+      expect(
+        find.text(
+          'Device online. Sensor values below are the last known readings.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Device offline.'), findsNothing);
+    },
+  );
+
   testWidgets('empty alert surrender and incentive summaries are neutral', (
     tester,
   ) async {

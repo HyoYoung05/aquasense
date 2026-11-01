@@ -2,7 +2,15 @@
 
 ## Current version
 
-0.8.6
+0.8.7
+
+## 0.8.7 - Independent device connectivity heartbeat - 2026-11-01
+
+- Added an authenticated 30-second device heartbeat independent of sensor
+  validity, with safe retry and no reboot behavior.
+- Heartbeats update `last_seen_at`, record firmware version, and resolve a stale
+  DEVICE_OFFLINE alert without inserting fake sensor telemetry.
+- Verified on COM10 against the local PHP/MySQL stack with HTTP 200.
 
 ## 0.8.6 - Ten-network startup rotation - 2026-10-27
 

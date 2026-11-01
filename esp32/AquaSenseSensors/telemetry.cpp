@@ -85,6 +85,48 @@ TelemetryResult performRequest(HTTPClient& http, char* json) {
   return classifyResponse(status, http);
 }
 
+TelemetryResult postJsonToUrl(const String& url, char* json) {
+  if (url.length() == 0U) {
+    return {TelemetryOutcome::kLocalConfigurationFailure, 0,
+            AquaSenseConfig::CONFIGURATION_RETRY_MS};
+  }
+  TelemetryResult result{};
+  if (url.startsWith("https://")) {
+    if (strlen(AquaSenseSecrets::TLS_ROOT_CA) == 0 || !secureClockReady()) {
+      Serial.println(F("[API] HTTPS trust/clock is not ready"));
+      return {TelemetryOutcome::kLocalConfigurationFailure, 0,
+              AquaSenseConfig::CONFIGURATION_RETRY_MS};
+    }
+    WiFiClientSecure client;
+    client.setCACert(AquaSenseSecrets::TLS_ROOT_CA);
+    client.setHandshakeTimeout(AquaSenseConfig::HTTP_TIMEOUT_MS / 1000U);
+    HTTPClient http;
+    if (!http.begin(client, url)) {
+      return {TelemetryOutcome::kNetworkFailure, 0, 0};
+    }
+    result = performRequest(http, json);
+    http.end();
+  } else {
+    WiFiClient client;
+    HTTPClient http;
+    if (!http.begin(client, url)) {
+      return {TelemetryOutcome::kNetworkFailure, 0, 0};
+    }
+    result = performRequest(http, json);
+    http.end();
+  }
+  return result;
+}
+
+String heartbeatEndpointUrl() {
+  String url(AquaSenseSecrets::API_URL);
+  const int separator = url.lastIndexOf('/');
+  if (separator < 0) return String();
+  url.remove(separator + 1);
+  url += "heartbeat.php";
+  return url;
+}
+
 }  // namespace
 
 void createPendingTelemetry(const float distanceCm, const SensorData& sensors,
@@ -205,33 +247,26 @@ TelemetryResult sendPendingTelemetry(const PendingTelemetry& pending) {
                 static_cast<unsigned long>(pending.queueSequence),
                 pending.ultrasonicDistanceCm, pending.readingUuid);
 
-  const String url(AquaSenseSecrets::API_URL);
-  TelemetryResult result{};
-  if (url.startsWith("https://")) {
-    if (strlen(AquaSenseSecrets::TLS_ROOT_CA) == 0 || !secureClockReady()) {
-      Serial.println(F("[API] HTTPS trust/clock is not ready"));
-      return {TelemetryOutcome::kLocalConfigurationFailure, 0,
-              AquaSenseConfig::CONFIGURATION_RETRY_MS};
-    }
-    WiFiClientSecure client;
-    client.setCACert(AquaSenseSecrets::TLS_ROOT_CA);
-    client.setHandshakeTimeout(AquaSenseConfig::HTTP_TIMEOUT_MS / 1000U);
-    HTTPClient http;
-    if (!http.begin(client, AquaSenseSecrets::API_URL)) {
-      return {TelemetryOutcome::kNetworkFailure, 0, 0};
-    }
-    result = performRequest(http, json);
-    http.end();
-  } else {
-    WiFiClient client;
-    HTTPClient http;
-    if (!http.begin(client, AquaSenseSecrets::API_URL)) {
-      return {TelemetryOutcome::kNetworkFailure, 0, 0};
-    }
-    result = performRequest(http, json);
-    http.end();
+  return postJsonToUrl(String(AquaSenseSecrets::API_URL), json);
+}
+
+TelemetryResult sendDeviceHeartbeat() {
+  if (!networkConnected()) {
+    return {TelemetryOutcome::kOffline, 0, 0};
   }
-  return result;
+  char json[160];
+  const int length = snprintf(
+      json, sizeof(json),
+      "{\"device_id\":\"%s\",\"firmware_version\":\"%s\"}",
+      AquaSenseConfig::DEVICE_CODE, AquaSenseConfig::FIRMWARE_VERSION);
+  if (length < 0 || length >= static_cast<int>(sizeof(json))) {
+    return {TelemetryOutcome::kLocalConfigurationFailure, 0,
+            AquaSenseConfig::CONFIGURATION_RETRY_MS};
+  }
+  Serial.printf("[HEARTBEAT] POST %s | firmware=%s\n",
+                AquaSenseConfig::DEVICE_CODE,
+                AquaSenseConfig::FIRMWARE_VERSION);
+  return postJsonToUrl(heartbeatEndpointUrl(), json);
 }
 
 const char* telemetryOutcomeName(const TelemetryOutcome outcome) {

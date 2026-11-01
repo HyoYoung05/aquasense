@@ -1,8 +1,8 @@
-# Shared API (backend 1.4.9)
+# Shared API (backend 1.4.13)
 
 Owner endpoints, device telemetry, staff monitoring, Phase 4 alerts, Phase 5 oil surrender endpoints, and the Phase 6 owner incentive endpoint are implemented. Existing PDO/configuration, users,
 roles, establishments, readings, audit and rate-limit records are reused.
-Root API access stays denied. `api/mobile` exposes the owner account, monitoring, and surrender routes; `api/device` exposes only telemetry; and `api/admin` exposes monitoring, history, alert history, the unresolved-alert notification summary, and administrator-only alert actions.
+Root API access stays denied. `api/mobile` exposes the owner account, monitoring, and surrender routes; `api/device` exposes authenticated telemetry and device heartbeat routes; and `api/admin` exposes monitoring, history, alert history, the unresolved-alert notification summary, and administrator-only alert actions.
 
 The API root is deployment-configured. Production clients use the host's HTTPS
 URL ending in `/api/mobile`; no server hostname is embedded in PHP or Flutter
@@ -110,6 +110,11 @@ future temperature/turbidity/flow/gas/odor sensors. Gas and odor use separate
 `gas_value` and `odor_value` fields. The server verifies the active assignment,
 calculates percentage/status from trap calibration, stores structured telemetry, updates
 last_seen_at, and prevents duplicate retries. See `../docs/ESP32_API.md`.
+
+POST `device/heartbeat.php` uses the same device credential and accepts only
+`device_id` plus optional `firmware_version`. It updates device connectivity and
+resolves DEVICE_OFFLINE without inserting a sensor reading. This keeps ONLINE /
+OFFLINE independent of missing, disconnected, or invalid sensors.
 
 GET `admin/monitoring.php` returns the latest record for registered traps. GET
 `admin/history.php` requires grease_trap_id and supports 1h, today, 24h, 7d, 30d, or a

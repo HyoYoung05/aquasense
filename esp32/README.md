@@ -1,6 +1,12 @@
 # AQUASENSE+ ESP32 Hardware — Final Phase 8
 
-Firmware **0.8.6** is the renewed six-sensor target in
+Firmware **0.8.7** adds an authenticated 30-second connectivity heartbeat that
+updates device `last_seen_at` without requiring valid sensor telemetry. A
+network-connected ESP32 therefore remains ONLINE while disconnected, invalid,
+warming-up, or uncalibrated sensors stay individually unavailable. No fake
+sensor row or zero value is created.
+
+Firmware **0.8.7** is the renewed six-sensor target in
 `AquaSenseSensors/AquaSenseSensors.ino`. It preserves the Phase 1–7 sensor,
 telemetry, power, calibration, and bounded outage-recovery implementation. A
 2026-10-27 COM10 deployment uses the production HTTPS endpoint and keeps every

@@ -173,7 +173,10 @@ try {
     check((int)$history['readings'][0]['turbidity_raw_adc'] === 1820 && (int)$history['readings'][0]['gas_raw_adc'] === 1450 && (int)$history['readings'][0]['ens160_aqi'] === 2, 'Owner history preserves Phase 4 sensor semantics');
     $pdo->prepare('UPDATE sensor_readings SET recorded_at = DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 DAY) WHERE device_assignment_id = ?')->execute([$assignments[0]]);
     $data = call_api('dashboard.php', null, $token)['json']['data'];
-    check($data['establishments'][0]['traps'][0]['is_stale'] === true && $data['establishments'][0]['traps'][0]['status'] === 'OFFLINE', 'Old readings cannot appear current');
+    check($data['establishments'][0]['traps'][0]['is_stale'] === true
+        && $data['establishments'][0]['traps'][0]['device_status'] === 'ONLINE'
+        && $data['establishments'][0]['traps'][0]['status'] === 'STALE SENSOR DATA',
+        'Old sensor data is stale without mislabeling a current device heartbeat offline');
     $pdo->prepare('UPDATE establishments SET owner_user_id = ? WHERE id = ?')->execute([$users[1], $sites[0]]);
     check(call_api('dashboard.php', null, $token)['json']['data']['establishments'] === [], 'Ownership changes apply immediately');
     $pdo->prepare('UPDATE users SET is_active = 0 WHERE id = ?')->execute([$users[0]]);

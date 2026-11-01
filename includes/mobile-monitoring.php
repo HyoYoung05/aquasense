@@ -37,7 +37,7 @@ function mobile_dashboard(int $ownerId): array
     $sitesQuery->execute([$ownerId]);
     $sites = [];
     foreach ($sitesQuery->fetchAll() as $site) {
-        $query = db()->prepare("SELECT g.*, a.id AS assignment_id, d.device_code, d.is_active AS device_active
+        $query = db()->prepare("SELECT g.*, a.id AS assignment_id, d.id AS device_id, d.device_code, d.is_active AS device_active, d.last_seen_at
             FROM grease_traps g JOIN device_assignments a ON a.grease_trap_id = g.id AND a.ended_at IS NULL
             JOIN devices d ON d.id = a.device_id AND d.device_type <> 'SIMULATED'
             WHERE g.establishment_id = ? AND g.is_active = 1 ORDER BY g.id");
@@ -49,12 +49,16 @@ function mobile_dashboard(int $ownerId): array
                 ORDER BY recorded_at DESC, id DESC LIMIT 1');
             $readQuery->execute([$trap['assignment_id']]);
             $reading = $readQuery->fetch();
-            $age = $reading ? time() - strtotime($reading['recorded_at'] . ' UTC') : null;
-            $stale = !$reading || !$trap['device_active'] || $age >= (float) $settings['device_offline_timeout_minutes'] * 60;
-            $status = !$trap['assignment_id'] ? 'NOT ASSIGNED' : (!$reading ? 'NO DATA' : ($stale ? 'OFFLINE' : mobile_reading_status($trap, $reading, $settings)));
+            $freshness = (int) $settings['device_offline_timeout_minutes'] * 60;
+            $deviceStatus = phase3_device_state($trap, $freshness);
+            $readingStale = $reading && time() - strtotime($reading['recorded_at'] . ' UTC') >= $freshness;
+            $stale = (bool) $reading && ($deviceStatus !== 'ONLINE' || $readingStale);
+            $status = !$reading ? 'NO DATA'
+                : ($deviceStatus !== 'ONLINE' ? 'OFFLINE'
+                : ($readingStale ? 'STALE SENSOR DATA' : mobile_reading_status($trap, $reading, $settings)));
             $traps[] = ['id' => (int) $trap['id'], 'name' => $trap['name'], 'status' => $status,
                 'device_code' => $trap['device_code'],
-                'device_status' => !$trap['assignment_id'] ? 'NOT ASSIGNED' : ($stale ? 'OFFLINE' : 'ONLINE'),
+                'device_status' => $deviceStatus,
                 'is_stale' => $stale, 'reading' => !$reading ? null : [
                     'waste_level_percent' => (float) $reading['waste_level_percent'],
                     'temperature_c' => $reading['temperature_c'] === null ? null : (float) $reading['temperature_c'],
@@ -100,7 +104,8 @@ function mobile_monitoring(int $ownerId): array
         $sensorState = !(bool) $row['trap_active'] ? 'INACTIVE'
             : (!$row['assignment_id'] ? 'AWAITING DEVICE'
             : (!$hasReading ? 'AWAITING SENSOR DATA'
-            : ($deviceStatus !== 'ONLINE' || $readingStale ? 'OFFLINE' : mobile_reading_status($row, $row, $settings))));
+            : ($deviceStatus !== 'ONLINE' ? 'OFFLINE'
+            : ($readingStale ? 'STALE SENSOR DATA' : mobile_reading_status($row, $row, $settings)))));
         $reading = null;
         if ($hasReading) {
             $reading = [
