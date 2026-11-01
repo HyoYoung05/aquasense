@@ -4,7 +4,7 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 six-sensor firmware.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.4.13 keeps one dedicated development-only Admin login for the website and one Owner login for the mobile app while preserving existing local accounts and production role boundaries. Simulated administrative fixtures are excluded from owner-facing Monitoring and Alerts, owners can securely replace their sign-in email or temporary password from the app, the Dashboard report/date controls share one aligned responsive action row, establishment registration requires a validated contact number and email address, Reports provides report-specific Status / event dropdown choices, and authenticated ESP32 heartbeats separate device connectivity from sensor validity.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.4.15 keeps one dedicated development-only Admin login for the website and one Owner login for the mobile app while preserving existing local accounts and production role boundaries. Simulated administrative fixtures are excluded from owner-facing Monitoring and Alerts, owners can securely replace their sign-in email or temporary password from the app, Barangay Administrators can manage User Accounts and Alert Settings without receiving Administrative Core access, and authenticated ESP32 heartbeats separate device connectivity from sensor validity. The guarded Monitoring utility now uses the neutral **Telemetry simulator** label without a development badge, while the owner app renders ONLINE in green and OFFLINE in red.
 
 The authenticated website notification bell has a protected 44 px click area,
 opens the Alerts workspace, and uses versioned JavaScript assets so repaired
@@ -35,7 +35,7 @@ outages; it is cleared by reset or power loss and drops the oldest record when
 full.
 COM3 must not be used. There is no microSD, OLED,
 buzzer, or DHT22. The Flutter source is tracked under
-[`mobile/`](mobile/README.md) at version **0.9.16+35**. Generated APKs,
+[`mobile/`](mobile/README.md) at version **0.9.18+37**. Generated APKs,
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 The current Android development build is verified with Flutter **3.41.6**.
 
@@ -71,7 +71,7 @@ physical installation or field-acceptance item.
 See the [connected-sensor verification](esp32/PHYSICAL-VERIFICATION-2026-10-22.md)
 for the measured results and remaining corrections.
 
-**Version: 1.4.13**
+**Version: 1.4.15**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -113,7 +113,7 @@ Import the SQL files using the steps below. `.gitattributes` keeps text line end
 | Role | Sidebar and route access |
 | --- | --- |
 | Admin | Dashboard, Administrative Core, Operations, and Administration |
-| Barangay Administrator | Dashboard and Operations; may perform operational review actions |
+| Barangay Administrator | Dashboard, Operations, User Accounts, and Alert Settings; may perform operational review actions but cannot create System Admin accounts |
 | Barangay Environmental Staff | Dashboard and Operations with read-only operational access |
 | Carinderia Owner | Flutter owner app only; no administrative website access |
 
@@ -123,7 +123,7 @@ The server enforces the same boundaries on direct URLs. Hiding a sidebar item is
 
 - Dashboard summary cards, grease-trap status, recent alerts, account activity, and vanilla-JavaScript charts use current database values only.
 - Admin can create, edit, activate, and deactivate establishments, grease traps, and devices. The interface retains records instead of deleting them.
-- Barangay Administrator and Environmental Staff do not receive Administrative Core navigation or direct-route access.
+- Barangay Administrator and Environmental Staff do not receive Administrative Core navigation or direct-route access. Barangay Administrators additionally receive the Administration section for User Accounts and Alert Settings; Environmental Staff remain limited to Dashboard and Operations.
 - Threshold validation enforces `low < medium < high < critical <= 100`.
 - Device assignment history is retained, and cross-establishment selections are rejected.
 - Missing sensor measurements say **No data yet**, **Awaiting device**, or **Awaiting telemetry**.
@@ -437,8 +437,11 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 - Full relational database foundation and fictional development seed.
 - PDO connection and separated local configuration.
 - Admin, Barangay Administrator, and Environmental Staff sign in with generic invalid-login feedback.
-- Full-access Admin users can create Admin, Barangay Administrator,
+- System Admin users can create System Admin, Barangay Administrator,
   Environmental Staff, and Karinderya Owner accounts from User Accounts.
+- Barangay Administrators can access User Accounts and create Barangay
+  Administrator, Environmental Staff, and Karinderya Owner accounts, but the
+  server prevents them from creating a System Admin account.
   Owner creation requires an active unlinked establishment; all creation and
   owner-link actions are audited.
 - Session regeneration on login, inactivity expiry, and current database role/activity checks on protected requests.
@@ -452,7 +455,9 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 - Dashboard setup status, account details, and current-user authentication history.
 - Database-backed operational totals, trap/device states, recent alerts, and summary charts without fabricated readings.
 - Admin management for establishments, grease traps, devices, activation state, and device assignment history.
-- Barangay Administrator and Environmental Staff access is limited to Dashboard and Operations; operational writes remain limited by role.
+- Barangay Administrator access includes Dashboard, Operations, User Accounts,
+  and Alert Settings. Environmental Staff remain limited to Dashboard and
+  Operations; writes remain limited by role.
 - Ordered threshold validation, cross-establishment assignment protection, CSRF checks, escaped output, prepared statements, and management audit events.
 - Production-capable device telemetry, hashed credentials, server-side calibration, future-sensor columns, idempotency, rate control, and heartbeat updates.
 - Authenticated monitoring/history APIs, live polling, date filters, bounded tables, actual-data charts, device/trap telemetry integration, and development simulation through the real API.
@@ -477,7 +482,7 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 
 - The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
 - PDF detail is limited to 500 rows and CSV detail to 10,000 rows; narrower filters are required for complete exports beyond those limits.
-- The Flutter Owner app is version `0.9.16+35`. Its responsive interface now
+- The Flutter Owner app is version `0.9.18+37`. Its responsive interface now
   follows the website's emerald, deep-green, mint, canvas, card, form, and
   navigation design system while remaining limited to owner workflows.
   Dashboard Quick Actions appear at the top of the owner dashboard with equal,

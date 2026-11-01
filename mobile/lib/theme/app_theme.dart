@@ -11,6 +11,8 @@ const canvas = Color(0xFFF5F7F5);
 const line = Color(0xFFE4EAE6);
 const warning = Color(0xFF805600);
 const critical = Color(0xFF9B2C22);
+const onlineStatus = Color(0xFF1B7F3A);
+const offlineStatus = Color(0xFFC62828);
 
 const _radius = 12.0;
 

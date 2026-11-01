@@ -5,6 +5,7 @@ import 'package:aquasense_mobile/screens/monitoring/monitoring_screen.dart';
 import 'package:aquasense_mobile/services/api_service.dart';
 import 'package:aquasense_mobile/services/auth_service.dart';
 import 'package:aquasense_mobile/services/monitoring_service.dart';
+import 'package:aquasense_mobile/theme/app_theme.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -437,6 +438,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('0%'), findsWidgets);
     expect(find.text('OFFLINE'), findsWidgets);
+    final statusFact = find.byKey(const ValueKey('monitoring-device-status'));
+    expect(
+      tester
+          .widget<Text>(
+            find.descendant(of: statusFact, matching: find.text('OFFLINE')),
+          )
+          .style
+          ?.color,
+      offlineStatus,
+    );
     expect(find.textContaining('Device Offline'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
     auth.api.close();

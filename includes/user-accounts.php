@@ -19,6 +19,16 @@ function user_account_roles(): array
     ];
 }
 
+function user_account_assignable_roles(array $actor): array
+{
+    $roles = user_account_roles();
+    return match ($actor['role_slug'] ?? '') {
+        'system_admin' => $roles,
+        'administrator' => array_diff_key($roles, ['system_admin' => true]),
+        default => [],
+    };
+}
+
 function user_account_password_error(string $password): ?string
 {
     if (strlen($password) < 12 || strlen($password) > 128
@@ -42,8 +52,18 @@ function user_account_create(PDO $pdo, array $input, int $actorId): int
         ? $input['password_confirmation'] : '';
     $establishmentId = filter_var($input['establishment_id'] ?? null, FILTER_VALIDATE_INT,
         ['options' => ['min_range' => 1]]);
-    $roles = user_account_roles();
+    $actorQuery = $pdo->prepare('SELECT r.slug AS role_slug FROM users u
+        JOIN roles r ON r.id=u.role_id WHERE u.id=? AND u.is_active=1 LIMIT 1');
+    $actorQuery->execute([$actorId]);
+    $actorRole = $actorQuery->fetchColumn();
+    $roles = user_account_assignable_roles([
+        'role_slug' => is_string($actorRole) ? $actorRole : '',
+    ]);
     $errors = [];
+
+    if ($roles === []) {
+        $errors[] = 'This account cannot create user accounts.';
+    }
 
     if (mb_strlen($fullName) < 2 || mb_strlen($fullName) > 150) {
         $errors[] = 'Full name must contain 2 to 150 characters.';

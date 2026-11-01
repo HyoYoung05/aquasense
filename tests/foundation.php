@@ -153,8 +153,11 @@ try {
     check(login($barangayClient, $fixtureEmails['administrator'], $password)['status'] === 303, 'Barangay Administrator login succeeds');
     $barangayPage = request($barangayClient, '/admin/dashboard.php');
     check($barangayPage['status'] === 200 && str_contains($barangayPage['body'], 'OPERATIONS')
-        && !str_contains($barangayPage['body'], 'ADMINISTRATIVE CORE') && !str_contains($barangayPage['body'], 'ADMINISTRATION'),
-        'Barangay Administrator sees Dashboard and Operations only');
+        && !str_contains($barangayPage['body'], 'ADMINISTRATIVE CORE') && str_contains($barangayPage['body'], 'ADMINISTRATION'),
+        'Barangay Administrator sees Operations and Administration without Administrative Core');
+    check(request($barangayClient, '/admin/users.php')['status'] === 200
+        && request($barangayClient, '/admin/settings.php')['status'] === 200,
+        'Barangay Administrator can open User Accounts and Alert Settings');
     check(request($barangayClient, '/admin/establishments.php')['status'] === 303,
         'Barangay Administrator cannot open Administrative Core directly');
 

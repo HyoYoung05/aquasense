@@ -3,7 +3,7 @@ declare(strict_types=1);
 require dirname(__DIR__).'/includes/bootstrap.php';
 require_once dirname(__DIR__).'/includes/alert-engine.php';
 require_once dirname(__DIR__).'/includes/oil-surrender.php';
-$user=require_system_admin();$errors=[];
+$user=require_administration_manager();$errors=[];
 if($_SERVER['REQUEST_METHOD']==='POST'){
     if(!valid_csrf()){$errors[]='The form expired. Reload and try again.';http_response_code(403);}
     else try{
@@ -26,5 +26,5 @@ $pageTitle='System Settings';$activeNav='settings';$flash=consume_flash();requir
 <input type="hidden" name="flow_alert_enabled" value="0"><label class="form-field"><span>YF-S201 threshold approval</span><span><input type="checkbox" name="flow_alert_enabled" value="1"<?= (($_POST['section']??'')==='alerts'?(($_POST['flow_alert_enabled']??'0')==='1'):$settings['flow_alert_enabled']===1.0)?' checked':'' ?>> Enable only after known-volume calibration and threshold approval</span></label>
 </div><div class="form-actions"><button class="button button-primary" type="submit">Save thresholds</button></div></form>
 <form method="post" class="panel record-form"><?= csrf_field() ?><input type="hidden" name="section" value="oil-surrender"><div class="panel-heading"><div><h2>Oil surrender evidence policy</h2><p>Controls protected photo uploads and the Hybrid Verification telemetry window.</p></div></div><div class="form-grid"><label class="form-field"><span>Maximum photo size (bytes)</span><input type="number" min="1024" max="20971520" step="1024" name="oil_surrender_max_upload_bytes" required value="<?= e((string)(($_POST['section']??'')==='oil-surrender'?($_POST['oil_surrender_max_upload_bytes']??$surrenderSettings['oil_surrender_max_upload_bytes']):$surrenderSettings['oil_surrender_max_upload_bytes'])) ?>"></label><label class="form-field"><span>Telemetry window before/after submission (hours)</span><input type="number" min="1" max="168" name="oil_surrender_telemetry_window_hours" required value="<?= e((string)(($_POST['section']??'')==='oil-surrender'?($_POST['oil_surrender_telemetry_window_hours']??$surrenderSettings['oil_surrender_telemetry_window_hours']):$surrenderSettings['oil_surrender_telemetry_window_hours'])) ?>"></label></div><div class="form-actions"><button class="button button-primary" type="submit">Save surrender settings</button></div></form>
-<section class="panel section-panel"><div class="panel-heading"><div><h2>Per-trap level thresholds</h2><p>Low &lt; Medium &lt; High &lt; Critical, all between 0 and 100.</p></div><a class="button button-secondary" href="<?= e(url('admin/grease-traps.php')) ?>">Manage grease traps</a></div></section>
+<section class="panel section-panel"><div class="panel-heading"><div><h2>Per-trap level thresholds</h2><p>Low &lt; Medium &lt; High &lt; Critical, all between 0 and 100.</p></div><?php if(is_system_admin($user)): ?><a class="button button-secondary" href="<?= e(url('admin/grease-traps.php')) ?>">Manage grease traps</a><?php endif; ?></div></section>
 <?php require dirname(__DIR__).'/includes/footer.php'; ?>

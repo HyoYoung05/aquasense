@@ -33,6 +33,26 @@ try {
     $actorId = (int) $pdo->lastInsertId();
     $ids['users'][] = $actorId;
 
+    $query->execute([(int) $roles['administrator'], 'Account Test Barangay Admin',
+        $emailPrefix . '-barangay-admin@example.test', password_hash('Temporary!2026', PASSWORD_DEFAULT)]);
+    $barangayActorId = (int) $pdo->lastInsertId();
+    $ids['users'][] = $barangayActorId;
+
+    account_check(array_key_exists('system_admin', user_account_assignable_roles(['role_slug' => 'system_admin']))
+        && !array_key_exists('system_admin', user_account_assignable_roles(['role_slug' => 'administrator'])),
+        'Only System Admin can assign the System Admin role');
+    try {
+        user_account_create($pdo, [
+            'full_name' => 'Unauthorized System Admin', 'email' => $emailPrefix . '-elevated@example.test',
+            'role' => 'system_admin', 'password' => 'ElevatedTemporary!2026',
+            'password_confirmation' => 'ElevatedTemporary!2026',
+        ], $barangayActorId);
+        account_check(false, 'Barangay Administrator cannot create a System Admin');
+    } catch (UserAccountValidationException $error) {
+        account_check(str_contains(implode(' ', $error->errors), 'valid account role'),
+            'Barangay Administrator cannot create a System Admin');
+    }
+
     $query = $pdo->prepare('INSERT INTO establishments (registration_code,business_name,owner_name,address,registration_date,created_by) VALUES (?,?,?,?,CURRENT_DATE(),?)');
     $query->execute(['UAT-' . strtoupper(bin2hex(random_bytes(4))), 'Account Test Kitchen', 'Account Test Owner',
         'Temporary automated test address', $actorId]);

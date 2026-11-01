@@ -27,7 +27,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 }
 require dirname(__DIR__).'/includes/header.php';
 ?>
-<div class="page-heading"><div><div class="breadcrumb"><a href="<?= e(url('admin/monitoring.php')) ?>">Monitoring</a> <span>/</span> Simulator</div><h1>Development telemetry simulator</h1><p>Submits through the same authenticated PHP endpoint used by the ESP32.</p></div><span class="status-badge status-warning">DEVELOPMENT ONLY</span></div>
+<div class="page-heading"><div><div class="breadcrumb"><a href="<?= e(url('admin/monitoring.php')) ?>">Monitoring</a> <span>/</span> Simulator</div><h1>Telemetry simulator</h1><p>Submits through the same authenticated PHP endpoint used by the ESP32.</p></div></div>
 <div class="phase-notice operational-notice"><?= icon('info') ?><p>The simulator never inserts directly into MySQL. Enter a device credential generated from Device Management; it is sent only to the local telemetry endpoint and is not stored.</p></div>
 <?php if($errors): ?><div class="notice notice-error"><ul><?php foreach($errors as $error): ?><li><?= e($error) ?></li><?php endforeach; ?></ul></div><?php endif; ?>
 <?php if($result): ?><div class="notice <?= $result['status']>=200&&$result['status']<300?'notice-success':'notice-error' ?>"><strong>HTTP <?= (int)$result['status'] ?></strong><pre class="simulator-result"><?= e(json_encode($result['body'],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES)) ?></pre></div><?php endif; ?>

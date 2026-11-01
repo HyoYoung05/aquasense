@@ -47,7 +47,7 @@ try {
     $anonymous=p8_http(null,$base.'/admin/users.php');p8_check($anonymous['status']===303,'User directory requires authentication');
     $admin=p8_login($base,$emails['system_admin'],$password);$users=p8_http($admin,$base.'/admin/users.php');
     p8_check($users['status']===200&&str_contains($users['body'],$emails['owner']),'Admin can review account roles and ownership links');
-    $barangay=p8_login($base,$emails['administrator'],$password);p8_check(p8_http($barangay,$base.'/admin/users.php')['status']===303,'Barangay Administrator cannot open the Admin user directory');curl_close($barangay);
+    $barangay=p8_login($base,$emails['administrator'],$password);p8_check(p8_http($barangay,$base.'/admin/users.php')['status']===200&&p8_http($barangay,$base.'/admin/settings.php')['status']===200,'Barangay Administrator can open User Accounts and Alert Settings');curl_close($barangay);
     $staff=p8_login($base,$emails['environmental_staff'],$password);p8_check(p8_http($staff,$base.'/admin/users.php')['status']===303,'Environmental staff cannot open administrator user directory');curl_close($staff);
     $owner=p8_login($base,$emails['owner'],$password);p8_check(curl_getinfo($owner,CURLINFO_RESPONSE_CODE)===200,'Owner remains denied from staff website login');curl_close($owner);
     foreach(['dashboard.php','establishments.php','grease-traps.php','devices.php','monitoring.php','alerts.php','oil-surrenders.php','incentives.php','incentive-rules.php','compliance-ledger.php','reports.php','settings.php','users.php'] as $route){$response=p8_http($admin,$base.'/admin/'.$route);p8_check($response['status']===200,'Authenticated release route works: '.$route);}

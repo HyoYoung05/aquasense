@@ -2,7 +2,24 @@
 
 ## Current Version
 
-0.9.16+35
+0.9.18+37
+
+## 0.9.18+37 - 2026-11-02
+
+- Display ONLINE status text and icons in green throughout Dashboard and
+  Monitoring.
+- Display OFFLINE status text and icons in red throughout Dashboard and
+  Monitoring.
+- Added widget coverage for both semantic connectivity colors.
+
+## 0.9.17+36 - 2026-11-02
+
+- Aligned the Alerts summary cards into an equal-width responsive grid.
+- Aligned Status and Severity side by side on phones with a full-width Date
+  Range field below; wide layouts keep all three filters in one row.
+- Added single-column fallback for very narrow screens or enlarged text and
+  prevented summary-label overflow.
+- Added widget geometry coverage for aligned phone layouts.
 
 ## 0.9.16+35 - 2026-11-01
 

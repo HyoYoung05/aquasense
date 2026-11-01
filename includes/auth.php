@@ -53,12 +53,22 @@ function require_system_admin(): array
     return require_roles(['system_admin']);
 }
 
+function require_administration_manager(): array
+{
+    return require_roles(['system_admin', 'administrator']);
+}
+
 function is_system_admin(array $user): bool
 {
     return ($user['role_slug'] ?? '') === 'system_admin';
 }
 
 function can_manage_operations(array $user): bool
+{
+    return in_array($user['role_slug'] ?? '', ['system_admin', 'administrator'], true);
+}
+
+function can_manage_administration(array $user): bool
 {
     return in_array($user['role_slug'] ?? '', ['system_admin', 'administrator'], true);
 }

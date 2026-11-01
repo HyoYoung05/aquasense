@@ -290,114 +290,177 @@ class _AlertsScreenState extends State<AlertsScreen>
       const SizedBox(height: 14),
       _summary(),
       const SizedBox(height: 14),
-      Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        children: [
-          SizedBox(
-            width: 190,
-            child: DropdownButtonFormField<AlertStatusFilter>(
-              isExpanded: true,
-              initialValue: status,
-              decoration: const InputDecoration(labelText: 'Status'),
-              items: [
-                for (final v in AlertStatusFilter.values)
-                  DropdownMenuItem(value: v, child: Text(v.label)),
-              ],
-              onChanged: (v) {
-                if (v != null) {
-                  setState(() => status = v);
-                  _load();
-                }
-              },
-            ),
-          ),
-          SizedBox(
-            width: 190,
-            child: DropdownButtonFormField<AlertSeverityFilter>(
-              isExpanded: true,
-              initialValue: severity,
-              decoration: const InputDecoration(labelText: 'Severity'),
-              items: [
-                for (final v in AlertSeverityFilter.values)
-                  DropdownMenuItem(value: v, child: Text(v.label)),
-              ],
-              onChanged: (v) {
-                if (v != null) {
-                  setState(() => severity = v);
-                  _load();
-                }
-              },
-            ),
-          ),
-          SizedBox(
-            width: 190,
-            child: DropdownButtonFormField<AlertDateRange>(
-              isExpanded: true,
-              initialValue: range,
-              decoration: const InputDecoration(labelText: 'Date Range'),
-              items: [
-                for (final v in AlertDateRange.values)
-                  DropdownMenuItem(value: v, child: Text(v.label)),
-              ],
-              onChanged: (v) {
-                if (v != null) _setRange(v);
-              },
-            ),
-          ),
-        ],
-      ),
+      _filters(),
     ],
   );
+
+  Widget _filters() => LayoutBuilder(
+    builder: (context, constraints) {
+      final fields = [_statusFilter(), _severityFilter(), _rangeFilter()];
+      final singleColumn =
+          constraints.maxWidth < 340 ||
+          MediaQuery.textScalerOf(context).scale(1) > 1.35;
+      if (singleColumn) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var index = 0; index < fields.length; index++) ...[
+              fields[index],
+              if (index < fields.length - 1) const SizedBox(height: 12),
+            ],
+          ],
+        );
+      }
+      if (constraints.maxWidth < 680) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: fields[0]),
+                const SizedBox(width: 12),
+                Expanded(child: fields[1]),
+              ],
+            ),
+            const SizedBox(height: 12),
+            fields[2],
+          ],
+        );
+      }
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var index = 0; index < fields.length; index++) ...[
+            Expanded(child: fields[index]),
+            if (index < fields.length - 1) const SizedBox(width: 12),
+          ],
+        ],
+      );
+    },
+  );
+
+  Widget _statusFilter() => DropdownButtonFormField<AlertStatusFilter>(
+    key: const ValueKey('alert-status-filter'),
+    isExpanded: true,
+    initialValue: status,
+    decoration: const InputDecoration(labelText: 'Status'),
+    items: [
+      for (final value in AlertStatusFilter.values)
+        DropdownMenuItem(value: value, child: Text(value.label)),
+    ],
+    onChanged: (value) {
+      if (value != null) {
+        setState(() => status = value);
+        _load();
+      }
+    },
+  );
+
+  Widget _severityFilter() => DropdownButtonFormField<AlertSeverityFilter>(
+    key: const ValueKey('alert-severity-filter'),
+    isExpanded: true,
+    initialValue: severity,
+    decoration: const InputDecoration(labelText: 'Severity'),
+    items: [
+      for (final value in AlertSeverityFilter.values)
+        DropdownMenuItem(value: value, child: Text(value.label)),
+    ],
+    onChanged: (value) {
+      if (value != null) {
+        setState(() => severity = value);
+        _load();
+      }
+    },
+  );
+
+  Widget _rangeFilter() => DropdownButtonFormField<AlertDateRange>(
+    key: const ValueKey('alert-range-filter'),
+    isExpanded: true,
+    initialValue: range,
+    decoration: const InputDecoration(labelText: 'Date Range'),
+    items: [
+      for (final value in AlertDateRange.values)
+        DropdownMenuItem(value: value, child: Text(value.label)),
+    ],
+    onChanged: (value) {
+      if (value != null) _setRange(value);
+    },
+  );
+
   Widget _summary() {
     final s = data!.summary;
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: [
-        _count(
-          'Unresolved',
-          s.unresolvedCount,
-          Icons.notifications_active,
-          Colors.red.shade700,
-        ),
-        _count(
-          'Critical',
-          s.criticalCount,
-          Icons.error_outline,
-          Colors.red.shade700,
-        ),
-        _count(
-          'Warning',
-          s.warningCount,
-          Icons.warning_amber_outlined,
-          Colors.orange.shade800,
-        ),
-        _count(
-          'Resolved',
-          s.resolvedCount,
-          Icons.check_circle_outline,
-          Colors.green.shade700,
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 10.0;
+        final columns = constraints.maxWidth < 340
+            ? 1
+            : constraints.maxWidth >= 720
+            ? 4
+            : 2;
+        final width = (constraints.maxWidth - (gap * (columns - 1))) / columns;
+        return Wrap(
+          key: const ValueKey('alert-summary-grid'),
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            _count(
+              'Unresolved',
+              s.unresolvedCount,
+              Icons.notifications_active,
+              Colors.red.shade700,
+              width,
+            ),
+            _count(
+              'Critical',
+              s.criticalCount,
+              Icons.error_outline,
+              Colors.red.shade700,
+              width,
+            ),
+            _count(
+              'Warning',
+              s.warningCount,
+              Icons.warning_amber_outlined,
+              Colors.orange.shade800,
+              width,
+            ),
+            _count(
+              'Resolved',
+              s.resolvedCount,
+              Icons.check_circle_outline,
+              Colors.green.shade700,
+              width,
+            ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _count(String label, int count, IconData icon, Color color) =>
-      Container(
-        constraints: const BoxConstraints(minWidth: 135),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: .08),
-          border: Border.all(color: color.withValues(alpha: .25)),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color),
-            const SizedBox(width: 10),
-            Column(
+  Widget _count(
+    String label,
+    int count,
+    IconData icon,
+    Color color,
+    double width,
+  ) => SizedBox(
+    key: ValueKey('alert-summary-${label.toLowerCase()}'),
+    width: width,
+    child: Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .08),
+        border: Border.all(color: color.withValues(alpha: .25)),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -407,12 +470,14 @@ class _AlertsScreenState extends State<AlertsScreen>
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                Text(label),
+                Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    ),
+  );
   Widget _card(AlertItem a) {
     final color = _color(a.severity);
     return Semantics(

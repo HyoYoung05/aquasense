@@ -2,7 +2,7 @@
 declare(strict_types=1);
 require dirname(__DIR__) . '/includes/bootstrap.php';
 require_once dirname(__DIR__) . '/includes/user-accounts.php';
-$user = require_system_admin();
+$user = require_administration_manager();
 $activeNav = 'users';
 $pageTitle = 'User accounts';
 $action = (string) ($_GET['action'] ?? 'list');
@@ -15,6 +15,7 @@ $form = [
     'role' => 'administrator',
     'establishment_id' => '',
 ];
+$assignableRoles = user_account_assignable_roles($user);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = 'add';
@@ -66,12 +67,12 @@ require dirname(__DIR__) . '/includes/header.php';
 <?php if($action==='add'): ?>
 <form class="panel record-form" method="post" autocomplete="off" novalidate>
     <?= csrf_field() ?>
-    <div class="panel-heading"><div><h2>Create user account</h2><p>Only full-access Admin users can provision accounts. Every creation is recorded in the audit log.</p></div></div>
+    <div class="panel-heading"><div><h2>Create user account</h2><p>System Admin and Barangay Admin account creation is audited. Only a System Admin can create another System Admin.</p></div></div>
     <div class="form-grid">
         <label class="form-field"><span>Full name *</span><input name="full_name" maxlength="150" required autocomplete="name" value="<?= e($form['full_name']) ?>"></label>
         <label class="form-field"><span>Email address *</span><input type="email" name="email" maxlength="190" required autocomplete="email" value="<?= e($form['email']) ?>"></label>
         <label class="form-field"><span>Contact number</span><input type="tel" name="contact_number" maxlength="30" autocomplete="tel" value="<?= e($form['contact_number']) ?>"></label>
-        <label class="form-field"><span>Role *</span><select name="role" required data-user-role><?php foreach(user_account_roles() as $slug=>$name): ?><option value="<?= e($slug) ?>"<?= selected($form['role'],$slug) ?>><?= e($name) ?></option><?php endforeach; ?></select></label>
+        <label class="form-field"><span>Role *</span><select name="role" required data-user-role><?php foreach($assignableRoles as $slug=>$name): ?><option value="<?= e($slug) ?>"<?= selected($form['role'],$slug) ?>><?= e($name) ?></option><?php endforeach; ?></select></label>
         <label class="form-field form-span" data-owner-establishment><span>Owner establishment *</span><select name="establishment_id"><option value="">Select an unlinked establishment</option><?php foreach($availableEstablishments as $establishment): ?><option value="<?= (int)$establishment['id'] ?>"<?= selected($form['establishment_id'],$establishment['id']) ?>><?= e($establishment['business_name'].' · '.$establishment['registration_code'].' · '.$establishment['owner_name']) ?></option><?php endforeach; ?></select><small>Required only for a Karinderya Owner account.</small></label>
         <label class="form-field"><span>Temporary password *</span><input type="password" name="password" minlength="12" maxlength="128" required autocomplete="new-password"></label>
         <label class="form-field"><span>Confirm password *</span><input type="password" name="password_confirmation" minlength="12" maxlength="128" required autocomplete="new-password"></label>

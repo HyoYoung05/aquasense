@@ -1,5 +1,6 @@
 import 'package:aquasense_mobile/models/grease_trap.dart';
 import 'package:aquasense_mobile/models/sensor_reading.dart';
+import 'package:aquasense_mobile/theme/app_theme.dart';
 import 'package:aquasense_mobile/widgets/status_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -59,6 +60,13 @@ void main() {
       ),
     );
     expect(find.text('ONLINE'), findsWidgets);
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('device-status-headline')))
+          .style
+          ?.color,
+      onlineStatus,
+    );
     expect(find.text('WARNING'), findsNothing);
     expect(find.text('75%'), findsOneWidget);
     expect(find.text('TEST DATA · Development reading'), findsNothing);

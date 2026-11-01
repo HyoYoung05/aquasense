@@ -254,6 +254,41 @@ void main() {
     expect(find.text('Grease Trap'), findsNothing);
     expect(r.trap, isNull);
   });
+  testWidgets('alert summary and filters align responsively', (tester) async {
+    final repository = _Repo();
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    await tester.pumpWidget(_app(repository, size: const Size(390, 844)));
+    await tester.pumpAndSettle();
+
+    Rect summaryRect(String name) =>
+        tester.getRect(find.byKey(ValueKey('alert-summary-$name')));
+    final unresolved = summaryRect('unresolved');
+    final critical = summaryRect('critical');
+    final warning = summaryRect('warning');
+    final resolved = summaryRect('resolved');
+    expect(unresolved.top, critical.top);
+    expect(warning.top, resolved.top);
+    expect(unresolved.width, closeTo(critical.width, .1));
+    expect(warning.width, closeTo(resolved.width, .1));
+    expect(unresolved.left, warning.left);
+    expect(critical.right, resolved.right);
+
+    final statusRect = tester.getRect(
+      find.byKey(const ValueKey('alert-status-filter')),
+    );
+    final severityRect = tester.getRect(
+      find.byKey(const ValueKey('alert-severity-filter')),
+    );
+    final rangeRect = tester.getRect(
+      find.byKey(const ValueKey('alert-range-filter')),
+    );
+    expect(statusRect.top, severityRect.top);
+    expect(statusRect.width, closeTo(severityRect.width, .1));
+    expect(rangeRect.left, statusRect.left);
+    expect(rangeRect.right, severityRect.right);
+    expect(rangeRect.top, greaterThan(statusRect.bottom));
+    await tester.binding.setSurfaceSize(null);
+  });
   testWidgets('alert detail is read only and handles missing optional values', (
     tester,
   ) async {

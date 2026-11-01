@@ -359,7 +359,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
               children: [
                 Icon(
                   offline ? Icons.cloud_off_outlined : Icons.sensors,
-                  color: offline ? Colors.deepOrange : emerald,
+                  color: offline ? offlineStatus : onlineStatus,
                   size: 30,
                 ),
                 const SizedBox(width: 12),
@@ -399,7 +399,12 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                       : '${cleanNumber(reading!.ultrasonicDistance!)} cm',
                 ),
                 _fact('Assigned Device', trap.deviceCode ?? 'Not assigned'),
-                _fact('Device Status', trap.deviceStatus),
+                _fact(
+                  'Device Status',
+                  trap.deviceStatus,
+                  valueColor: offline ? offlineStatus : onlineStatus,
+                  key: const ValueKey('monitoring-device-status'),
+                ),
                 _fact(
                   'Last Seen',
                   trap.lastSeenAt == null
@@ -422,6 +427,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
               const SizedBox(height: 18),
               _InlineState(
                 icon: Icons.history,
+                color: offline ? offlineStatus : onlineStatus,
                 text: offline
                     ? 'Device Offline - values shown are the last known readings from ${readingTime(reading.recordedAt)}.'
                     : 'Device Online - sensor telemetry is stale; values shown are from ${readingTime(reading.recordedAt)}.',
@@ -502,17 +508,22 @@ class _MonitoringScreenState extends State<MonitoringScreen>
     );
   }
 
-  Widget _fact(String label, String value) => SizedBox(
-    width: 250,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-        const SizedBox(height: 3),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
-      ],
-    ),
-  );
+  Widget _fact(String label, String value, {Color? valueColor, Key? key}) =>
+      SizedBox(
+        key: key,
+        width: 250,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 3),
+            Text(
+              value,
+              style: TextStyle(color: valueColor, fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+      );
 
   Widget _sensorOverview(GreaseTrapMonitoring trap) {
     final reading = trap.reading;
@@ -889,35 +900,60 @@ class _StatusChip extends StatelessWidget {
   const _StatusChip(this.status);
 
   @override
-  Widget build(BuildContext context) => Chip(
-    avatar: Icon(
-      status == 'ONLINE' || status == 'NORMAL'
-          ? Icons.check_circle_outline
-          : Icons.info_outline,
-      size: 18,
-    ),
-    label: Text(status),
-  );
+  Widget build(BuildContext context) {
+    final color = status == 'ONLINE'
+        ? onlineStatus
+        : status == 'OFFLINE'
+        ? offlineStatus
+        : status == 'NORMAL'
+        ? onlineStatus
+        : ink;
+    return Chip(
+      backgroundColor: color.withValues(alpha: .08),
+      side: BorderSide(color: color.withValues(alpha: .25)),
+      avatar: Icon(
+        status == 'ONLINE' || status == 'NORMAL'
+            ? Icons.check_circle_outline
+            : Icons.info_outline,
+        color: color,
+        size: 18,
+      ),
+      label: Text(
+        status,
+        style: TextStyle(color: color, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
 }
 
 class _InlineState extends StatelessWidget {
   final IconData icon;
   final String text;
+  final Color? color;
 
-  const _InlineState({required this.icon, required this.text});
+  const _InlineState({required this.icon, required this.text, this.color});
 
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: const Color(0xFFFFF3CD),
+      color: (color ?? warning).withValues(alpha: .1),
+      border: Border.all(color: (color ?? warning).withValues(alpha: .24)),
       borderRadius: BorderRadius.circular(12),
     ),
     child: Row(
       children: [
-        Icon(icon, color: const Color(0xFF805600)),
+        Icon(icon, color: color ?? warning),
         const SizedBox(width: 10),
-        Expanded(child: Text(text)),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: color ?? warning,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
       ],
     ),
   );

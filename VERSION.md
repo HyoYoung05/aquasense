@@ -1,6 +1,43 @@
 # AQUASENSE+ Version History
 
-1.4.13
+1.4.15
+
+## Website/backend 1.4.15, Flutter owner app 0.9.18+37, and ESP32 firmware 0.8.7
+
+Date: 2026-11-02
+
+- Renamed the Monitoring action and page from Development simulator to
+  Telemetry simulator while retaining its environment and System Admin guard.
+- Removed the visible DEVELOPMENT ONLY badge from the simulator page.
+- Display ONLINE in green and OFFLINE in red across the Flutter Dashboard and
+  Monitoring connectivity views, with regression coverage for both states.
+- Aligned the Flutter Alerts summary and filter boxes across phone, narrow, and
+  wide layouts with equal widths and overflow-safe responsive stacking.
+- Added the Administration navigation section for Barangay Administrator
+  accounts, containing User Accounts and Alert Settings.
+- Enforced the access change in the server-side route guards for both pages;
+  Environmental Management remains unable to access Administration.
+- Barangay Administrators may create Barangay Administrator, Environmental
+  Staff, and Karinderya Owner accounts but cannot create a System Admin.
+- Administrative Core pages remain exclusive to System Admin.
+- Expanded foundation, Phase 2, Phase 8, and account-provisioning coverage for
+  the updated permission boundary.
+
+## Website/backend 1.4.14, Flutter owner app 0.9.17+36, and ESP32 firmware 0.8.7
+
+Date: 2026-11-02
+
+- Added the Administration navigation section for Barangay Administrator
+  accounts, containing User Accounts and Alert Settings.
+- Enforced the access change in the server-side route guards for both pages;
+  Environmental Management remains unable to access Administration.
+- Barangay Administrators may create Barangay Administrator, Environmental
+  Staff, and Karinderya Owner accounts but cannot create a System Admin.
+- Administrative Core pages remain exclusive to System Admin.
+- Expanded foundation, Phase 2, Phase 8, and account-provisioning coverage for
+  the updated permission boundary.
+- Aligned the Flutter Alerts summary and filter boxes across phone, narrow, and
+  wide layouts with equal widths and overflow-safe responsive stacking.
 
 ## Website/backend 1.4.13, Flutter owner app 0.9.16+35, and ESP32 firmware 0.8.7
 

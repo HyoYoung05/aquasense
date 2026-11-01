@@ -21,7 +21,7 @@ class StatusCard extends StatelessWidget {
     final offline = trap.deviceStatus != 'ONLINE';
     final stale = trap.isStale || snapshotExpired;
     final status = offline ? 'OFFLINE' : 'ONLINE';
-    final color = offline ? const Color(0xFF4C6061) : forest;
+    final statusColor = offline ? offlineStatus : onlineStatus;
 
     return Semantics(
       container: true,
@@ -32,7 +32,8 @@ class StatusCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              color: color,
+              color: statusColor.withValues(alpha: .08),
+              border: Border.all(color: statusColor.withValues(alpha: .28)),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Column(
@@ -40,13 +41,13 @@ class StatusCard extends StatelessWidget {
               children: [
                 Text(
                   trap.name,
-                  style: const TextStyle(color: Colors.white, fontSize: 17),
+                  style: const TextStyle(color: ink, fontSize: 17),
                 ),
                 const SizedBox(height: 16),
                 const Text(
                   'DEVICE STATUS',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: muted,
                     letterSpacing: 1.5,
                     fontSize: 12,
                   ),
@@ -60,13 +61,14 @@ class StatusCard extends StatelessWidget {
                       offline
                           ? Icons.cloud_off_outlined
                           : Icons.check_circle_outline,
-                      color: Colors.white,
+                      color: statusColor,
                       size: 34,
                     ),
                     Text(
                       status,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      key: const ValueKey('device-status-headline'),
+                      style: TextStyle(
+                        color: statusColor,
                         fontSize: 27,
                         fontWeight: FontWeight.w700,
                       ),
@@ -78,10 +80,7 @@ class StatusCard extends StatelessWidget {
                     padding: EdgeInsets.only(top: 14),
                     child: Text(
                       'TEST DATA · Development reading',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(color: ink, fontWeight: FontWeight.bold),
                     ),
                   ),
                 if (reading?.isSimulated == true)
@@ -89,10 +88,7 @@ class StatusCard extends StatelessWidget {
                     padding: EdgeInsets.only(top: 14),
                     child: Text(
                       'SIMULATED · Development data',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(color: ink, fontWeight: FontWeight.bold),
                     ),
                   ),
               ],
@@ -157,10 +153,19 @@ class StatusCard extends StatelessWidget {
                         ? Icons.router_outlined
                         : Icons.portable_wifi_off_outlined,
                     color: trap.deviceStatus == 'ONLINE'
-                        ? emerald
-                        : const Color(0xFF805600),
+                        ? onlineStatus
+                        : offlineStatus,
                   ),
-                  title: Text('Device ${trap.deviceStatus}'),
+                  title: Text(
+                    'Device ${trap.deviceStatus}',
+                    key: const ValueKey('device-status-detail'),
+                    style: TextStyle(
+                      color: trap.deviceStatus == 'ONLINE'
+                          ? onlineStatus
+                          : offlineStatus,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   subtitle: Text(trap.deviceCode ?? 'No device assigned'),
                 ),
                 const Divider(height: 1),

@@ -10,6 +10,7 @@ import 'package:aquasense_mobile/screens/home/home_screen.dart';
 import 'package:aquasense_mobile/screens/login/login_screen.dart';
 import 'package:aquasense_mobile/services/api_service.dart';
 import 'package:aquasense_mobile/services/auth_service.dart';
+import 'package:aquasense_mobile/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -360,6 +361,20 @@ void main() {
     );
     expect(find.text('OFFLINE'), findsOneWidget);
     expect(find.text('Device OFFLINE'), findsOneWidget);
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('device-status-headline')))
+          .style
+          ?.color,
+      offlineStatus,
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('device-status-detail')))
+          .style
+          ?.color,
+      offlineStatus,
+    );
     expect(find.text('Last sensor update'), findsOneWidget);
   });
 
