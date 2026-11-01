@@ -33,7 +33,9 @@ migrate_working_dir/
 /build/
 /coverage/
 /config/api.local.json
-/config/api.production.json
+
+# The production API URL is public, contains no credential, and is tracked so
+# release builds cannot silently omit the configured HTTPS backend.
 
 # Symbolication related
 app.*.symbols

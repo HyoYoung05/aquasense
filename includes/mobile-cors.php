@@ -13,11 +13,25 @@ function mobile_local_development_origin(string $origin): bool
 function mobile_origin_allowed(string $origin, array $settings): bool
 {
     $configured = in_array($origin, $settings['mobile_web_origins'] ?? [], true);
-    if (($settings['environment'] ?? 'development') === 'production') {
-        return $configured && str_starts_with($origin, 'https://');
+    $appOrigin = '';
+    $appUrl = (string) ($settings['app_url'] ?? '');
+    if ($appUrl !== '') {
+        $parts = parse_url($appUrl);
+        if (is_array($parts) && isset($parts['scheme'], $parts['host'])) {
+            $appOrigin = $parts['scheme'] . '://' . $parts['host'];
+            if (isset($parts['port'])) {
+                $appOrigin .= ':' . $parts['port'];
+            }
+        }
     }
-    return $configured || (!empty($settings['mobile_allow_local_web_preview'])
-        && mobile_local_development_origin($origin));
+    $sameApplicationOrigin = $appOrigin !== '' && hash_equals($appOrigin, $origin);
+    if (($settings['environment'] ?? 'development') === 'production') {
+        return ($configured || $sameApplicationOrigin)
+            && str_starts_with($origin, 'https://');
+    }
+    return $configured || $sameApplicationOrigin
+        || (!empty($settings['mobile_allow_local_web_preview'])
+            && mobile_local_development_origin($origin));
 }
 
 function mobile_preflight_allowed(string $method, string $headerLine): bool

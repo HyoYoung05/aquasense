@@ -54,8 +54,10 @@ foreach (['http://localhost', 'http://localhost:0', 'http://localhost:65536',
     check(!mobile_origin_allowed($invalidLocal, $development), 'Invalid local development origin rejected: ' . $invalidLocal);
 }
 $production = ['environment' => 'production', 'mobile_allow_local_web_preview' => true,
+    'app_url' => 'https://aquasense.example.test/administration',
     'mobile_web_origins' => ['https://owners.example.test']];
 check(mobile_origin_allowed('https://owners.example.test', $production), 'Production configured HTTPS origin allowed');
+check(mobile_origin_allowed('https://aquasense.example.test', $production), 'Production application origin allowed automatically');
 check(!mobile_origin_allowed('http://localhost:49840', $production), 'Production rejects localhost despite preview flag');
 check(!mobile_origin_allowed('https://evil.example', $production), 'Production rejects unconfigured HTTPS origin');
 $invalidProduction = ['environment' => 'production', 'mobile_allow_local_web_preview' => false,

@@ -1,6 +1,6 @@
 # AQUASENSE+ Carinderia Owner App
 
-Flutter owner application for AQUASENSE+. Version **0.9.19+38** aligns the app
+Flutter owner application for AQUASENSE+. Version **0.9.20+39** aligns the app
 with the administrative website's AQUASENSE+ visual system while retaining the
 Mobile Phase 7 owner-only foundation and Phase 4 sensor contract. The app now
 uses the website's emerald, deep-green, mint, canvas, border, typography, form,
@@ -84,12 +84,14 @@ builds require HTTPS. The validator rejects missing hosts, embedded
 credentials, query strings, fragments, unsafe endpoint paths, and release HTTP;
 it also normalizes trailing slashes.
 
-Create ignored local settings from the examples:
+Create ignored local development settings from the example:
 
 ```powershell
 Copy-Item config/api.development.example.json config/api.local.json
-Copy-Item config/api.production.example.json config/api.production.json
 ```
+
+The supplied public production API root is tracked in
+`config/api.production.json`. This file contains no credential.
 
 Development run:
 
@@ -114,11 +116,17 @@ Local Android debug APK:
 flutter build apk --debug --dart-define=API_BASE_URL=http://<LOCAL-IP>/AQUASENSE+/aquasense-web/api/mobile
 ```
 
-Production release:
+Installable production-API test APK:
 
 ```powershell
-flutter build apk --release --dart-define-from-file=config/api.production.json
+.\build-production.ps1 -Target apk -Mode debug
 ```
+
+For a signed production release, configure the ignored Android signing files,
+then run `.\build-production.ps1 -Target apk -Mode release`. The same script
+supports `appbundle` and `web` targets. VS Code also provides
+**AQUASENSE+ Web (Production API)** and **AQUASENSE+ Android (Production API)**
+launch presets.
 
 A build without `API_BASE_URL` is valid as an installation artifact and opens
 the visible **Server configuration error** screen. It does not attempt a

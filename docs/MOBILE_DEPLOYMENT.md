@@ -36,11 +36,11 @@ Development only, using an explicit local address:
 flutter run --dart-define=API_BASE_URL=http://192.168.x.x/AQUASENSE+/aquasense-web/api/mobile
 ```
 
-Production:
+Production (uses the tracked non-secret `mobile/config/api.production.json`):
 
 ```powershell
-flutter build apk --release --dart-define=API_BASE_URL=https://YOUR-PRODUCTION-DOMAIN/api/mobile
-flutter build appbundle --release --dart-define=API_BASE_URL=https://YOUR-PRODUCTION-DOMAIN/api/mobile
+.\build-production.ps1 -Target apk -Mode release
+.\build-production.ps1 -Target appbundle -Mode release
 ```
 
 Release builds reject HTTP. A build with no URL deliberately opens a visible

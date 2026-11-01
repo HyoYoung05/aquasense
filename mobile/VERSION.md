@@ -2,7 +2,17 @@
 
 ## Current Version
 
-0.9.19+38
+0.9.20+39
+
+## 0.9.20+39 - 2026-11-02
+
+- Added the supplied public production API root at
+  `https://aquasense.back2gaming.com/api/mobile` to the tracked, non-secret
+  production build configuration.
+- Added validated production APK, app-bundle, and web build automation that
+  always passes `API_BASE_URL` to Flutter.
+- Added VS Code launch presets for Chrome and Android using the production API.
+- Production release signing secrets remain ignored and are never committed.
 
 ## 0.9.19+38 - 2026-11-02
 

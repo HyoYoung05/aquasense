@@ -1,6 +1,20 @@
 # AQUASENSE+ Version History
 
-1.4.15
+1.4.16
+
+## Website/backend 1.4.16, Flutter owner app 0.9.20+39, and ESP32 firmware 0.8.7
+
+Date: 2026-11-02
+
+- Added the supplied public HTTPS owner API root to the tracked non-secret
+  Flutter production configuration.
+- Added validated production build automation and VS Code launch presets so
+  Android and Chrome builds no longer omit `API_BASE_URL`.
+- Kept the production URL in one configuration file, and Android signing
+  secrets out of version control.
+- Allowed the exact production application origin to call the owner API from
+  Flutter Web while retaining the explicit HTTPS origin allowlist for every
+  other browser origin.
 
 ## Website/backend 1.4.15, Flutter owner app 0.9.19+38, and ESP32 firmware 0.8.7
 

@@ -1,18 +1,17 @@
 # AQUASENSE+ Mobile Deployment
 
-The app contains no default server hostname. Every build must receive the one
-central API URL through `API_BASE_URL`; all services use that value.
+The app contains no runtime fallback server hostname. Every build receives the
+one central API URL through `API_BASE_URL`; all services use that value.
 
-Create an ignored configuration file from the appropriate example:
+Create the ignored local development configuration from its example:
 
 ```powershell
 Copy-Item config/api.development.example.json config/api.local.json
-Copy-Item config/api.production.example.json config/api.production.json
 ```
 
-Edit the copied file for the target environment. Do not commit either copied
-file. Development may use an emulator alias or LAN address. Production must use
-the public HTTPS URL of the deployed PHP API.
+Development may use an emulator alias or LAN address. The public, non-secret
+production URL is tracked in `config/api.production.json`; credentials never
+belong in this file.
 
 Development:
 
@@ -23,7 +22,7 @@ flutter run --dart-define-from-file=config/api.local.json
 Production:
 
 ```powershell
-flutter build apk --release --dart-define-from-file=config/api.production.json
+.\build-production.ps1 -Target apk -Mode release
 ```
 
 Release builds reject HTTP. A missing or malformed value stops authentication
