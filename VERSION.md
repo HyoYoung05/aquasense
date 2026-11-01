@@ -2,6 +2,13 @@
 
 1.4.15
 
+## Website/backend 1.4.15, Flutter owner app 0.9.19+38, and ESP32 firmware 0.8.7
+
+Date: 2026-11-02
+
+- Changed Flutter OFFLINE status text and icons from red to neutral gray while
+  retaining green for ONLINE; layout and connectivity behavior are unchanged.
+
 ## Website/backend 1.4.15, Flutter owner app 0.9.18+37, and ESP32 firmware 0.8.7
 
 Date: 2026-11-02

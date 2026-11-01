@@ -1,6 +1,6 @@
 # AQUASENSE+ Carinderia Owner App
 
-Flutter owner application for AQUASENSE+. Version **0.9.18+37** aligns the app
+Flutter owner application for AQUASENSE+. Version **0.9.19+38** aligns the app
 with the administrative website's AQUASENSE+ visual system while retaining the
 Mobile Phase 7 owner-only foundation and Phase 4 sensor contract. The app now
 uses the website's emerald, deep-green, mint, canvas, border, typography, form,
@@ -30,7 +30,7 @@ review notification and optional Android display-over-other-apps status, and
 open the corresponding system permission controls.
 Device connectivity now comes from the independent ESP32 heartbeat. The owner
 Dashboard status card intentionally displays only **ONLINE** or **OFFLINE**;
-ONLINE is green, OFFLINE is red, and individual sensor availability remains in
+ONLINE is green, OFFLINE is gray, and individual sensor availability remains in
 the sensor section.
 Monitoring now presents the required sensor measurements in one compact panel
 instead of separate cards. It groups ENS160 air-quality values, uses calibrated

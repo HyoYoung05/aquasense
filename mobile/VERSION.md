@@ -2,7 +2,13 @@
 
 ## Current Version
 
-0.9.18+37
+0.9.19+38
+
+## 0.9.19+38 - 2026-11-02
+
+- Changed OFFLINE status text and icons from red to neutral gray.
+- Kept ONLINE status text and icons green.
+- No status layout or behavior was changed.
 
 ## 0.9.18+37 - 2026-11-02
 
