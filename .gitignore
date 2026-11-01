@@ -4,6 +4,8 @@
 !/logs/.gitkeep
 /uploads/surrender-photos/*
 !/uploads/surrender-photos/.gitkeep
+/uploads/profile-photos/*
+!/uploads/profile-photos/.gitkeep
 /.idea/
 /.vscode/
 Thumbs.db

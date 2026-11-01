@@ -1,6 +1,6 @@
 # AQUASENSE+ Carinderia Owner App
 
-Flutter owner application for AQUASENSE+. Version **0.9.13+32** aligns the app
+Flutter owner application for AQUASENSE+. Version **0.9.16+35** aligns the app
 with the administrative website's AQUASENSE+ visual system while retaining the
 Mobile Phase 7 owner-only foundation and Phase 4 sensor contract. The app now
 uses the website's emerald, deep-green, mint, canvas, border, typography, form,
@@ -10,7 +10,9 @@ and Android edge-back gestures follow tab history. A checked-in web launcher
 uses the ignored local API configuration for repeatable Chrome testing.
 The sign-in form no longer shows a redundant standalone login glyph, and the
 authenticated navigation identity displays the signed-in owner's full name,
-email address, and derived initials from the PHP API profile.
+email address, and private profile photo from the PHP API profile. Owners can
+use **Add photo** or **Change photo** on the Profile page; initials remain the
+fallback until a valid image is uploaded.
 The Incentives sidebar item is a tree that expands in place to the owner-only
 **Rice Incentives** and **Rice History** choices. Summaries and current rewards
 remain in Rice Incentives; transaction filters and records are isolated in Rice
@@ -26,10 +28,13 @@ Settings is categorized into Account, Security, and App permissions. Owners can
 change their sign-in email, replace an administrator-issued temporary password,
 review notification and optional Android display-over-other-apps status, and
 open the corresponding system permission controls.
-Device connectivity now comes from the independent ESP32 heartbeat. Old sensor
-telemetry is labeled **STALE SENSOR DATA** while a current heartbeat keeps the
-device **ONLINE**, preventing owners from mistaking a sensor issue for a device
-or network outage.
+Device connectivity now comes from the independent ESP32 heartbeat. The owner
+Dashboard status card intentionally displays only **ONLINE** or **OFFLINE**;
+individual sensor availability remains in the sensor section.
+Monitoring now presents the required sensor measurements in one compact panel
+instead of separate cards. It groups ENS160 air-quality values, uses calibrated
+turbidity/gas values with raw ADC fallback, omits diagnostic flow-pulse and
+duplicate raw tiles, and retains separate Gas and Odor rows.
 
 The app communicates only with the PHP API. It contains no SQL, MySQL package,
 or database credential.

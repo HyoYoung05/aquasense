@@ -5,6 +5,7 @@ if (PHP_SAPI !== 'cli' || !in_array('--allow-local-fixtures', $argv, true)) {
 }
 require dirname(__DIR__) . '/config/config.php';
 require dirname(__DIR__) . '/config/database.php';
+require dirname(__DIR__) . '/includes/functions.php';
 require dirname(__DIR__) . '/includes/mobile-monitoring.php';
 $siteBase = $config['test_base_url'] ?? null;
 if (!is_string($siteBase) || !filter_var($siteBase, FILTER_VALIDATE_URL)) {
@@ -13,6 +14,7 @@ if (!is_string($siteBase) || !filter_var($siteBase, FILTER_VALIDATE_URL)) {
 $base = rtrim($siteBase, '/') . '/api/mobile/';
 $checks = 0;
     $users = $sites = $traps = $devices = $assignments = $emails = $cleanupEmails = [];
+    $profilePhotoPath = null;
 $password = 'Test!' . bin2hex(random_bytes(12));
 function check(bool $ok, string $label): void {
     global $checks;
@@ -30,6 +32,33 @@ function call_api(string $path, ?array $body = null, ?string $token = null): arr
     $raw = curl_exec($curl);
     if ($raw === false) throw new RuntimeException(curl_error($curl));
     $result = ['status' => curl_getinfo($curl, CURLINFO_RESPONSE_CODE), 'json' => json_decode($raw, true, 32, JSON_THROW_ON_ERROR)];
+    curl_close($curl);
+    return $result;
+}
+function call_profile_photo_upload(string $file, ?string $token = null): array {
+    global $base;
+    $curl = curl_init($base . 'account-photo.php');
+    $headers = [];
+    if ($token !== null) $headers[] = 'Authorization: Bearer ' . $token;
+    curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15,
+        CURLOPT_HTTPHEADER => $headers, CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => ['photo' => new CURLFile($file, 'image/png', 'profile.png')]]);
+    $raw = curl_exec($curl);
+    if ($raw === false) throw new RuntimeException(curl_error($curl));
+    $result = ['status' => curl_getinfo($curl, CURLINFO_RESPONSE_CODE),
+        'json' => json_decode($raw, true, 32, JSON_THROW_ON_ERROR)];
+    curl_close($curl);
+    return $result;
+}
+function call_profile_photo(string $token): array {
+    global $base;
+    $curl = curl_init($base . 'profile-photo.php');
+    curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15,
+        CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token]]);
+    $raw = curl_exec($curl);
+    if ($raw === false) throw new RuntimeException(curl_error($curl));
+    $result = ['status' => curl_getinfo($curl, CURLINFO_RESPONSE_CODE),
+        'content_type' => curl_getinfo($curl, CURLINFO_CONTENT_TYPE), 'body' => $raw];
     curl_close($curl);
     return $result;
 }
@@ -106,6 +135,20 @@ try {
     $emailChange = call_api('account-email.php', ['email' => $updatedEmail, 'current_password' => $password], $token);
     check($emailChange['status'] === 200 && $emailChange['json']['data']['user']['email'] === $updatedEmail, 'Owner can change the mobile sign-in email');
     check(call_api('profile.php', null, $token)['json']['data']['user']['email'] === $updatedEmail, 'Email change updates the active owner profile');
+    $profileSource = dirname(__DIR__) . '/mobile/assets/images/water-drop-splash.png';
+    check(call_api('account-photo.php', null, $token)['status'] === 405, 'Owner profile photo requires POST');
+    check(call_profile_photo_upload($profileSource)['status'] === 401, 'Anonymous profile photo upload rejected');
+    $profileUpload = call_profile_photo_upload($profileSource, $token);
+    check($profileUpload['status'] === 200 && $profileUpload['json']['data']['user']['has_profile_photo'] === true,
+        'Owner can add a validated profile photo');
+    $profilePhotoPath = $pdo->query('SELECT profile_photo_path FROM users WHERE id=' . (int)$users[0])->fetchColumn();
+    check(is_string($profilePhotoPath) && is_file(storage_path($profilePhotoPath)),
+        'Profile photo is stored in protected storage');
+    check(call_api('profile.php', null, $token)['json']['data']['user']['has_profile_photo'] === true,
+        'Owner profile remembers the uploaded photo');
+    $profilePhoto = call_profile_photo($token);
+    check($profilePhoto['status'] === 200 && $profilePhoto['content_type'] === 'image/png' && strlen($profilePhoto['body']) > 0,
+        'Authenticated owner can retrieve the private profile photo');
     check(call_api('login.php', ['email' => $emails[0], 'password' => $password])['status'] === 401, 'Old owner email cannot sign in after change');
     $emails[0] = $updatedEmail;
     $cleanupEmails[] = $updatedEmail;
@@ -215,6 +258,9 @@ try {
     check(call_api('login.php', ['email'=>$emails[1], 'password'=>$password])['status'] === 429, 'API sign-in throttling enforced');
     echo "$checks checks passed.\n";
 } finally {
+    if (is_string($profilePhotoPath) && $profilePhotoPath !== '' && is_file(storage_path($profilePhotoPath))) {
+        unlink(storage_path($profilePhotoPath));
+    }
     foreach ($sites as $id) $pdo->prepare('DELETE FROM compliance_ledger WHERE establishment_id = ?')->execute([$id]);
     foreach ($assignments as $id) $pdo->prepare('DELETE FROM alerts WHERE device_assignment_id = ?')->execute([$id]);
     foreach ($assignments as $id) $pdo->prepare('DELETE FROM sensor_readings WHERE device_assignment_id = ?')->execute([$id]);

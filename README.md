@@ -35,7 +35,7 @@ outages; it is cleared by reset or power loss and drops the oldest record when
 full.
 COM3 must not be used. There is no microSD, OLED,
 buzzer, or DHT22. The Flutter source is tracked under
-[`mobile/`](mobile/README.md) at version **0.9.13+32**. Generated APKs,
+[`mobile/`](mobile/README.md) at version **0.9.16+35**. Generated APKs,
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 The current Android development build is verified with Flutter **3.41.6**.
 
@@ -245,7 +245,7 @@ These are the standard steps for a healthy XAMPP installation. See **Current mac
 5. Open [phpMyAdmin](http://localhost/phpmyadmin/).
 6. Create a database named **aquasense**, using `utf8mb4_unicode_ci`.
 7. Select **aquasense**, choose **Import**, select `database/schema.sql`, and click **Import/Go**. The SQL creates tables in the database selected by the importer, so production hosts may use their assigned database name without editing the schema.
-8. Apply migrations `001-mobile-tokens.sql` through `014-device-support.sql` in numeric order.
+8. Apply migrations `001-mobile-tokens.sql` through `015-owner-profile-photo.sql` in numeric order.
 9. For local development, import `database/sample-data.sql`. For a production-style empty database, import `database/reference-data.sql` instead; it creates roles but no users or passwords.
 10. Run `composer install` in the project directory to install the locked PDF dependency.
 11. If your local database credentials differ, copy `config/local.example.php` to `config/local.php` and adjust the settings. Set every development database value in the ignored file; the committed application has no database username, database name, or password defaults.
@@ -287,7 +287,7 @@ history, alerts, protected oil-surrender evidence, and incentive APIs under
 [Flutter Owner app](mobile/README.md) implements Mobile Phases 1 through 5,
 including authenticated oil surrender submission and review-state history.
 
-For an existing or fresh installation, select the `aquasense` database and import migrations 001 through 014 in order. Do not rerun the full schema on an existing database.
+For an existing or fresh installation, select the `aquasense` database and import migrations 001 through 015 in order. Do not rerun the full schema on an existing database.
 
 For local development only, run from the website directory:
 
@@ -378,6 +378,7 @@ aquasense-web/
     migrations/012-...sql      calibrated alert gates
     migrations/013-...sql      retired bench identity cleanup
     migrations/014-...sql      Admin-to-System-Admin device support
+    migrations/015-...sql      private owner profile-photo storage fields
   docs/ESP32_API.md            ESP32 request, authentication, and retry contract
   public/
     index.php                  public entry redirect
@@ -476,7 +477,7 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 
 - The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
 - PDF detail is limited to 500 rows and CSV detail to 10,000 rows; narrower filters are required for complete exports beyond those limits.
-- The Flutter Owner app is version `0.9.13+32`. Its responsive interface now
+- The Flutter Owner app is version `0.9.16+35`. Its responsive interface now
   follows the website's emerald, deep-green, mint, canvas, card, form, and
   navigation design system while remaining limited to owner workflows.
   Dashboard Quick Actions appear at the top of the owner dashboard with equal,
@@ -485,7 +486,8 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
   Android back gestures return through previously visited tabs before exiting
   from Home.
   The login form omits the redundant standalone login icon, while authenticated
-  navigation shows the signed-in owner's API-provided name and email.
+  navigation shows the signed-in owner's API-provided name, email, and private
+  profile photo, with an initials fallback and Add/Change photo control.
   The Incentives sidebar item expands in place into separate Rice Incentives
   and Rice History children; the parent does not open a page, and the old page
   and top-bar dropdowns have been removed. Its selected navigation label uses

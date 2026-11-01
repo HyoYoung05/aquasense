@@ -399,6 +399,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('owner@aquasense.test'), findsWidgets);
+    expect(find.text('Add photo'), findsOneWidget);
+    expect(find.byKey(const ValueKey('profile-photo-action')), findsOneWidget);
     expect(find.textContaining('Owner App v$appVersion'), findsOneWidget);
 
     await tester.binding.handlePopRoute();

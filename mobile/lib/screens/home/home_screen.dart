@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../config/app_config.dart';
 import '../../models/dashboard_snapshot.dart';
@@ -80,6 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? refreshError;
   bool loading = false;
   bool refreshing = false;
+  bool _uploadingProfilePhoto = false;
 
   @override
   void initState() {
@@ -261,6 +264,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: _OwnerWorkspaceLabel(
                         fullName: widget.auth.user!.fullName,
                         email: widget.auth.user!.email,
+                        photoBytes: widget.auth.profilePhotoBytes,
                       ),
                     ),
                     const Divider(),
@@ -312,6 +316,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _WideNavigationSidebar(
                     fullName: widget.auth.user!.fullName,
                     email: widget.auth.user!.email,
+                    photoBytes: widget.auth.profilePhotoBytes,
                     selectedIndex: selectedIndex,
                     incentiveView: _incentiveView,
                     incentivesExpanded: _incentivesExpanded,
@@ -416,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _profilePage() {
-    final owner = snapshot?.dashboard.user ?? widget.auth.user!;
+    final owner = widget.auth.user ?? snapshot!.dashboard.user;
     final establishments = snapshot?.dashboard.establishments;
     return ListView(
       padding: const EdgeInsets.all(24),
@@ -430,7 +435,36 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(Icons.account_circle_outlined, size: 64),
+                    Align(
+                      child: _OwnerPhoto(
+                        fullName: owner.fullName,
+                        photoBytes: widget.auth.profilePhotoBytes,
+                        size: 112,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Align(
+                      child: OutlinedButton.icon(
+                        key: const ValueKey('profile-photo-action'),
+                        onPressed: _uploadingProfilePhoto
+                            ? null
+                            : _chooseProfilePhoto,
+                        icon: _uploadingProfilePhoto
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.add_a_photo_outlined),
+                        label: Text(
+                          owner.hasProfilePhoto ||
+                                  widget.auth.profilePhotoBytes != null
+                              ? 'Change photo'
+                              : 'Add photo',
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       owner.fullName,
@@ -468,6 +502,42 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> _chooseProfilePhoto() async {
+    XFile? selected;
+    try {
+      selected = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 88,
+      );
+      if (selected == null || !mounted) return;
+      setState(() => _uploadingProfilePhoto = true);
+      final bytes = await selected.readAsBytes();
+      await widget.auth.updateProfilePhoto(
+        filePath: selected.path,
+        filename: selected.name,
+        bytes: bytes,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Profile photo updated.')));
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not update the profile photo.')),
+      );
+    } finally {
+      if (mounted) setState(() => _uploadingProfilePhoto = false);
+    }
   }
 }
 
@@ -511,6 +581,7 @@ class _DrawerDestinationTile extends StatelessWidget {
 class _WideNavigationSidebar extends StatelessWidget {
   final String fullName;
   final String email;
+  final Uint8List? photoBytes;
   final int selectedIndex;
   final IncentiveView incentiveView;
   final bool incentivesExpanded;
@@ -521,6 +592,7 @@ class _WideNavigationSidebar extends StatelessWidget {
   const _WideNavigationSidebar({
     required this.fullName,
     required this.email,
+    this.photoBytes,
     required this.selectedIndex,
     required this.incentiveView,
     required this.incentivesExpanded,
@@ -538,7 +610,11 @@ class _WideNavigationSidebar extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 12, 18),
-          child: _OwnerWorkspaceLabel(fullName: fullName, email: email),
+          child: _OwnerWorkspaceLabel(
+            fullName: fullName,
+            email: email,
+            photoBytes: photoBytes,
+          ),
         ),
         const Divider(),
         for (var index = 0; index < 4; index++)
@@ -706,8 +782,31 @@ class _IncentiveSubmenuTile extends StatelessWidget {
 
 class _WorkspaceMark extends StatelessWidget {
   final String fullName;
+  final Uint8List? photoBytes;
 
-  const _WorkspaceMark({required this.fullName});
+  const _WorkspaceMark({required this.fullName, this.photoBytes});
+
+  @override
+  Widget build(BuildContext context) => _OwnerPhoto(
+    fullName: fullName,
+    photoBytes: photoBytes,
+    size: 34,
+    borderRadius: 7,
+  );
+}
+
+class _OwnerPhoto extends StatelessWidget {
+  final String fullName;
+  final Uint8List? photoBytes;
+  final double size;
+  final double? borderRadius;
+
+  const _OwnerPhoto({
+    required this.fullName,
+    required this.photoBytes,
+    required this.size,
+    this.borderRadius,
+  });
 
   String get initials {
     final parts = fullName
@@ -722,39 +821,62 @@ class _WorkspaceMark extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: 34,
-    height: 34,
-    alignment: Alignment.center,
-    decoration: BoxDecoration(
-      color: const Color(0xFFF7F8F5),
-      border: Border.all(color: line),
-      borderRadius: BorderRadius.circular(7),
-    ),
-    child: Text(
-      initials,
-      style: const TextStyle(
-        color: forest,
-        fontSize: 10,
-        fontWeight: FontWeight.w800,
-        letterSpacing: .5,
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(borderRadius ?? size / 2);
+    return Semantics(
+      image: photoBytes != null,
+      label: photoBytes == null
+          ? '$fullName initials'
+          : '$fullName profile photo',
+      child: Container(
+        width: size,
+        height: size,
+        clipBehavior: Clip.antiAlias,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F8F5),
+          border: Border.all(color: line),
+          borderRadius: radius,
+        ),
+        child: photoBytes == null
+            ? Text(
+                initials,
+                style: TextStyle(
+                  color: forest,
+                  fontSize: size * .3,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: .5,
+                ),
+              )
+            : Image.memory(
+                photoBytes!,
+                width: size,
+                height: size,
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+              ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _OwnerWorkspaceLabel extends StatelessWidget {
   final String fullName;
   final String email;
+  final Uint8List? photoBytes;
 
-  const _OwnerWorkspaceLabel({required this.fullName, required this.email});
+  const _OwnerWorkspaceLabel({
+    required this.fullName,
+    required this.email,
+    this.photoBytes,
+  });
 
   @override
   Widget build(BuildContext context) => SizedBox(
     width: 198,
     child: Row(
       children: [
-        _WorkspaceMark(fullName: fullName),
+        _WorkspaceMark(fullName: fullName, photoBytes: photoBytes),
         const SizedBox(width: 10),
         Expanded(
           child: Column(

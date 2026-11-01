@@ -2,7 +2,31 @@
 
 ## Current Version
 
-0.9.13+32
+0.9.16+35
+
+## 0.9.16+35 - 2026-11-01
+
+- Added authenticated owner profile-photo upload from the Profile page.
+- The action reads **Add photo** before upload and **Change photo** afterward.
+- Restores the private photo after sign-in and displays it in the Profile page
+  and owner navigation identity, with initials retained as the fallback.
+- Stores only validated JPEG, PNG, or WEBP files (maximum 5 MB) outside the
+  public web root and serves them only to the authenticated owner.
+
+## 0.9.15+34 - 2026-11-01
+
+- Replaced the Monitoring sensor-card grid with one compact sensor panel.
+- Shows only Wastewater Temperature, Turbidity, Flow Rate, Air Quality, Gas,
+  and Odor; gas and odor remain separate readings.
+- Combined ENS160 AQI, TVOC, and eCO2 in one Air Quality row and removed
+  duplicate raw, flow-pulse, ambient-temperature, and humidity tiles.
+- Uses raw ADC as a fallback when turbidity or gas calibration is unavailable.
+
+## 0.9.14+33 - 2026-11-01
+
+- Simplified the owner Dashboard device card to display only ONLINE or OFFLINE.
+- Removed stale-sensor headlines and explanatory status sentences from that
+  card; individual sensor availability remains visible below it.
 
 ## 0.9.13+32 - 2026-11-01
 

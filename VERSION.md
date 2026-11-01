@@ -2,7 +2,7 @@
 
 1.4.13
 
-## Website/backend 1.4.13, Flutter owner app 0.9.13+32, and ESP32 firmware 0.8.7
+## Website/backend 1.4.13, Flutter owner app 0.9.16+35, and ESP32 firmware 0.8.7
 
 Date: 2026-11-01
 
@@ -21,6 +21,12 @@ Date: 2026-11-01
   credentials, inactive/unknown devices, heartbeat storage, and no fake data.
 - Owner Dashboard and Monitoring now label an old reading as STALE SENSOR DATA
   while the heartbeat is current; OFFLINE is reserved for an expired heartbeat.
+- Owner Monitoring consolidates required sensor measurements into one compact
+  panel and removes duplicate diagnostic tiles while keeping Gas and Odor separate.
+- Simplified the owner Dashboard device card to show only ONLINE or OFFLINE,
+  without a stale-sensor headline or explanatory status sentence.
+- Added private owner profile photos with authenticated upload/download,
+  Add/Change photo states, validation, and initials fallback in the app.
 
 ## Website/backend 1.4.12, Flutter owner app 0.9.12+31, and ESP32 firmware 0.8.6
 

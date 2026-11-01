@@ -516,99 +516,42 @@ class _MonitoringScreenState extends State<MonitoringScreen>
 
   Widget _sensorOverview(GreaseTrapMonitoring trap) {
     final reading = trap.reading;
-    final width = MediaQuery.sizeOf(context).width;
-    final columns = width >= 720 ? 4 : (width < 420 ? 1 : 2);
+    String measured(double? value, String unit, String fallback) =>
+        value == null ? fallback : '${cleanNumber(value)} $unit';
+    final turbidity = reading?.turbidity != null
+        ? measured(reading!.turbidity, 'NTU', 'Not connected')
+        : measured(reading?.turbidityRawAdc, 'ADC (raw)', 'Not connected');
+    final flow = reading?.flowRate != null
+        ? measured(reading!.flowRate, 'L/min', 'Not connected')
+        : reading?.flowPulseCount != null
+        ? 'Not calibrated'
+        : 'Not connected';
+    final airQualityParts = <String>[
+      if (reading?.ens160Aqi != null) measured(reading!.ens160Aqi, 'AQI', ''),
+      if (reading?.tvocPpb != null) measured(reading!.tvocPpb, 'ppb TVOC', ''),
+      if (reading?.eco2Ppm != null) measured(reading!.eco2Ppm, 'ppm eCO2', ''),
+    ];
+    final gas = reading?.gasValue != null
+        ? measured(reading!.gasValue, 'calibrated', 'Not connected')
+        : measured(reading?.gasRawAdc, 'ADC (raw)', 'Not connected');
     final sensors = [
       (
         'Wastewater Temperature',
-        reading?.temperature,
-        '°C',
+        measured(reading?.temperature, '°C', 'Not connected'),
         Icons.thermostat_outlined,
-        'Not connected',
       ),
+      ('Turbidity', turbidity, Icons.opacity_outlined),
+      ('Flow Rate', flow, Icons.air_outlined),
       (
-        'Turbidity',
-        reading?.turbidity,
-        'NTU',
-        Icons.opacity_outlined,
-        'Not calibrated',
-      ),
-      (
-        'Turbidity Raw',
-        reading?.turbidityRawAdc,
-        'ADC',
-        Icons.opacity_outlined,
-        'Not connected',
-      ),
-      (
-        'Flow Rate',
-        reading?.flowRate,
-        'L/min',
+        'Air Quality',
+        airQualityParts.isEmpty ? 'Not connected' : airQualityParts.join(' · '),
         Icons.air_outlined,
-        'Not connected',
       ),
+      ('Gas', gas, Icons.co2_outlined),
       (
-        'Flow Pulses',
-        reading?.flowPulseCount,
-        'pulses',
-        Icons.speed_outlined,
-        'Not connected',
-      ),
-      (
-        'Ambient Temperature',
-        reading?.ambientTemperature,
-        '°C',
-        Icons.device_thermostat_outlined,
-        'Not connected',
-      ),
-      (
-        'Humidity',
-        reading?.humidity,
-        '% RH',
-        Icons.water_drop_outlined,
-        'Not connected',
-      ),
-      (
-        'ENS160 AQI',
-        reading?.ens160Aqi,
-        'AQI',
-        Icons.air_outlined,
-        'Not connected',
-      ),
-      (
-        'ENS160 TVOC',
-        reading?.tvocPpb,
-        'ppb',
-        Icons.air_outlined,
-        'Not connected',
-      ),
-      (
-        'ENS160 eCO2',
-        reading?.eco2Ppm,
-        'ppm',
-        Icons.co2_outlined,
-        'Not connected',
-      ),
-      (
-        'MQ-135 Calibrated Gas',
-        reading?.gasValue,
-        'calibrated',
-        Icons.co2_outlined,
-        'Not calibrated',
-      ),
-      (
-        'MQ-135 Raw',
-        reading?.gasRawAdc,
-        'ADC',
-        Icons.co2_outlined,
-        'Not connected',
-      ),
-      (
-        'Odor Sensor Reading',
-        reading?.odorValue,
-        'raw',
+        'Odor',
+        measured(reading?.odorValue, 'raw', 'Not connected'),
         Icons.sensors_outlined,
-        'Not connected',
       ),
     ];
     return Column(
@@ -621,40 +564,43 @@ class _MonitoringScreenState extends State<MonitoringScreen>
           ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 12),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: columns,
-            childAspectRatio: columns == 1 ? 2.0 : (columns == 2 ? 1.35 : 1.05),
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-          ),
-          itemCount: sensors.length,
-          itemBuilder: (context, index) {
-            final sensor = sensors[index];
-            return Card(
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(sensor.$4, color: emerald),
-                    const SizedBox(height: 8),
-                    Text(sensor.$1),
-                    const SizedBox(height: 3),
-                    Text(
-                      sensor.$2 == null
-                          ? sensor.$5
-                          : '${cleanNumber(sensor.$2!)} ${sensor.$3}',
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ],
+        Card(
+          key: const Key('sensor-summary-panel'),
+          child: Column(
+            children: [
+              for (var index = 0; index < sensors.length; index++) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(sensors[index].$3, color: emerald, size: 22),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(sensors[index].$1),
+                            const SizedBox(height: 3),
+                            Text(
+                              sensors[index].$2,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
+                if (index < sensors.length - 1) const Divider(height: 1),
+              ],
+            ],
+          ),
         ),
       ],
     );

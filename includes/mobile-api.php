@@ -101,6 +101,7 @@ function mobile_token_hash(): string
 function mobile_owner(): array
 {
     $query = db()->prepare('SELECT u.id, u.full_name, u.email, u.password_hash,
+        u.profile_photo_path, u.profile_photo_mime, u.profile_photo_updated_at,
         t.password_fingerprint FROM mobile_tokens t
         JOIN users u ON u.id = t.user_id JOIN roles r ON r.id = u.role_id
         WHERE t.token_hash = ? AND t.expires_at > UTC_TIMESTAMP()
@@ -110,5 +111,13 @@ function mobile_owner(): array
     if (!$user || !hash_equals($user['password_fingerprint'], hash('sha256', $user['password_hash']))) {
         api_fail('Your session has expired. Please sign in again.', 401);
     }
-    return ['id' => (int) $user['id'], 'full_name' => $user['full_name'], 'email' => $user['email']];
+    return [
+        'id' => (int) $user['id'],
+        'full_name' => $user['full_name'],
+        'email' => $user['email'],
+        'has_profile_photo' => $user['profile_photo_path'] !== null,
+        'profile_photo_updated_at' => $user['profile_photo_updated_at'] === null
+            ? null
+            : str_replace(' ', 'T', $user['profile_photo_updated_at']) . 'Z',
+    ];
 }

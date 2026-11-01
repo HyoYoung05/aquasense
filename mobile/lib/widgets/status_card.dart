@@ -20,24 +20,12 @@ class StatusCard extends StatelessWidget {
     final reading = trap.reading;
     final offline = trap.deviceStatus != 'ONLINE';
     final stale = trap.isStale || snapshotExpired;
-    final status = snapshotExpired ? 'REFRESH NEEDED' : trap.status;
-    final urgent = const {
-      'CRITICAL',
-      'OVERFLOW',
-      'EMULSION WARNING',
-    }.contains(status);
-    final warning = const {'MEDIUM', 'HIGH', 'WARNING'}.contains(status);
-    final color = urgent
-        ? const Color(0xFF9B2C22)
-        : warning
-        ? const Color(0xFF805600)
-        : stale
-        ? const Color(0xFF4C6061)
-        : forest;
+    final status = offline ? 'OFFLINE' : 'ONLINE';
+    final color = offline ? const Color(0xFF4C6061) : forest;
 
     return Semantics(
       container: true,
-      label: '${trap.name}, condition $status, device ${trap.deviceStatus}',
+      label: '${trap.name}, device $status',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -56,7 +44,7 @@ class StatusCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'CURRENT CONDITION',
+                  'DEVICE STATUS',
                   style: TextStyle(
                     color: Colors.white,
                     letterSpacing: 1.5,
@@ -71,10 +59,6 @@ class StatusCard extends StatelessWidget {
                     Icon(
                       offline
                           ? Icons.cloud_off_outlined
-                          : stale
-                          ? Icons.history
-                          : urgent || warning
-                          ? Icons.warning_amber_rounded
                           : Icons.check_circle_outline,
                       color: Colors.white,
                       size: 34,
@@ -88,19 +72,6 @@ class StatusCard extends StatelessWidget {
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  reading == null
-                      ? 'No sensor data has been received yet.'
-                      : offline
-                      ? 'Device offline. Values below are the last known readings.'
-                      : stale
-                      ? 'Device online. Sensor values below are the last known readings.'
-                      : urgent || warning
-                      ? 'Attention is required. Inspect the grease trap.'
-                      : 'Latest condition reported by the AQUASENSE+ server.',
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
                 if (reading?.isTest == true)
                   const Padding(

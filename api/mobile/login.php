@@ -48,4 +48,12 @@ try {
     throw $error;
 }
 api_ok(['token' => $token, 'expires_at' => str_replace(' ', 'T', $expires) . 'Z',
-    'user' => ['id' => (int) $user['id'], 'full_name' => $user['full_name'], 'email' => $user['email']]]);
+    'user' => [
+        'id' => (int) $user['id'],
+        'full_name' => $user['full_name'],
+        'email' => $user['email'],
+        'has_profile_photo' => $user['profile_photo_path'] !== null,
+        'profile_photo_updated_at' => $user['profile_photo_updated_at'] === null
+            ? null
+            : str_replace(' ', 'T', $user['profile_photo_updated_at']) . 'Z',
+    ]]);

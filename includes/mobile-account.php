@@ -29,7 +29,8 @@ function mobile_account_check_attempts(int $ownerId): void
 
 function mobile_account_owner_for_update(PDO $pdo, int $ownerId): array
 {
-    $query = $pdo->prepare("SELECT u.id,u.full_name,u.email,u.password_hash
+    $query = $pdo->prepare("SELECT u.id,u.full_name,u.email,u.password_hash,
+        u.profile_photo_path,u.profile_photo_updated_at
         FROM users u JOIN roles r ON r.id=u.role_id
         WHERE u.id=? AND u.is_active=1 AND r.slug='owner' FOR UPDATE");
     $query->execute([$ownerId]);
@@ -73,7 +74,15 @@ function mobile_account_change_email(int $ownerId, array $input): array
         $pdo->prepare('UPDATE users SET email=? WHERE id=?')->execute([$email, $ownerId]);
         audit('OWNER_EMAIL_CHANGED', $ownerId, 'users', $ownerId);
         $pdo->commit();
-        return ['id' => $ownerId, 'full_name' => $owner['full_name'], 'email' => $email];
+        return [
+            'id' => $ownerId,
+            'full_name' => $owner['full_name'],
+            'email' => $email,
+            'has_profile_photo' => $owner['profile_photo_path'] !== null,
+            'profile_photo_updated_at' => $owner['profile_photo_updated_at'] === null
+                ? null
+                : str_replace(' ', 'T', $owner['profile_photo_updated_at']) . 'Z',
+        ];
     } catch (Throwable $error) {
         if ($pdo->inTransaction()) $pdo->rollBack();
         if ($error instanceof MobileAccountException && $error->getMessage() === 'The current password is incorrect.') {

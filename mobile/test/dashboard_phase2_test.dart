@@ -333,7 +333,7 @@ void main() {
         ),
       ),
     );
-    expect(find.text('No sensor data has been received yet.'), findsWidgets);
+    expect(find.text('ONLINE'), findsOneWidget);
     expect(find.text('0%'), findsNothing);
     expect(tester.takeException(), isNull);
   });
@@ -383,14 +383,9 @@ void main() {
           ),
         ),
       );
-      expect(find.text('STALE SENSOR DATA'), findsOneWidget);
-      expect(
-        find.text(
-          'Device online. Sensor values below are the last known readings.',
-        ),
-        findsOneWidget,
-      );
-      expect(find.text('Device offline.'), findsNothing);
+      expect(find.text('ONLINE'), findsOneWidget);
+      expect(find.text('STALE SENSOR DATA'), findsNothing);
+      expect(find.textContaining('Device online'), findsNothing);
     },
   );
 

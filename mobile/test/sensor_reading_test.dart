@@ -37,7 +37,7 @@ void main() {
     expect(reading.ultrasonicDistance, isNull);
   });
 
-  testWidgets('device warning renders without inventing a temperature', (
+  testWidgets('online device renders without inventing a temperature', (
     tester,
   ) async {
     final trap = GreaseTrap(
@@ -58,7 +58,8 @@ void main() {
         ),
       ),
     );
-    expect(find.text('WARNING'), findsOneWidget);
+    expect(find.text('ONLINE'), findsWidgets);
+    expect(find.text('WARNING'), findsNothing);
     expect(find.text('75%'), findsOneWidget);
     expect(find.text('TEST DATA · Development reading'), findsNothing);
     expect(find.text('11.3 cm'), findsOneWidget);

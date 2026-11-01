@@ -44,6 +44,7 @@ class AuthService extends ChangeNotifier {
 
   AuthState state = AuthState.checking;
   OwnerUser? user;
+  Uint8List? profilePhotoBytes;
   String? error;
   String? notice;
   String? _token;
@@ -71,6 +72,7 @@ class AuthService extends ChangeNotifier {
         } else {
           final data = await api.get('profile.php', token: _token);
           user = OwnerUser.fromJson(data['user'] as Map<String, dynamic>);
+          await _restoreProfilePhoto();
           state = AuthState.signedIn;
         }
       } on ApiException catch (exception) {
@@ -123,6 +125,7 @@ class AuthService extends ChangeNotifier {
       }
       _token = result.token;
       user = result.user;
+      await _restoreProfilePhoto();
       error = null;
       _generation++;
       state = AuthState.signedIn;
@@ -242,6 +245,52 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateProfilePhoto({
+    required String filePath,
+    required String filename,
+    required Uint8List bytes,
+  }) async {
+    final data = await postMultipart(
+      'account-photo.php',
+      fields: const {},
+      fileField: 'photo',
+      filePath: filePath,
+      filename: filename,
+      fileBytes: bytes,
+    );
+    final updated = data['user'];
+    if (updated is! Map<String, dynamic>) {
+      throw const ApiException(
+        'The server returned an unreadable account profile.',
+        type: ApiErrorType.serverError,
+      );
+    }
+    try {
+      user = OwnerUser.fromJson(updated);
+    } on FormatException {
+      throw const ApiException(
+        'The server returned an unreadable account profile.',
+        type: ApiErrorType.serverError,
+      );
+    }
+    profilePhotoBytes = bytes;
+    notifyListeners();
+  }
+
+  Future<void> _restoreProfilePhoto() async {
+    profilePhotoBytes = null;
+    if (user?.hasProfilePhoto != true || _token == null) return;
+    try {
+      profilePhotoBytes = await api.getBytes(
+        'profile-photo.php',
+        token: _token!,
+      );
+    } catch (_) {
+      // A missing/corrupt optional image must not block account sign-in.
+      profilePhotoBytes = null;
+    }
+  }
+
   Future<Map<String, dynamic>> postMultipart(
     String path, {
     required Map<String, String> fields,
@@ -305,6 +354,7 @@ class AuthService extends ChangeNotifier {
     _generation++;
     _token = null;
     user = null;
+    profilePhotoBytes = null;
     this.notice = notice;
     state = AuthState.signedOut;
     _mustClear = true;

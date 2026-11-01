@@ -395,12 +395,22 @@ void main() {
       expect(find.text('410 NTU'), findsWidgets);
       expect(find.text('1.8 L/min'), findsWidgets);
       expect(find.text('725 calibrated'), findsWidgets);
-      expect(find.text('1820 ADC'), findsWidgets);
-      expect(find.text('29.8 °C'), findsWidgets);
-      expect(find.text('68.2 % RH'), findsWidgets);
-      expect(find.text('2 AQI'), findsWidgets);
-      expect(find.text('120 ppb'), findsWidgets);
-      expect(find.text('510 ppm'), findsWidgets);
+      expect(find.text('240 raw'), findsWidgets);
+      expect(find.text('2 AQI · 120 ppb TVOC · 510 ppm eCO2'), findsOneWidget);
+      final sensorPanel = find.byKey(const Key('sensor-summary-panel'));
+      expect(sensorPanel, findsOneWidget);
+      for (final removedLabel in [
+        'Turbidity Raw',
+        'Flow Pulses',
+        'Ambient Temperature',
+        'Humidity',
+        'MQ-135 Raw',
+      ]) {
+        expect(
+          find.descendant(of: sensorPanel, matching: find.text(removedLabel)),
+          findsNothing,
+        );
+      }
       expect(find.text('AQS-001'), findsWidgets);
       expect(find.text('ONLINE'), findsWidgets);
       expect(find.textContaining('Oct 4, 2026'), findsWidgets);
@@ -467,8 +477,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Awaiting Sensor Data'), findsWidgets);
     expect(find.text('No data'), findsWidgets);
-    expect(find.text('Not connected'), findsNWidgets(11));
-    expect(find.text('Not calibrated'), findsNWidgets(2));
+    expect(find.text('Not connected'), findsNWidgets(6));
+    expect(find.text('Not calibrated'), findsNothing);
     await tester.scrollUntilVisible(
       find.text('No telemetry history'),
       300,
