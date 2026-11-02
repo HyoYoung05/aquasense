@@ -1,6 +1,6 @@
 # AQUASENSE+ Carinderia Owner App
 
-Flutter owner application for AQUASENSE+. Version **0.9.20+39** aligns the app
+Flutter owner application for AQUASENSE+. Version **0.9.21+40** aligns the app
 with the administrative website's AQUASENSE+ visual system while retaining the
 Mobile Phase 7 owner-only foundation and Phase 4 sensor contract. The app now
 uses the website's emerald, deep-green, mint, canvas, border, typography, form,
@@ -12,7 +12,9 @@ The sign-in form no longer shows a redundant standalone login glyph, and the
 authenticated navigation identity displays the signed-in owner's full name,
 email address, and private profile photo from the PHP API profile. Owners can
 use **Add photo** or **Change photo** on the Profile page; initials remain the
-fallback until a valid image is uploaded.
+fallback until a valid image is uploaded. The authenticated photo update uses
+a bounded JSON payload because the production host rejects multipart uploads
+before the request reaches PHP.
 The Incentives sidebar item is a tree that expands in place to the owner-only
 **Rice Incentives** and **Rice History** choices. Summaries and current rewards
 remain in Rice Incentives; transaction filters and records are isolated in Rice

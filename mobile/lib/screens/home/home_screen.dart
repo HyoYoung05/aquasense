@@ -517,7 +517,6 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => _uploadingProfilePhoto = true);
       final bytes = await selected.readAsBytes();
       await widget.auth.updateProfilePhoto(
-        filePath: selected.path,
         filename: selected.name,
         bytes: bytes,
       );

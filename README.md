@@ -4,7 +4,7 @@
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 six-sensor firmware.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.4.16 keeps one dedicated development-only Admin login for the website and one Owner login for the mobile app while preserving existing local accounts and production role boundaries. Simulated administrative fixtures are excluded from owner-facing Monitoring and Alerts, owners can securely replace their sign-in email or temporary password from the app, Barangay Administrators can manage User Accounts and Alert Settings without receiving Administrative Core access, and authenticated ESP32 heartbeats separate device connectivity from sensor validity. The guarded Monitoring utility now uses the neutral **Telemetry simulator** label without a development badge, while the owner app renders ONLINE in green and OFFLINE in gray. Production Flutter builds receive the tracked public HTTPS API root, and same-origin Flutter Web requests are accepted without weakening the explicit CORS allowlist.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.4.17 keeps one dedicated development-only Admin login for the website and one Owner login for the mobile app while preserving existing local accounts and production role boundaries. Simulated administrative fixtures are excluded from owner-facing Monitoring and Alerts, owners can securely replace their sign-in email or temporary password from the app, Barangay Administrators can manage User Accounts and Alert Settings without receiving Administrative Core access, and authenticated ESP32 heartbeats separate device connectivity from sensor validity. The guarded Monitoring utility now uses the neutral **Telemetry simulator** label without a development badge, while the owner app renders ONLINE in green and OFFLINE in gray. Production Flutter builds receive the tracked public HTTPS API root, same-origin Flutter Web requests are accepted without weakening the explicit CORS allowlist, and owner profile photos use an authenticated JSON upload compatible with the production host.
 
 The authenticated website notification bell has a protected 44 px click area,
 opens the Alerts workspace, and uses versioned JavaScript assets so repaired
@@ -35,7 +35,7 @@ outages; it is cleared by reset or power loss and drops the oldest record when
 full.
 COM3 must not be used. There is no microSD, OLED,
 buzzer, or DHT22. The Flutter source is tracked under
-[`mobile/`](mobile/README.md) at version **0.9.20+39**. Generated APKs,
+[`mobile/`](mobile/README.md) at version **0.9.21+40**. Generated APKs,
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 The current Android development build is verified with Flutter **3.41.6**.
 
@@ -71,7 +71,7 @@ physical installation or field-acceptance item.
 See the [connected-sensor verification](esp32/PHYSICAL-VERIFICATION-2026-10-22.md)
 for the measured results and remaining corrections.
 
-**Version: 1.4.16**
+**Version: 1.4.17**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -482,7 +482,7 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 
 - The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
 - PDF detail is limited to 500 rows and CSV detail to 10,000 rows; narrower filters are required for complete exports beyond those limits.
-- The Flutter Owner app is version `0.9.20+39`. Its responsive interface now
+- The Flutter Owner app is version `0.9.21+40`. Its responsive interface now
   follows the website's emerald, deep-green, mint, canvas, card, form, and
   navigation design system while remaining limited to owner workflows.
   Dashboard Quick Actions appear at the top of the owner dashboard with equal,
@@ -492,7 +492,9 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
   from Home.
   The login form omits the redundant standalone login icon, while authenticated
   navigation shows the signed-in owner's API-provided name, email, and private
-  profile photo, with an initials fallback and Add/Change photo control.
+  profile photo, with an initials fallback and Add/Change photo control. Photo
+  updates use a bounded authenticated JSON request because the production host
+  rejects multipart uploads before PHP authorization.
   The Incentives sidebar item expands in place into separate Rice Incentives
   and Rice History children; the parent does not open a page, and the old page
   and top-bar dropdowns have been removed. Its selected navigation label uses

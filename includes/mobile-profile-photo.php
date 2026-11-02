@@ -46,9 +46,65 @@ function mobile_profile_photo_validate(array $file, int $maximumBytes = 5_242_88
     ];
 }
 
+function mobile_profile_photo_json_body(int $maximumBytes = 5_242_880): string
+{
+    if (strtolower(trim(explode(';', $_SERVER['CONTENT_TYPE'] ?? '')[0])) !== 'application/json') {
+        throw new MobileProfilePhotoException('Send the profile photo as JSON.', 415);
+    }
+    $maximumEncodedBytes = 4 * (int) ceil($maximumBytes / 3) + 1024;
+    $raw = file_get_contents('php://input', false, null, 0, $maximumEncodedBytes + 1);
+    if ($raw === false || strlen($raw) > $maximumEncodedBytes) {
+        throw new MobileProfilePhotoException('The profile photo must be 5 MB or smaller.', 413);
+    }
+    try {
+        $body = json_decode($raw, true, 4, JSON_THROW_ON_ERROR);
+    } catch (JsonException) {
+        throw new MobileProfilePhotoException('The profile photo request could not be read.', 400);
+    }
+    $encoded = is_array($body) ? ($body['data_base64'] ?? null) : null;
+    if (!is_string($encoded) || $encoded === '') {
+        throw new MobileProfilePhotoException('Choose a profile photo to upload.');
+    }
+    $bytes = base64_decode($encoded, true);
+    if ($bytes === false || $bytes === '' || strlen($bytes) > $maximumBytes) {
+        throw new MobileProfilePhotoException('The profile photo must be a valid image no larger than 5 MB.');
+    }
+    return $bytes;
+}
+
+function mobile_profile_photo_validate_bytes(string $bytes): array
+{
+    $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+    $mime = (new finfo(FILEINFO_MIME_TYPE))->buffer($bytes) ?: '';
+    $extension = $allowed[$mime] ?? null;
+    $dimensions = @getimagesizefromstring($bytes);
+    if ($extension === null || $dimensions === false || ($dimensions['mime'] ?? '') !== $mime) {
+        throw new MobileProfilePhotoException('Use a valid JPEG, PNG, or WEBP profile photo.');
+    }
+    if ((int) $dimensions[0] < 64 || (int) $dimensions[1] < 64) {
+        throw new MobileProfilePhotoException('The profile photo must be at least 64 by 64 pixels.');
+    }
+    return ['mime_type' => $mime, 'extension' => $extension];
+}
+
+function mobile_profile_photo_store_bytes(PDO $pdo, int $ownerId, string $bytes): array
+{
+    $photo = mobile_profile_photo_validate_bytes($bytes);
+    return mobile_profile_photo_store_content($pdo, $ownerId, $photo, $bytes);
+}
+
 function mobile_profile_photo_store(PDO $pdo, int $ownerId, array $file): array
 {
     $photo = mobile_profile_photo_validate($file);
+    $bytes = file_get_contents($photo['temporary_path']);
+    if ($bytes === false) {
+        throw new RuntimeException('The profile photo could not be read.');
+    }
+    return mobile_profile_photo_store_content($pdo, $ownerId, $photo, $bytes);
+}
+
+function mobile_profile_photo_store_content(PDO $pdo, int $ownerId, array $photo, string $bytes): array
+{
     $relativeDirectory = 'profile-photos';
     $directory = storage_path($relativeDirectory);
     if (!is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)) {
@@ -60,7 +116,8 @@ function mobile_profile_photo_store(PDO $pdo, int $ownerId, array $file): array
     $oldQuery = $pdo->prepare('SELECT profile_photo_path FROM users WHERE id=?');
     $oldQuery->execute([$ownerId]);
     $oldRelativePath = $oldQuery->fetchColumn();
-    if (!move_uploaded_file($photo['temporary_path'], $absolutePath)) {
+    if (file_put_contents($absolutePath, $bytes, LOCK_EX) !== strlen($bytes)) {
+        @unlink($absolutePath);
         throw new RuntimeException('The profile photo could not be stored.');
     }
     @chmod($absolutePath, 0640);

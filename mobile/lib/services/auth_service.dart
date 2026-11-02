@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -178,6 +180,7 @@ class AuthService extends ChangeNotifier {
   Future<Map<String, dynamic>> post(
     String path, {
     required Map<String, dynamic> body,
+    Duration? timeout,
   }) async {
     final generation = _generation;
     final token = _token;
@@ -185,7 +188,12 @@ class AuthService extends ChangeNotifier {
       throw const ApiException.unauthorized('Please sign in to continue.');
     }
     try {
-      final data = await api.post(path, token: token, body: body);
+      final data = await api.post(
+        path,
+        token: token,
+        body: body,
+        timeout: timeout,
+      );
       if (generation != _generation) {
         throw const ApiException.unauthorized('The session changed.');
       }
@@ -246,17 +254,13 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> updateProfilePhoto({
-    required String filePath,
     required String filename,
     required Uint8List bytes,
   }) async {
-    final data = await postMultipart(
-      'account-photo.php',
-      fields: const {},
-      fileField: 'photo',
-      filePath: filePath,
-      filename: filename,
-      fileBytes: bytes,
+    final data = await post(
+      'profile.php',
+      body: {'filename': filename, 'data_base64': base64Encode(bytes)},
+      timeout: const Duration(seconds: 60),
     );
     final updated = data['user'];
     if (updated is! Map<String, dynamic>) {

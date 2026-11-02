@@ -37,12 +37,15 @@ function call_api(string $path, ?array $body = null, ?string $token = null): arr
 }
 function call_profile_photo_upload(string $file, ?string $token = null): array {
     global $base;
-    $curl = curl_init($base . 'account-photo.php');
-    $headers = [];
+    $curl = curl_init($base . 'profile.php');
+    $headers = ['Content-Type: application/json'];
     if ($token !== null) $headers[] = 'Authorization: Bearer ' . $token;
     curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15,
         CURLOPT_HTTPHEADER => $headers, CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => ['photo' => new CURLFile($file, 'image/png', 'profile.png')]]);
+        CURLOPT_POSTFIELDS => json_encode([
+            'filename' => 'profile.png',
+            'data_base64' => base64_encode((string) file_get_contents($file)),
+        ], JSON_THROW_ON_ERROR)]);
     $raw = curl_exec($curl);
     if ($raw === false) throw new RuntimeException(curl_error($curl));
     $result = ['status' => curl_getinfo($curl, CURLINFO_RESPONSE_CODE),

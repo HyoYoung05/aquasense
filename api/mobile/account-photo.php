@@ -5,7 +5,10 @@ require dirname(__DIR__, 2) . '/includes/mobile-profile-photo.php';
 api_method('POST');
 $owner = mobile_owner();
 try {
-    $user = mobile_profile_photo_store(db(), $owner['id'], $_FILES['photo'] ?? []);
+    $contentType = strtolower(trim(explode(';', $_SERVER['CONTENT_TYPE'] ?? '')[0]));
+    $user = $contentType === 'application/json'
+        ? mobile_profile_photo_store_bytes(db(), $owner['id'], mobile_profile_photo_json_body())
+        : mobile_profile_photo_store(db(), $owner['id'], $_FILES['photo'] ?? []);
 } catch (MobileProfilePhotoException $error) {
     api_fail($error->getMessage(), $error->status);
 }

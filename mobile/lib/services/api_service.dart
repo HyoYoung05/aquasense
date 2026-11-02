@@ -85,7 +85,8 @@ class ApiService {
     String path, {
     String? token,
     Map<String, dynamic>? body,
-  }) => request(path, token: token, body: body, post: true);
+    Duration? timeout,
+  }) => request(path, token: token, body: body, post: true, timeout: timeout);
 
   Future<Map<String, dynamic>> postMultipart(
     String path, {
@@ -228,6 +229,7 @@ class ApiService {
     String? token,
     Map<String, dynamic>? body,
     bool post = false,
+    Duration? timeout,
   }) async {
     final stopwatch = Stopwatch()..start();
     int? status;
@@ -247,7 +249,7 @@ class ApiService {
       final response = await _client
           .send(request)
           .then(http.Response.fromStream)
-          .timeout(_timeout);
+          .timeout(timeout ?? _timeout);
       status = response.statusCode;
       Map<String, dynamic> decoded;
       try {

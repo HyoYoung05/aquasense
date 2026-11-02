@@ -2,7 +2,16 @@
 
 ## Current Version
 
-0.9.20+39
+0.9.21+40
+
+## 0.9.21+40 - 2026-11-02
+
+- Replaced multipart profile-photo submission with an authenticated, bounded
+  JSON image upload compatible with the production Apache host.
+- Reused the authorized owner profile route to avoid the host-level block on
+  the dedicated upload path.
+- Preserved server-side image content validation, the 5 MB limit, protected
+  storage, and owner-only access.
 
 ## 0.9.20+39 - 2026-11-02
 

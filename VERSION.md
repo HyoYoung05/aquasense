@@ -1,6 +1,20 @@
 # AQUASENSE+ Version History
 
-1.4.16
+1.4.17
+
+## Website/backend 1.4.17, Flutter owner app 0.9.21+40, and ESP32 firmware 0.8.7
+
+Date: 2026-11-02
+
+- Fixed owner profile-photo updates rejected by production Apache before PHP
+  authorization by replacing the app's multipart request with an authenticated,
+  bounded JSON image upload.
+- Routed the update through the existing authorized owner profile endpoint so
+  production Apache no longer blocks the request before PHP authentication.
+- Preserved the 5 MB limit, JPEG/PNG/WEBP content inspection, minimum image
+  dimensions, protected storage, authenticated retrieval, and owner-only scope.
+- Retained multipart handling for compatible clients while the Flutter owner app
+  uses the production-host-compatible JSON transport.
 
 ## Website/backend 1.4.16, Flutter owner app 0.9.20+39, and ESP32 firmware 0.8.7
 
