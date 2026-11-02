@@ -249,14 +249,14 @@ class _FormPanel extends StatelessWidget {
                   TextFormField(
                     controller: email,
                     enabled: !busy,
-                    keyboardType: TextInputType.emailAddress,
+                    keyboardType: TextInputType.text,
                     textInputAction: TextInputAction.next,
                     autocorrect: false,
                     autofillHints: const [AutofillHints.username],
-                    validator: validateEmail,
+                    validator: validateLoginIdentifier,
                     decoration: const InputDecoration(
-                      labelText: 'Email address',
-                      prefixIcon: Icon(Icons.mail_outline),
+                      labelText: 'Email address or contact number',
+                      prefixIcon: Icon(Icons.person_outline),
                     ),
                   ),
                   const SizedBox(height: 18),

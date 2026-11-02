@@ -12,14 +12,14 @@ $pdo = db();
 $freshness = (int) $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key='device_offline_timeout_minutes'")->fetchColumn() * 60;
 $establishmentCounts = $pdo->query('SELECT COUNT(*) total, SUM(is_active=1) active FROM establishments')->fetch();
 $trapRows = $pdo->query("SELECT g.id,g.name,g.is_active,g.low_threshold,g.medium_threshold,g.high_threshold,g.critical_threshold,
-    e.business_name,d.device_code,d.is_active device_active,d.last_seen_at,
+    e.business_name,d.device_code,d.is_active device_active,d.last_seen_at,a.id assignment_id,
     r.waste_level_percent,r.temperature_c,r.level_status,r.recorded_at
     FROM grease_traps g JOIN establishments e ON e.id=g.establishment_id
     LEFT JOIN device_assignments a ON a.grease_trap_id=g.id AND a.ended_at IS NULL
     LEFT JOIN devices d ON d.id=a.device_id
     LEFT JOIN sensor_readings r ON r.id=(SELECT sr.id FROM sensor_readings sr WHERE sr.device_assignment_id=a.id ORDER BY sr.recorded_at DESC,sr.id DESC LIMIT 1)
     ORDER BY e.business_name,g.name")->fetchAll();
-$devices = $pdo->query('SELECT is_active,last_seen_at FROM devices')->fetchAll();
+$devices = $pdo->query('SELECT d.is_active,d.last_seen_at,a.id assignment_id FROM devices d LEFT JOIN device_assignments a ON a.device_id=d.id AND a.ended_at IS NULL')->fetchAll();
 
 $deviceCounts=['online'=>0,'offline'=>0,'not_connected'=>0];
 foreach($devices as $device){
@@ -30,7 +30,7 @@ foreach($devices as $device){
 }
 $trapCounts=['normal'=>0,'warning'=>0,'critical'=>0,'offline'=>0];
 foreach($trapRows as &$trap){
-    $deviceState=$trap['device_code']===null?'NOT CONNECTED':phase2_device_status(['is_active'=>$trap['device_active'],'last_seen_at'=>$trap['last_seen_at']],$freshness);
+    $deviceState=$trap['device_code']===null?'NOT CONNECTED':phase2_device_status(['is_active'=>$trap['device_active'],'assignment_id'=>$trap['assignment_id']],$freshness);
     if(!(bool)$trap['is_active'])$status='INACTIVE';
     elseif($trap['device_code']===null)$status='AWAITING DEVICE';
     elseif($trap['recorded_at']===null)$status='AWAITING TELEMETRY';

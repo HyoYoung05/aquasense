@@ -5,24 +5,26 @@ if (current_user()) {
     redirect('admin/dashboard.php');
 }
 $errors = [];
-$email = '';
+$identifier = '';
 $notice = $_SESSION['notice'] ?? null;
 unset($_SESSION['notice']);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = strtolower(post_string('email'));
+    $identifier = post_string('identifier');
+    if ($identifier === '') $identifier = post_string('email'); // Backward-compatible clients/tests.
     $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
     if (!valid_csrf()) {
         http_response_code(403);
         $errors['form'] = 'This form has expired. Please try signing in again.';
     } else {
-        if (strlen($email) > 190 || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors['email'] = 'Enter a valid email address.';
+        if (strlen($identifier) > 190 || (filter_var($identifier, FILTER_VALIDATE_EMAIL) === false
+            && normalize_contact_number($identifier) === null)) {
+            $errors['identifier'] = 'Enter a valid email address or contact number.';
         }
         if ($password === '' || strlen($password) > 1024) {
             $errors['password'] = 'Enter your password (up to 1,024 characters).';
         }
         if (!$errors) {
-            $error = attempt_login($email, $password);
+            $error = attempt_login($identifier, $password);
             if ($error === null) {
                 redirect('admin/dashboard.php');
             }
@@ -47,9 +49,9 @@ require dirname(__DIR__) . '/includes/auth-header.php';
 <form method="post" action="<?= e(url('public/login.php')) ?>" class="login-form">
     <?= csrf_field() ?>
     <div class="field">
-        <label for="email">Email address <span class="required">*</span></label>
-        <input id="email" name="email" type="email" autocomplete="username" placeholder="you@example.com" maxlength="190" required value="<?= e($email) ?>" <?= isset($errors['email']) ? 'aria-invalid="true" aria-describedby="email-error"' : '' ?>>
-        <?php if (isset($errors['email'])): ?><span id="email-error" class="field-error"><?= e($errors['email']) ?></span><?php endif; ?>
+        <label for="identifier">Email address or contact number <span class="required">*</span></label>
+        <input id="identifier" name="identifier" type="text" autocomplete="username" placeholder="you@example.com or 09..." maxlength="190" required value="<?= e($identifier) ?>" <?= isset($errors['identifier']) ? 'aria-invalid="true" aria-describedby="identifier-error"' : '' ?>>
+        <?php if (isset($errors['identifier'])): ?><span id="identifier-error" class="field-error"><?= e($errors['identifier']) ?></span><?php endif; ?>
     </div>
     <div class="field">
         <div class="field-label"><label for="password">Password <span class="required">*</span></label><a href="<?= e(url('public/forgot-password.php')) ?>">Forgot password?</a></div>

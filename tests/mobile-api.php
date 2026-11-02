@@ -16,6 +16,7 @@ $checks = 0;
     $users = $sites = $traps = $devices = $assignments = $emails = $cleanupEmails = [];
     $profilePhotoPath = null;
 $password = 'Test!' . bin2hex(random_bytes(12));
+$contacts = ['+639100000001', '+639100000002', '+639100000003'];
 function check(bool $ok, string $label): void {
     global $checks;
     if (!$ok) throw new RuntimeException('FAIL: ' . $label);
@@ -72,8 +73,9 @@ try {
         $email = 'mobile-test-' . bin2hex(random_bytes(6)) . '@example.test';
         $emails[] = $email;
         $cleanupEmails[] = $email;
-        $pdo->prepare('INSERT INTO users (role_id, full_name, email, password_hash) VALUES (?, ?, ?, ?)')
-            ->execute([$roles[$role], 'Mobile fixture ' . $i, $email, password_hash($password, PASSWORD_DEFAULT)]);
+        $pdo->prepare('INSERT INTO users (role_id, full_name, email, password_hash, contact_number) VALUES (?, ?, ?, ?, ?)')
+            ->execute([$roles[$role], 'Mobile fixture ' . $i, $email,
+                password_hash($password, PASSWORD_DEFAULT), $contacts[$i]]);
         $users[] = (int) $pdo->lastInsertId();
     }
     foreach (array_slice($users, 0, 2) as $i => $id) {
@@ -124,6 +126,8 @@ try {
     check(call_api('login.php', ['email' => $emails[0], 'password' => 'wrong'])['status'] === 401, 'Wrong password rejected');
     $login = call_api('login.php', ['email' => $emails[0], 'password' => $password]);
     check($login['status'] === 200, 'Owner login succeeds');
+    check(call_api('login.php', ['identifier' => $contacts[0], 'password' => $password])['status'] === 200,
+        'Owner login accepts the registered contact number');
     $token = $login['json']['data']['token'];
     $query = $pdo->prepare('SELECT token_hash FROM mobile_tokens WHERE user_id = ?');
     $query->execute([$users[0]]);

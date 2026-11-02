@@ -473,7 +473,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 8),
-                    Text(owner.email, textAlign: TextAlign.center),
+                    Text(owner.signInIdentifier, textAlign: TextAlign.center),
                     const Divider(height: 40),
                     Text(
                       establishments == null || establishments.isEmpty

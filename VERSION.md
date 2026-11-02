@@ -1,6 +1,108 @@
 # AQUASENSE+ Version History
 
-1.4.17
+1.4.27
+
+## Website/backend 1.4.27, Flutter owner app 0.9.23+42, and ESP32 firmware 0.8.14
+
+Date: 2026-11-02
+
+- Active devices now display Online as soon as they have an active grease-trap
+  assignment; physical connectivity is checked manually by personnel.
+- Disabled heartbeat-age offline alerts and resolve existing device-offline
+  alerts for active assignments.
+- Added migration 017 to close legacy unresolved device-offline alerts.
+- Accept the ESP32-reported waste-level percentage when ultrasonic calibration
+  is absent, while preserving distance and threshold validation.
+- Removed empty/full ultrasonic calibration fields from grease-trap forms.
+- Added a waste-level percentage field to the development telemetry simulator.
+- Owner mobile monitoring remains restricted to the establishment linked to the
+  authenticated owner account.
+
+## Website/backend 1.4.26, Flutter owner app 0.9.23+42, and ESP32 firmware 0.8.14
+
+Date: 2026-11-02
+
+- Removed the Device Credential field from the development telemetry simulator.
+- The simulator now uses the authenticated System Admin session and shared
+  telemetry validation/storage service; device credentials are never exposed to
+  or submitted by the browser.
+- Kept device-key authentication unchanged for real ESP32 telemetry requests.
+
+## Website/backend 1.4.25, Flutter owner app 0.9.23+42, and ESP32 firmware 0.8.14
+
+Date: 2026-11-02
+
+- Removed Device Code from device registration and editing forms.
+- Generate sequential `AQS-###` device codes automatically while preserving
+  existing codes during edits.
+
+## Website/backend 1.4.24, Flutter owner app 0.9.23+42, and ESP32 firmware 0.8.14
+
+Date: 2026-11-02
+
+- Removed Trap Code and Last Service Date from grease-trap registration/edit
+  forms.
+- Generate a unique server-side trap code automatically and preserve existing
+  trap codes and service dates during edits.
+
+## Website/backend 1.4.23, Flutter owner app 0.9.23+42, and ESP32 firmware 0.8.14
+
+Date: 2026-11-02
+
+- Permanently deleting an Owner account now safely unlinks its establishment
+  ownership before deleting the user.
+- Delete and status validation errors remain on the Account Directory view.
+
+## Website/backend 1.4.22, Flutter owner app 0.9.23+42, and ESP32 firmware 0.8.14
+
+Date: 2026-11-02
+
+- Added an Active/Inactive nested status list directly in each account row.
+- Changed Delete to permanently remove accounts when database history permits;
+  referenced accounts are protected with a clear validation message.
+
+## Website/backend 1.4.21, Flutter owner app 0.9.23+42, and ESP32 firmware 0.8.14
+
+Date: 2026-11-02
+
+- Restored the account Action column to normal table layout and aligned Edit
+  and Delete in a fixed two-column action group.
+
+## Website/backend 1.4.20, Flutter owner app 0.9.23+42, and ESP32 firmware 0.8.14
+
+Date: 2026-11-02
+
+- Added independent show/hide eye controls to both account password fields.
+- Added audited Edit and soft-Delete actions with Active/Inactive account
+  status management.
+- Aligned the User Accounts filter bar in a responsive single-row grid.
+
+## Website/backend 1.4.19, Flutter owner app 0.9.23+42, and ESP32 firmware 0.8.14
+
+Date: 2026-11-02
+
+- Aligned the Alert Management filter controls in a responsive grid with
+  equal-height inputs and a consistently aligned Filter button.
+
+## Website/backend 1.4.18, Flutter owner app 0.9.23+42, and ESP32 firmware 0.8.11
+
+Date: 2026-11-02
+
+- Clarified owner-only grease-trap scope in Monitoring with a verified,
+  read-only assignment when the owner has one deployed trap.
+- Preserved server-enforced owner isolation for monitoring, history, and alerts.
+- Made establishment email optional in both the administrative form and
+  server-side validation while retaining format validation when supplied.
+- Made user email optional, contact number required, and enabled website/mobile
+  sign-in with either identifier; temporary passwords now have an 8-character
+  minimum while retaining complexity requirements.
+- Removed editable device type and firmware fields from registration; type is
+  assigned internally and firmware remains device-reported metadata.
+- Improved ESP32 UTC synchronization for authenticated production HTTPS
+  heartbeats, including a safe API-server Date fallback for networks that block
+  NTP, so website and mobile consume the same ONLINE/OFFLINE state.
+- Kept sensor validity independent from device connectivity; missing sensors do
+  not create fake telemetry or force a powered, reachable device offline.
 
 ## Website/backend 1.4.17, Flutter owner app 0.9.21+40, and ESP32 firmware 0.8.7
 

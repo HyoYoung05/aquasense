@@ -44,6 +44,7 @@ try {
     try {
         user_account_create($pdo, [
             'full_name' => 'Unauthorized System Admin', 'email' => $emailPrefix . '-elevated@example.test',
+            'contact_number' => '+639000000101',
             'role' => 'system_admin', 'password' => 'ElevatedTemporary!2026',
             'password_confirmation' => 'ElevatedTemporary!2026',
         ], $barangayActorId);
@@ -62,6 +63,7 @@ try {
     try {
         user_account_create($pdo, [
             'full_name' => 'Weak Password User', 'email' => $emailPrefix . '-weak@example.test',
+            'contact_number' => '+639000000102',
             'role' => 'environmental_staff', 'password' => 'weak', 'password_confirmation' => 'weak',
         ], $actorId);
         account_check(false, 'Weak passwords are rejected');
@@ -85,19 +87,61 @@ try {
     account_check((int) $pdo->query('SELECT owner_user_id FROM establishments WHERE id=' . $establishmentId)->fetchColumn() === $ownerId,
         'Owner account is linked to the selected establishment');
 
+    $contactOnlyId = user_account_create($pdo, [
+        'full_name' => 'Contact Only Staff', 'email' => '', 'contact_number' => '+63 900 000 0103',
+        'role' => 'environmental_staff', 'password' => 'Eight!8A',
+        'password_confirmation' => 'Eight!8A',
+    ], $actorId);
+    $ids['users'][] = $contactOnlyId;
+    $query = $pdo->prepare('SELECT email,contact_number FROM users WHERE id=?');
+    $query->execute([$contactOnlyId]);
+    $contactOnly = $query->fetch();
+    account_check($contactOnly && $contactOnly['email'] === null
+        && $contactOnly['contact_number'] === '+639000000103',
+        'Admin can create a contact-number account without email using an 8-character password');
+
     $query = $pdo->prepare("SELECT COUNT(*) FROM audit_logs WHERE user_id=? AND action IN ('USER_ACCOUNT_CREATED','OWNER_ACCOUNT_LINKED')");
     $query->execute([$actorId]);
-    account_check((int) $query->fetchColumn() === 2, 'Account creation and owner link are audited');
+    account_check((int) $query->fetchColumn() === 3, 'Account creation and owner link are audited');
+
+    user_account_update($pdo, $contactOnlyId, [
+        'full_name' => 'Updated Contact Staff', 'email' => '',
+        'contact_number' => '+63 900 000 0103', 'role' => 'environmental_staff',
+        'status' => 'active',
+    ], $actorId);
+    $query = $pdo->prepare('SELECT full_name,is_active FROM users WHERE id=?');
+    $query->execute([$contactOnlyId]);
+    $updatedAccount = $query->fetch();
+    account_check($updatedAccount && $updatedAccount['full_name'] === 'Updated Contact Staff'
+        && (bool) $updatedAccount['is_active'], 'Admin can edit an account and retain Active status');
+
+    user_account_set_status($pdo, $contactOnlyId, false, $actorId);
+    $query->execute([$contactOnlyId]);
+    $inactiveAccount = $query->fetch();
+    account_check($inactiveAccount && !(bool) $inactiveAccount['is_active'],
+        'Admin can change an account status to Inactive');
+
+    user_account_delete($pdo, $contactOnlyId, $actorId);
+    $query->execute([$contactOnlyId]);
+    account_check($query->fetch() === false, 'Delete permanently removes an unreferenced account');
 
     try {
         user_account_create($pdo, [
             'full_name' => 'Duplicate Owner', 'email' => $ownerEmail, 'role' => 'environmental_staff',
+            'contact_number' => '+639000000104',
             'password' => 'AnotherTemporary!2026', 'password_confirmation' => 'AnotherTemporary!2026',
         ], $actorId);
         account_check(false, 'Duplicate email addresses are rejected');
     } catch (UserAccountValidationException $error) {
         account_check(str_contains(implode(' ', $error->errors), 'already uses'), 'Duplicate email addresses are rejected');
     }
+
+    user_account_delete($pdo, $ownerId, $actorId);
+    $query = $pdo->prepare('SELECT COUNT(*) FROM users WHERE id=?');
+    $query->execute([$ownerId]);
+    account_check((int) $query->fetchColumn() === 0
+        && $pdo->query('SELECT owner_user_id FROM establishments WHERE id=' . $establishmentId)->fetchColumn() === null,
+        'Deleting an Owner account unlinks its establishment and permanently removes the user');
 
     echo PHP_EOL . $checks . " user-account checks passed.\n";
 } finally {

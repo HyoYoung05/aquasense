@@ -327,23 +327,38 @@ class _MonitoringScreenState extends State<MonitoringScreen>
     ],
   );
 
-  Widget _trapSelector() => DropdownButtonFormField<int>(
-    key: const Key('grease-trap-selector'),
-    isExpanded: true,
-    initialValue: selectedTrapId,
-    decoration: const InputDecoration(
-      labelText: 'Grease Trap',
-      prefixIcon: Icon(Icons.water_outlined),
-    ),
-    items: [
-      for (final trap in snapshot!.traps)
-        DropdownMenuItem(
-          value: trap.greaseTrapId,
-          child: Text('${trap.greaseTrapName} · ${trap.businessName}'),
+  Widget _trapSelector() {
+    final traps = snapshot!.traps;
+    if (traps.length == 1) {
+      final trap = traps.single;
+      return InputDecorator(
+        key: const Key('owner-grease-trap-assignment'),
+        decoration: const InputDecoration(
+          labelText: 'Your assigned grease trap',
+          prefixIcon: Icon(Icons.verified_user_outlined),
         ),
-    ],
-    onChanged: _selectTrap,
-  );
+        child: Text('${trap.greaseTrapName} · ${trap.businessName}'),
+      );
+    }
+
+    return DropdownButtonFormField<int>(
+      key: const Key('grease-trap-selector'),
+      isExpanded: true,
+      initialValue: selectedTrapId,
+      decoration: const InputDecoration(
+        labelText: 'Your assigned grease traps',
+        prefixIcon: Icon(Icons.verified_user_outlined),
+      ),
+      items: [
+        for (final trap in traps)
+          DropdownMenuItem(
+            value: trap.greaseTrapId,
+            child: Text('${trap.greaseTrapName} · ${trap.businessName}'),
+          ),
+      ],
+      onChanged: _selectTrap,
+    );
+  }
 
   Widget _currentStatus(GreaseTrapMonitoring trap) {
     final reading = trap.reading;
@@ -374,6 +389,14 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                         ),
                       ),
                       Text(trap.businessName),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Assigned to your owner account',
+                        style: TextStyle(
+                          color: emerald,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ],
                   ),
                 ),

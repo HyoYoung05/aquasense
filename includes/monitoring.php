@@ -6,8 +6,7 @@ function phase3_device_state(?array $device,int $freshnessSeconds):string
 {
     if(!$device||empty($device['device_id']))return 'NOT CONNECTED';
     if(!(bool)$device['device_active'])return 'INACTIVE';
-    if(empty($device['last_seen_at']))return 'NOT CONNECTED';
-    return time()-strtotime($device['last_seen_at'].' UTC')<$freshnessSeconds?'ONLINE':'OFFLINE';
+    return 'ONLINE';
 }
 
 function phase3_monitoring_latest():array

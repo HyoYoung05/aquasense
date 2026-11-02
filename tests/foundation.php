@@ -121,7 +121,7 @@ try {
     $response = request($anonymous, '/public/login.php', ['email' => $fixtureEmails['administrator'], 'password' => $password]);
     check($response['status'] === 403, 'Missing login CSRF token is rejected');
     $response = request($anonymous, '/public/login.php', ['csrf_token' => token($form), 'email' => '<script>alert(1)</script>', 'password' => 'invalid']);
-    check(str_contains($response['body'], 'Enter a valid email address.') && !str_contains($response['body'], '<script>alert(1)</script>'), 'Invalid input is validated and safely escaped');
+    check(str_contains($response['body'], 'Enter a valid email address or contact number.') && !str_contains($response['body'], '<script>alert(1)</script>'), 'Invalid input is validated and safely escaped');
     $response = login($anonymous, "' OR 1=1 --@example.test", 'invalid');
     check($response['status'] !== 303, 'SQL injection input cannot authenticate');
     $response = login($anonymous, $fixtureEmails['administrator'], 'wrong-password');

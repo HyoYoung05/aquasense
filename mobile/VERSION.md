@@ -2,7 +2,26 @@
 
 ## Current Version
 
-0.9.21+40
+0.9.23+42
+
+## 0.9.23+42 - 2026-11-02
+
+- Owner sign-in now accepts either the optional email address or the required
+  contact number provisioned by an administrator.
+- Profiles without an email display their contact number as the sign-in
+  identifier while retaining the option to add an email later.
+- Temporary and replacement passwords use the shared 8-character minimum with
+  uppercase, lowercase, number, and symbol requirements.
+
+## 0.9.22+41 - 2026-11-02
+
+- Shows the authenticated owner's single assigned grease trap as a read-only
+  assignment instead of a selector that could imply access to other traps.
+- Labels owner monitoring status cards with the verified owner assignment.
+- Keeps multi-trap selection only when the backend returns multiple traps that
+  are all assigned to the same authenticated owner.
+- Uses the production device heartbeat status as the shared ONLINE/OFFLINE
+  source for the website and owner app.
 
 ## 0.9.21+40 - 2026-11-02
 

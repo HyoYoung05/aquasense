@@ -67,7 +67,6 @@ function phase2_validate_establishment(array $input): array
     phase2_required($data['owner_name'], 'Owner name', 150, $errors);
     phase2_required($data['address'], 'Address', 500, $errors);
     phase2_required($data['contact_number'] ?? '', 'Contact number', 30, $errors);
-    phase2_required($data['email'] ?? '', 'Email', 190, $errors);
     if ($data['email'] !== null && (mb_strlen($data['email']) > 190 || !filter_var($data['email'], FILTER_VALIDATE_EMAIL))) $errors[] = 'Enter a valid email address.';
     if ($data['notes'] !== null && mb_strlen($data['notes']) > 4000) $errors[] = 'Notes must be 4,000 characters or fewer.';
     phase2_validate_contact($data['contact_number'], $errors);
@@ -126,6 +125,18 @@ function phase2_set_establishment_active(int $id, bool $active, int $actorId): v
     audit($active ? 'ESTABLISHMENT_ACTIVATED' : 'ESTABLISHMENT_DEACTIVATED', $actorId, 'establishments', $id);
 }
 
+function phase2_generate_trap_code(PDO $pdo, int $establishmentId): string
+{
+    $check = $pdo->prepare('SELECT COUNT(*) FROM grease_traps WHERE trap_code=?');
+    for ($attempt = 0; $attempt < 10; $attempt++) {
+        $code = 'GT-' . str_pad((string) $establishmentId, 4, '0', STR_PAD_LEFT)
+            . '-' . strtoupper(bin2hex(random_bytes(3)));
+        $check->execute([$code]);
+        if (!(int) $check->fetchColumn()) return $code;
+    }
+    throw new RuntimeException('Unable to generate a unique grease-trap code.');
+}
+
 function phase2_validate_trap(array $input): array
 {
     $data = [
@@ -144,7 +155,6 @@ function phase2_validate_trap(array $input): array
     ];
     $errors = [];
     if (!$data['establishment_id']) $errors[] = 'Select an establishment.';
-    phase2_required($data['trap_code'], 'Trap code', 40, $errors);
     if ($data['trap_code'] !== '' && !preg_match('/^[A-Z0-9_-]+$/D', $data['trap_code'])) $errors[] = 'Trap code may contain letters, numbers, hyphens, and underscores only.';
     phase2_required($data['name'], 'Trap name', 100, $errors);
     if ($data['capacity_liters'] === false || $data['capacity_liters'] <= 0 || $data['capacity_liters'] > 1000000) $errors[] = 'Capacity must be greater than zero and shown in liters.';
@@ -169,6 +179,7 @@ function phase2_create_trap(array $input, int $actorId): int
 {
     $d = phase2_validate_trap($input);$pdo=db();$pdo->beginTransaction();
     try {
+        if ($d['trap_code'] === '') $d['trap_code'] = phase2_generate_trap_code($pdo, (int) $d['establishment_id']);
         $q=$pdo->prepare('INSERT INTO grease_traps (establishment_id,trap_code,name,capacity_liters,low_threshold,medium_threshold,high_threshold,critical_threshold,empty_distance_cm,full_distance_cm,installation_date,last_service_date) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
         $q->execute([$d['establishment_id'],$d['trap_code'],$d['name'],$d['capacity_liters'],$d['low_threshold'],$d['medium_threshold'],$d['high_threshold'],$d['critical_threshold'],$d['empty_distance_cm'],$d['full_distance_cm'],$d['installation_date'],$d['last_service_date']]);
         $id=(int)$pdo->lastInsertId();audit('GREASE_TRAP_CREATED',$actorId,'grease_traps',$id);
@@ -184,14 +195,16 @@ function phase2_create_trap(array $input, int $actorId): int
 
 function phase2_update_trap(int $id, array $input, int $actorId): void
 {
-    $d=phase2_validate_trap($input);
     $pdo=db();
-    $current=$pdo->prepare('SELECT establishment_id,empty_distance_cm,full_distance_cm,low_threshold,medium_threshold,high_threshold,critical_threshold,
+    $current=$pdo->prepare('SELECT establishment_id,trap_code,last_service_date,empty_distance_cm,full_distance_cm,low_threshold,medium_threshold,high_threshold,critical_threshold,
         (SELECT COUNT(*) FROM device_assignments WHERE grease_trap_id=grease_traps.id) AS assignment_count
         FROM grease_traps WHERE id=?');
     $current->execute([$id]);
     $existing=$current->fetch();
     if(!$existing) throw new Phase2ValidationException(['Grease trap was not found.']);
+    if (!isset($input['trap_code']) || trim((string)$input['trap_code']) === '') $input['trap_code'] = $existing['trap_code'];
+    if (!array_key_exists('last_service_date', $input)) $input['last_service_date'] = $existing['last_service_date'];
+    $d=phase2_validate_trap($input);
     if((int)$existing['establishment_id']!==(int)$d['establishment_id'] && (int)$existing['assignment_count']>0) {
         throw new Phase2ValidationException(['A grease trap with device assignment history cannot be moved to another establishment.']);
     }
@@ -219,6 +232,18 @@ function phase2_set_trap_active(int $id, bool $active, int $actorId): void
     audit($active?'GREASE_TRAP_ACTIVATED':'GREASE_TRAP_DEACTIVATED',$actorId,'grease_traps',$id);
 }
 
+function phase2_generate_device_code(PDO $pdo): string
+{
+    $next = (int) $pdo->query("SELECT COALESCE(MAX(CAST(SUBSTRING(device_code,5) AS UNSIGNED)),0)+1 FROM devices WHERE device_code REGEXP '^AQS-[0-9]+$'")->fetchColumn();
+    for ($attempt = 0; $attempt < 100; $attempt++, $next++) {
+        $code = 'AQS-' . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+        $check = $pdo->prepare('SELECT COUNT(*) FROM devices WHERE device_code=?');
+        $check->execute([$code]);
+        if (!(int) $check->fetchColumn()) return $code;
+    }
+    throw new RuntimeException('Unable to generate a unique device code.');
+}
+
 function phase2_validate_device(array $input): array
 {
     $data=[
@@ -231,7 +256,6 @@ function phase2_validate_device(array $input): array
         'grease_trap_id'=>filter_var($input['grease_trap_id']??null,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]])?:null,
     ];
     $errors=[];
-    phase2_required($data['device_code'],'Device code',60,$errors);
     if($data['device_code']!==''&&!preg_match('/^[A-Z0-9_-]+$/D',$data['device_code'])) $errors[]='Device code may contain letters, numbers, hyphens, and underscores only.';
     phase2_required($data['name'],'Device name',100,$errors);
     phase2_required($data['device_type'],'Device type',60,$errors);
@@ -265,8 +289,11 @@ function phase2_change_assignment(PDO $pdo, int $deviceId, ?int $trapId, int $ac
 
 function phase2_create_device(array $input,int $actorId): int
 {
+    $input['device_type']='ESP32_SIX_SENSOR';
+    $input['firmware_version']=null;
     $d=phase2_validate_device($input); $pdo=db(); $pdo->beginTransaction();
     try {
+        if ($d['device_code'] === '') $d['device_code'] = phase2_generate_device_code($pdo);
         $q=$pdo->prepare('INSERT INTO devices (device_code,name,device_type,firmware_version,installation_date) VALUES (?,?,?,?,?)');
         $q->execute([$d['device_code'],$d['name'],$d['device_type'],$d['firmware_version'],$d['installation_date']]);
         $id=(int)$pdo->lastInsertId();
@@ -283,6 +310,13 @@ function phase2_create_device(array $input,int $actorId): int
 
 function phase2_update_device(int $id,array $input,int $actorId): void
 {
+    $metadata=db()->prepare('SELECT device_code,device_type,firmware_version FROM devices WHERE id=?');
+    $metadata->execute([$id]);
+    $existingMetadata=$metadata->fetch();
+    if(!$existingMetadata) throw new Phase2ValidationException(['Device was not found.']);
+    if (!isset($input['device_code']) || trim((string)$input['device_code']) === '') $input['device_code']=$existingMetadata['device_code'];
+    $input['device_type']=$existingMetadata['device_type'];
+    $input['firmware_version']=$existingMetadata['firmware_version'];
     $d=phase2_validate_device($input); $pdo=db(); $pdo->beginTransaction();
     try {
         $q=$pdo->prepare('UPDATE devices SET device_code=?,name=?,device_type=?,firmware_version=?,installation_date=? WHERE id=?');
@@ -305,6 +339,8 @@ function phase2_set_device_active(int $id,bool $active,int $actorId): void
 function phase2_device_status(array $device, int $freshnessSeconds): string
 {
     if(!(bool)$device['is_active'])return 'INACTIVE';
-    if(empty($device['last_seen_at']))return 'NOT CONNECTED';
-    return time()-strtotime($device['last_seen_at'].' UTC')<$freshnessSeconds?'ONLINE':'OFFLINE';
+    if(array_key_exists('assignment_id',$device))$assigned=!empty($device['assignment_id']);
+    elseif(array_key_exists('grease_trap_id',$device))$assigned=!empty($device['grease_trap_id']);
+    else $assigned=true;
+    return $assigned?'ONLINE':'NOT CONNECTED';
 }

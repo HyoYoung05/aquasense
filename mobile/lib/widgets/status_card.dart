@@ -43,6 +43,27 @@ class StatusCard extends StatelessWidget {
                   trap.name,
                   style: const TextStyle(color: ink, fontSize: 17),
                 ),
+                const SizedBox(height: 7),
+                const Row(
+                  children: [
+                    Icon(
+                      Icons.verified_user_outlined,
+                      color: emerald,
+                      size: 17,
+                    ),
+                    SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        'Assigned to your owner account',
+                        key: ValueKey('owner-assignment-label'),
+                        style: TextStyle(
+                          color: emerald,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 const Text(
                   'DEVICE STATUS',

@@ -2,9 +2,15 @@
 
 ## Project Overview
 
+Version **1.4.27** treats an active device with an active grease-trap assignment
+as Online without waiting for a heartbeat. Physical connectivity is checked
+manually. ESP32-reported fill percentages are accepted without grease-trap
+ultrasonic calibration, and owner APIs remain scoped to the signed-in owner's
+linked establishment.
+
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 six-sensor firmware.
 
-The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.4.17 keeps one dedicated development-only Admin login for the website and one Owner login for the mobile app while preserving existing local accounts and production role boundaries. Simulated administrative fixtures are excluded from owner-facing Monitoring and Alerts, owners can securely replace their sign-in email or temporary password from the app, Barangay Administrators can manage User Accounts and Alert Settings without receiving Administrative Core access, and authenticated ESP32 heartbeats separate device connectivity from sensor validity. The guarded Monitoring utility now uses the neutral **Telemetry simulator** label without a development badge, while the owner app renders ONLINE in green and OFFLINE in gray. Production Flutter builds receive the tracked public HTTPS API root, same-origin Flutter Web requests are accepted without weakening the explicit CORS allowlist, and owner profile photos use an authenticated JSON upload compatible with the production host.
+The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.4.19 adds a consistently aligned, responsive Alert Management filter grid. It keeps one dedicated development-only Admin login for the website and one Owner login for the mobile app while preserving existing local accounts and production role boundaries. Simulated administrative fixtures are excluded from owner-facing Monitoring and Alerts, owners can securely replace their sign-in email or temporary password from the app, Barangay Administrators can manage User Accounts and Alert Settings without receiving Administrative Core access, and authenticated ESP32 heartbeats separate device connectivity from sensor validity. Owner Monitoring visibly identifies the grease trap assigned to the authenticated account, while the API enforces the same owner scope for monitoring, history, and alerts. Establishment contact numbers remain required while establishment email is optional and validated when provided. The owner app renders ONLINE in green and OFFLINE in gray. Production Flutter builds receive the tracked public HTTPS API root, same-origin Flutter Web requests are accepted without weakening the explicit CORS allowlist, and owner profile photos use an authenticated JSON upload compatible with the production host.
 
 The authenticated website notification bell has a protected 44 px click area,
 opens the Alerts workspace, and uses versioned JavaScript assets so repaired
@@ -18,7 +24,7 @@ problems. Environmental Management cannot see or directly open that workflow.
 ## Current Version
 
 The repository includes the final [ESP32 Hardware Phase 8](esp32/README.md)
-firmware **0.8.7** in `esp32/AquaSenseSensors`. It preserves HC-SR04, Wi-Fi, and
+firmware **0.8.11** in `esp32/AquaSenseSensors`. It preserves HC-SR04, Wi-Fi, and
 retry-safe PHP telemetry, then adds independently valid drivers for DS18B20,
 SEN0189, YF-S201, the ENS160+AHT2x combination module, and MQ-135. Raw ADC
 values use dedicated database fields and are never mislabeled as NTU or gas
@@ -35,7 +41,7 @@ outages; it is cleared by reset or power loss and drops the oldest record when
 full.
 COM3 must not be used. There is no microSD, OLED,
 buzzer, or DHT22. The Flutter source is tracked under
-[`mobile/`](mobile/README.md) at version **0.9.21+40**. Generated APKs,
+[`mobile/`](mobile/README.md) at version **0.9.23+42**. Generated APKs,
 local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
 The current Android development build is verified with Flutter **3.41.6**.
 
@@ -44,7 +50,7 @@ ESP32, then a
 local Wi-Fi router, then Apache/PHP, MariaDB, website, and Flutter APIs. The
 same configurable endpoint supports the separate production HTTPS target.
 
-Phase 8 is the final ESP32 hardware phase. Firmware **0.8.7** keeps the safe local
+Phase 8 is the final ESP32 hardware phase. Firmware **0.8.11** keeps the safe local
 hardware profile and a DS18B20 development pull-up fix after the six modules
 were connected, and applies the useful initialization details from the supplied
 combined-sensor sketch without adopting its obsolete GPIO27 flow pin or
@@ -71,7 +77,7 @@ physical installation or field-acceptance item.
 See the [connected-sensor verification](esp32/PHYSICAL-VERIFICATION-2026-10-22.md)
 for the measured results and remaining corrections.
 
-**Version: 1.4.17**
+**Version: 1.4.18**
 
 The website reads its version from `APP_VERSION` in `config/config.php`. See [VERSION.md](VERSION.md) for release notes.
 
@@ -245,7 +251,7 @@ These are the standard steps for a healthy XAMPP installation. See **Current mac
 5. Open [phpMyAdmin](http://localhost/phpmyadmin/).
 6. Create a database named **aquasense**, using `utf8mb4_unicode_ci`.
 7. Select **aquasense**, choose **Import**, select `database/schema.sql`, and click **Import/Go**. The SQL creates tables in the database selected by the importer, so production hosts may use their assigned database name without editing the schema.
-8. Apply migrations `001-mobile-tokens.sql` through `015-owner-profile-photo.sql` in numeric order.
+8. Apply migrations `001-mobile-tokens.sql` through `017-assignment-based-device-status.sql` in numeric order.
 9. For local development, import `database/sample-data.sql`. For a production-style empty database, import `database/reference-data.sql` instead; it creates roles but no users or passwords.
 10. Run `composer install` in the project directory to install the locked PDF dependency.
 11. If your local database credentials differ, copy `config/local.example.php` to `config/local.php` and adjust the settings. Set every development database value in the ignored file; the committed application has no database username, database name, or password defaults.
@@ -287,7 +293,7 @@ history, alerts, protected oil-surrender evidence, and incentive APIs under
 [Flutter Owner app](mobile/README.md) implements Mobile Phases 1 through 5,
 including authenticated oil surrender submission and review-state history.
 
-For an existing or fresh installation, select the `aquasense` database and import migrations 001 through 015 in order. Do not rerun the full schema on an existing database.
+For an existing or fresh installation, select the `aquasense` database and import migrations 001 through 017 in order. Do not rerun the full schema on an existing database.
 
 For local development only, run from the website directory:
 
@@ -379,6 +385,8 @@ aquasense-web/
     migrations/013-...sql      retired bench identity cleanup
     migrations/014-...sql      Admin-to-System-Admin device support
     migrations/015-...sql      private owner profile-photo storage fields
+    migrations/016-...sql      optional account email and contact-number login
+    migrations/017-...sql      assignment-based device status cleanup
   docs/ESP32_API.md            ESP32 request, authentication, and retry contract
   public/
     index.php                  public entry redirect
@@ -482,7 +490,7 @@ Protected directories have their own `.htaccess` files. Later modules use one pr
 
 - The actual production Sana Oil conversion policy must be supplied and configured by authorized Barangay personnel.
 - PDF detail is limited to 500 rows and CSV detail to 10,000 rows; narrower filters are required for complete exports beyond those limits.
-- The Flutter Owner app is version `0.9.21+40`. Its responsive interface now
+- The Flutter Owner app is version `0.9.23+42`. Its responsive interface now
   follows the website's emerald, deep-green, mint, canvas, card, form, and
   navigation design system while remaining limited to owner workflows.
   Dashboard Quick Actions appear at the top of the owner dashboard with equal,

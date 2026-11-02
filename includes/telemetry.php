@@ -32,14 +32,17 @@ function phase4_json_integer(mixed $value, string $label, int $minimum, int $max
     return $value;
 }
 
-function phase3_calculate_level(float $distance, array $trap, float $overflowThreshold): array
+function phase3_calculate_level(float $distance, array $trap, float $overflowThreshold, ?float $devicePercent = null): array
 {
     $empty = isset($trap['empty_distance_cm']) ? (float)$trap['empty_distance_cm'] : 0.0;
     $full = isset($trap['full_distance_cm']) ? (float)$trap['full_distance_cm'] : 0.0;
-    if ($full < 2 || $empty <= $full || $empty > 400) {
-        throw new TelemetryException(409, 'invalid_calibration', 'Grease trap ultrasonic calibration is incomplete or invalid.');
+    if ($full >= 2 && $empty > $full && $empty <= 400) {
+        $percent = round(max(0, min(100, (($empty - $distance) / ($empty - $full)) * 100)), 2);
+    } elseif ($devicePercent !== null) {
+        $percent = round(max(0, min(100, $devicePercent)), 2);
+    } else {
+        throw new TelemetryException(422, 'missing_fill_percentage', 'waste_level_percent is required when ultrasonic calibration is not configured.');
     }
-    $percent = round(max(0, min(100, (($empty - $distance) / ($empty - $full)) * 100)), 2);
     if ($percent >= $overflowThreshold) $status = 'OVERFLOW';
     elseif ($percent >= (float)$trap['critical_threshold']) $status = 'CRITICAL';
     elseif ($percent >= (float)$trap['high_threshold']) $status = 'HIGH';
@@ -173,10 +176,11 @@ function phase3_record_heartbeat(PDO $pdo, array $body, string $deviceKey): arra
     }
 }
 
-function phase3_ingest_telemetry(PDO $pdo, array $body, string $deviceKey, bool $simulated = false): array
+function phase3_ingest_telemetry(PDO $pdo, array $body, string $deviceKey, bool $simulated = false, ?int $trustedDeviceId = null): array
 {
     global $config;
-    if(!preg_match('/^[a-f0-9]{64}$/iD',$deviceKey)) throw new TelemetryException(401,'missing_or_invalid_key','A valid device credential is required.');
+    if($trustedDeviceId===null&&!preg_match('/^[a-f0-9]{64}$/iD',$deviceKey)) throw new TelemetryException(401,'missing_or_invalid_key','A valid device credential is required.');
+    if($trustedDeviceId!==null&&!$simulated) throw new LogicException('Trusted device selection is restricted to simulated telemetry.');
     $received=new DateTimeImmutable('now',new DateTimeZone('UTC'));
     $data=phase3_telemetry_payload($body,$config,$received);
     $canonical=$body;ksort($canonical);$payloadHash=hash('sha256',json_encode($canonical,JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR));
@@ -185,7 +189,11 @@ function phase3_ingest_telemetry(PDO $pdo, array $body, string $deviceKey, bool 
         $q=$pdo->prepare('SELECT id,device_code,device_type,api_key_hash,is_active,last_seen_at FROM devices WHERE device_code=? FOR UPDATE');$q->execute([$data['device_id']]);$device=$q->fetch();
         if(!$device) throw new TelemetryException(404,'unknown_device','Unknown device.');
         if(!(bool)$device['is_active']) throw new TelemetryException(403,'inactive_device','Device access is inactive.');
-        if(!$device['api_key_hash']||!hash_equals((string)$device['api_key_hash'],hash('sha256',$deviceKey))) throw new TelemetryException(401,'invalid_key','A valid device credential is required.');
+        if($trustedDeviceId===null){
+            if(!$device['api_key_hash']||!hash_equals((string)$device['api_key_hash'],hash('sha256',$deviceKey))) throw new TelemetryException(401,'invalid_key','A valid device credential is required.');
+        }elseif((int)$device['id']!==$trustedDeviceId){
+            throw new TelemetryException(403,'device_selection_mismatch','Invalid simulated device selection.');
+        }
         $q=$pdo->prepare('SELECT a.id assignment_id,a.grease_trap_id assigned_trap_id,g.*,e.is_active establishment_active FROM device_assignments a JOIN grease_traps g ON g.id=a.grease_trap_id JOIN establishments e ON e.id=g.establishment_id WHERE a.device_id=? AND a.ended_at IS NULL FOR UPDATE');$q->execute([$device['id']]);$assignment=$q->fetch();
         $trapExists=$pdo->prepare('SELECT COUNT(*) FROM grease_traps WHERE id=?');$trapExists->execute([$data['grease_trap_id']]);
         if(!(int)$trapExists->fetchColumn()) throw new TelemetryException(404,'unknown_trap','Unknown grease trap.');
@@ -201,13 +209,18 @@ function phase3_ingest_telemetry(PDO $pdo, array $body, string $deviceKey, bool 
         $latestReading=$pdo->prepare('SELECT MAX(received_at) FROM sensor_readings WHERE device_assignment_id=?');$latestReading->execute([$assignment['assignment_id']]);$latestReceived=$latestReading->fetchColumn();
         if(!$simulated&&$latestReceived!==false&&$latestReceived!==null&&$received->getTimestamp()-strtotime($latestReceived.' UTC')<$config['telemetry_min_interval_seconds']) throw new TelemetryException(429,'rate_limited','Wait before the next reading.');
         $overflow=$pdo->query("SELECT setting_value FROM system_settings WHERE setting_key='overflow_threshold'")->fetchColumn();if($overflow===false||!is_numeric($overflow))throw new RuntimeException('Missing overflow threshold.');
-        $level=phase3_calculate_level($data['ultrasonic_distance'],$assignment,(float)$overflow);
+        $level=phase3_calculate_level($data['ultrasonic_distance'],$assignment,(float)$overflow,$data['device_reported_percent']);
         $q=$pdo->prepare('INSERT INTO sensor_readings (device_assignment_id,ultrasonic_distance_cm,waste_level_percent,device_reported_percent,temperature_c,turbidity_ntu,turbidity_raw_adc,flow_rate_lpm,flow_pulse_count,gas_value,odor_value,gas_raw_adc,ambient_temperature_c,humidity_percent,ens160_aqi,tvoc_ppb,eco2_ppm,level_status,is_simulated,is_test,reading_uuid,sequence_number,payload_hash,recorded_at,received_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
         $q->execute([$assignment['assignment_id'],round($data['ultrasonic_distance'],2),$level['waste_level_percent'],$data['device_reported_percent'],$data['temperature_c'],$data['turbidity_ntu'],$data['turbidity_raw_adc'],$data['flow_rate_lpm'],$data['flow_pulse_count'],$data['gas_value'],$data['odor_value'],$data['gas_raw_adc'],$data['ambient_temperature_c'],$data['humidity_percent'],$data['ens160_aqi'],$data['tvoc_ppb'],$data['eco2_ppm'],$level['status'],$simulated?1:0,0,$data['reading_uuid'],$data['sequence_number'],$payloadHash,$data['recorded_at'],$received->format('Y-m-d H:i:s')]);
         $id=(int)$pdo->lastInsertId();$at=$received->format('Y-m-d H:i:s');$pdo->prepare('UPDATE devices SET last_seen_at=? WHERE id=?')->execute([$at,$device['id']]);
         $alertTypes=phase4_evaluate_telemetry($pdo,$assignment,$id,['waste_level_percent'=>$level['waste_level_percent'],'temperature_c'=>$data['temperature_c'],'turbidity_ntu'=>$data['turbidity_ntu'],'flow_rate_lpm'=>$data['flow_rate_lpm']],$at);$pdo->commit();
         return ['http_status'=>201,'duplicate'=>false,'reading_id'=>$id,'device_id'=>$device['device_code'],'grease_trap_id'=>$data['grease_trap_id'],'ultrasonic_distance'=>round($data['ultrasonic_distance'],2),'waste_level_percent'=>$level['waste_level_percent'],'status'=>$level['status'],'active_alert_types'=>$alertTypes,'received_at'=>$received->format(DATE_ATOM)];
     } catch(Throwable $error) {if($pdo->inTransaction())$pdo->rollBack();throw $error;}
+}
+
+function phase3_ingest_admin_simulation(PDO $pdo, array $body, int $deviceId): array
+{
+    return phase3_ingest_telemetry($pdo,$body,'',true,$deviceId);
 }
 
 function phase3_rotate_device_key(int $deviceId,int $actorId): string

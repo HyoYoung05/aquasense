@@ -100,7 +100,7 @@ function mobile_token_hash(): string
 
 function mobile_owner(): array
 {
-    $query = db()->prepare('SELECT u.id, u.full_name, u.email, u.password_hash,
+    $query = db()->prepare('SELECT u.id, u.full_name, u.email, u.contact_number, u.password_hash,
         u.profile_photo_path, u.profile_photo_mime, u.profile_photo_updated_at,
         t.password_fingerprint FROM mobile_tokens t
         JOIN users u ON u.id = t.user_id JOIN roles r ON r.id = u.role_id
@@ -114,7 +114,8 @@ function mobile_owner(): array
     return [
         'id' => (int) $user['id'],
         'full_name' => $user['full_name'],
-        'email' => $user['email'],
+        'email' => $user['email'] ?? '',
+        'contact_number' => $user['contact_number'] ?? '',
         'has_profile_photo' => $user['profile_photo_path'] !== null,
         'profile_photo_updated_at' => $user['profile_photo_updated_at'] === null
             ? null

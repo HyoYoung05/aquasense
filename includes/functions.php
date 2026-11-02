@@ -164,6 +164,15 @@ function client_ip(): string
     return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '0.0.0.0';
 }
 
+function normalize_contact_number(string $value): ?string
+{
+    $value = trim($value);
+    if ($value === '' || !preg_match('/^[0-9+().\-\s]+$/D', $value)) return null;
+    $normalized = preg_replace('/[().\-\s]+/', '', $value);
+    return is_string($normalized) && preg_match('/^\+?[0-9]{7,20}$/D', $normalized)
+        ? $normalized : null;
+}
+
 function display_date(string $utc): string
 {
     global $config;

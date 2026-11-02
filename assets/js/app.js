@@ -1,12 +1,17 @@
 'use strict';
 
-const passwordToggle = document.querySelector('[data-password-toggle]');
-passwordToggle?.addEventListener('click', () => {
-    const input = document.getElementById('password');
-    const visible = input.type === 'password';
-    input.type = visible ? 'text' : 'password';
-    passwordToggle.setAttribute('aria-label', visible ? 'Hide password' : 'Show password');
-    passwordToggle.setAttribute('aria-pressed', String(visible));
+document.querySelectorAll('[data-password-toggle]').forEach((passwordToggle) => {
+    passwordToggle.addEventListener('click', () => {
+        const targetId = passwordToggle.dataset.passwordTarget;
+        const input = targetId
+            ? document.getElementById(targetId)
+            : passwordToggle.closest('.password-field')?.querySelector('input');
+        if (!input) return;
+        const visible = input.type === 'password';
+        input.type = visible ? 'text' : 'password';
+        passwordToggle.setAttribute('aria-label', visible ? 'Hide password' : 'Show password');
+        passwordToggle.setAttribute('aria-pressed', String(visible));
+    });
 });
 
 const menuToggle = document.querySelector('[data-menu-toggle]');

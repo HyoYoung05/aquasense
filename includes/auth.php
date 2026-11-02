@@ -88,10 +88,13 @@ function workspace_role_label(array $user): string
     };
 }
 
-function attempt_login(string $email, string $password): ?string
+function attempt_login(string $identifier, string $password): ?string
 {
     global $config;
-    $emailHash = hash('sha256', strtolower($email));
+    $identifier = trim($identifier);
+    $email = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? strtolower($identifier) : '';
+    $contactNumber = normalize_contact_number($identifier) ?? '';
+    $emailHash = hash('sha256', strtolower($email !== '' ? $email : $contactNumber));
     $cutoff = gmdate('Y-m-d H:i:s', time() - $config['login_window_minutes'] * 60);
     $statement = db()->prepare('SELECT COUNT(*) FROM login_attempts
         WHERE attempted_at >= ? AND (email_hash = ? OR ip_address = ?)');
@@ -104,8 +107,9 @@ function attempt_login(string $email, string $password): ?string
     $statement = db()->prepare('INSERT INTO login_attempts (email_hash, ip_address) VALUES (?, ?)');
     $statement->execute([$emailHash, client_ip()]);
     $attemptId = (int) db()->lastInsertId();
-    $statement = db()->prepare('SELECT u.*, r.slug AS role_slug FROM users u JOIN roles r ON r.id = u.role_id WHERE u.email = ?');
-    $statement->execute([$email]);
+    $statement = db()->prepare('SELECT u.*, r.slug AS role_slug FROM users u JOIN roles r ON r.id = u.role_id
+        WHERE LOWER(u.email) = ? OR u.contact_number = ? LIMIT 1');
+    $statement->execute([$email, $contactNumber]);
     $user = $statement->fetch();
     // A real hash also makes unknown-email attempts perform a password check.
     $dummyHash = '$2y$12$ArYeuNFsn1OIprnoIGNZvOtBMyOFL6elYdjrPt5EE4YAhx0Ag8w6e';
@@ -113,7 +117,7 @@ function attempt_login(string $email, string $password): ?string
     if (!$user || !$valid || !(bool) $user['is_active']
         || !in_array($user['role_slug'], ['system_admin', 'administrator', 'environmental_staff'], true)) {
         audit('LOGIN_FAILED');
-        return 'Unable to sign in. Check your email and password, or contact your administrator.';
+        return 'Unable to sign in. Check your email/contact number and password, or contact your administrator.';
     }
 
     $pdo = db();

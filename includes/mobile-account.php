@@ -29,7 +29,7 @@ function mobile_account_check_attempts(int $ownerId): void
 
 function mobile_account_owner_for_update(PDO $pdo, int $ownerId): array
 {
-    $query = $pdo->prepare("SELECT u.id,u.full_name,u.email,u.password_hash,
+    $query = $pdo->prepare("SELECT u.id,u.full_name,u.email,u.contact_number,u.password_hash,
         u.profile_photo_path,u.profile_photo_updated_at
         FROM users u JOIN roles r ON r.id=u.role_id
         WHERE u.id=? AND u.is_active=1 AND r.slug='owner' FOR UPDATE");
@@ -78,6 +78,7 @@ function mobile_account_change_email(int $ownerId, array $input): array
             'id' => $ownerId,
             'full_name' => $owner['full_name'],
             'email' => $email,
+            'contact_number' => $owner['contact_number'] ?? '',
             'has_profile_photo' => $owner['profile_photo_path'] !== null,
             'profile_photo_updated_at' => $owner['profile_photo_updated_at'] === null
                 ? null

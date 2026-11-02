@@ -97,7 +97,7 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<void> login(String email, String password) async {
+  Future<void> login(String identifier, String password) async {
     if (_signingIn) {
       throw const ApiException(
         'Sign-in is already in progress.',
@@ -109,7 +109,7 @@ class AuthService extends ChangeNotifier {
     try {
       final data = await api.post(
         'login.php',
-        body: {'email': email.trim(), 'password': password},
+        body: {'identifier': identifier.trim(), 'password': password},
       );
       final result = AuthResult.fromJson(data);
       try {
@@ -135,7 +135,7 @@ class AuthService extends ChangeNotifier {
     } on ApiException catch (exception) {
       if (exception.type == ApiErrorType.unauthorized) {
         throw const ApiException(
-          'Incorrect email or password, or this account cannot access the owner app.',
+          'Incorrect email/contact number or password, or this account cannot access the owner app.',
           type: ApiErrorType.unauthorized,
           status: 401,
         );

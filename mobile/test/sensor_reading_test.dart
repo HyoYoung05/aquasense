@@ -60,6 +60,7 @@ void main() {
       ),
     );
     expect(find.text('ONLINE'), findsWidgets);
+    expect(find.text('Assigned to your owner account'), findsOneWidget);
     expect(
       tester
           .widget<Text>(find.byKey(const ValueKey('device-status-headline')))

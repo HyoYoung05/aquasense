@@ -364,7 +364,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                 _SettingsActionCard(
                   icon: Icons.alternate_email,
                   title: 'Email address',
-                  value: widget.auth.user?.email ?? 'Unavailable',
+                  value: widget.auth.user?.email.isNotEmpty == true
+                      ? widget.auth.user!.email
+                      : 'Not provided · sign in with ${widget.auth.user?.contactNumber ?? 'contact number'}',
                   description:
                       'Change the email address used to sign in to the owner app.',
                   actionLabel: 'Change email',

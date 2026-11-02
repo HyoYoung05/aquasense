@@ -3,12 +3,15 @@ declare(strict_types=1);
 require dirname(__DIR__, 2) . '/includes/mobile-api.php';
 api_method('POST');
 $data = api_body();
-$email = is_string($data['email'] ?? null) ? strtolower(trim($data['email'])) : '';
+$identifier = is_string($data['identifier'] ?? $data['email'] ?? null)
+    ? trim((string) ($data['identifier'] ?? $data['email'])) : '';
+$email = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? strtolower($identifier) : '';
+$contactNumber = normalize_contact_number($identifier) ?? '';
 $password = is_string($data['password'] ?? null) ? $data['password'] : '';
-if (strlen($email) > 190 || !filter_var($email, FILTER_VALIDATE_EMAIL) || $password === '' || strlen($password) > 1024) {
-    api_fail('Enter your registered email and password.', 422);
+if (strlen($identifier) > 190 || ($email === '' && $contactNumber === '') || $password === '' || strlen($password) > 1024) {
+    api_fail('Enter your registered email/contact number and password.', 422);
 }
-$emailHash = hash('sha256', $email);
+$emailHash = hash('sha256', $email !== '' ? $email : $contactNumber);
 $cutoff = gmdate('Y-m-d H:i:s', time() - $config['login_window_minutes'] * 60);
 $query = db()->prepare('SELECT COUNT(*) FROM login_attempts WHERE attempted_at >= ? AND (email_hash = ? OR ip_address = ?)');
 $query->execute([$cutoff, $emailHash, client_ip()]);
@@ -19,13 +22,14 @@ if ((int) $query->fetchColumn() >= $config['login_max_attempts']) {
 $query = db()->prepare('INSERT INTO login_attempts (email_hash, ip_address) VALUES (?, ?)');
 $query->execute([$emailHash, client_ip()]);
 $attemptId = db()->lastInsertId();
-$query = db()->prepare('SELECT u.*, r.slug AS role_slug FROM users u JOIN roles r ON r.id = u.role_id WHERE u.email = ?');
-$query->execute([$email]);
+$query = db()->prepare('SELECT u.*, r.slug AS role_slug FROM users u JOIN roles r ON r.id = u.role_id
+    WHERE LOWER(u.email) = ? OR u.contact_number = ? LIMIT 1');
+$query->execute([$email, $contactNumber]);
 $user = $query->fetch();
 $valid = password_verify($password, $user['password_hash'] ?? '$2y$12$ArYeuNFsn1OIprnoIGNZvOtBMyOFL6elYdjrPt5EE4YAhx0Ag8w6e');
 if (!$user || !$valid || !$user['is_active'] || $user['role_slug'] !== 'owner') {
     audit('MOBILE_LOGIN_FAILED');
-    api_fail('Incorrect email or password, or this account cannot access the owner app.', 401);
+    api_fail('Incorrect email/contact number or password, or this account cannot access the owner app.', 401);
 }
 $pdo = db();
 $pdo->beginTransaction();
@@ -51,7 +55,8 @@ api_ok(['token' => $token, 'expires_at' => str_replace(' ', 'T', $expires) . 'Z'
     'user' => [
         'id' => (int) $user['id'],
         'full_name' => $user['full_name'],
-        'email' => $user['email'],
+        'email' => $user['email'] ?? '',
+        'contact_number' => $user['contact_number'] ?? '',
         'has_profile_photo' => $user['profile_photo_path'] !== null,
         'profile_photo_updated_at' => $user['profile_photo_updated_at'] === null
             ? null

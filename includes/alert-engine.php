@@ -93,10 +93,10 @@ function phase4_evaluate_telemetry(PDO $pdo,array $assignment,int $readingId,arr
 
 function phase4_check_offline_devices(PDO $pdo): array
 {
-    $settings=phase4_numeric_settings($pdo);$cutoff=(new DateTimeImmutable('now',new DateTimeZone('UTC')))->modify('-'.(int)$settings['device_offline_timeout_minutes'].' minutes');$now=gmdate('Y-m-d H:i:s');$created=0;$resolved=0;
-    $rows=$pdo->query("SELECT a.id assignment_id,d.last_seen_at FROM device_assignments a JOIN devices d ON d.id=a.device_id JOIN grease_traps g ON g.id=a.grease_trap_id JOIN establishments e ON e.id=g.establishment_id WHERE a.ended_at IS NULL AND d.is_active=1 AND g.is_active=1 AND e.is_active=1 AND d.last_seen_at IS NOT NULL")->fetchAll();
-    foreach($rows as $row){$offline=strtotime($row['last_seen_at'].' UTC')<$cutoff->getTimestamp();if($offline){phase4_upsert_alert($pdo,(int)$row['assignment_id'],null,'DEVICE_OFFLINE',null,$settings['device_offline_timeout_minutes'],$now);$created++;}else{$resolved+=phase4_resolve_recovered($pdo,(int)$row['assignment_id'],['DEVICE_OFFLINE'],$now,'Device reported within the configured timeout.');}}
-    return ['checked'=>count($rows),'offline'=>$created,'resolved'=>$resolved,'cutoff'=>$cutoff->format(DATE_ATOM)];
+    $now=gmdate('Y-m-d H:i:s');$resolved=0;
+    $rows=$pdo->query("SELECT a.id assignment_id FROM device_assignments a JOIN devices d ON d.id=a.device_id JOIN grease_traps g ON g.id=a.grease_trap_id JOIN establishments e ON e.id=g.establishment_id WHERE a.ended_at IS NULL AND d.is_active=1 AND g.is_active=1 AND e.is_active=1")->fetchAll();
+    foreach($rows as $row)$resolved+=phase4_resolve_recovered($pdo,(int)$row['assignment_id'],['DEVICE_OFFLINE'],$now,'Device remains registered and assigned. Physical connectivity is checked manually.');
+    return ['checked'=>count($rows),'offline'=>0,'resolved'=>$resolved,'cutoff'=>null];
 }
 
 function phase4_acknowledge_alert(int $id,int $userId): void

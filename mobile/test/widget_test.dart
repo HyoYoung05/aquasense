@@ -245,7 +245,10 @@ void main() {
       await tester.ensureVisible(find.text('Sign in'));
       await tester.tap(find.text('Sign in'));
       await tester.pumpAndSettle();
-      expect(find.text('Enter your email address.'), findsOneWidget);
+      expect(
+        find.text('Enter your email address or contact number.'),
+        findsOneWidget,
+      );
       await tester.enterText(
         find.byType(TextFormField).at(0),
         'owner@aquasense.test',
