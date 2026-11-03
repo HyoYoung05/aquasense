@@ -369,76 +369,128 @@ class _MonitoringScreenState extends State<MonitoringScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  offline ? Icons.cloud_off_outlined : Icons.sensors,
-                  color: offline ? offlineStatus : onlineStatus,
-                  size: 30,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        trap.greaseTrapName,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final identity = Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      offline ? Icons.cloud_off_outlined : Icons.sensors,
+                      color: offline ? offlineStatus : onlineStatus,
+                      size: 30,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            trap.greaseTrapName,
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                          Text(trap.businessName),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Assigned to your owner account',
+                            style: TextStyle(
+                              color: emerald,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
-                      Text(trap.businessName),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Assigned to your owner account',
-                        style: TextStyle(
-                          color: emerald,
-                          fontWeight: FontWeight.w700,
-                        ),
+                    ),
+                  ],
+                );
+
+                if (constraints.maxWidth < 520) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      identity,
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: _StatusChip(trap.sensorState),
                       ),
                     ],
-                  ),
-                ),
-                _StatusChip(trap.sensorState),
-              ],
+                  );
+                }
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: identity),
+                    const SizedBox(width: 16),
+                    _StatusChip(trap.sensorState),
+                  ],
+                );
+              },
             ),
             const Divider(height: 30),
-            Wrap(
-              spacing: 24,
-              runSpacing: 14,
-              children: [
-                _fact(
-                  'Waste Level',
-                  reading?.wasteLevel == null
-                      ? 'No data'
-                      : '${cleanNumber(reading!.wasteLevel!)}%',
-                ),
-                _fact('Current Condition', trap.sensorState),
-                _fact(
-                  'Distance to Waste Surface',
-                  reading?.ultrasonicDistance == null
-                      ? 'Not available'
-                      : '${cleanNumber(reading!.ultrasonicDistance!)} cm',
-                ),
-                _fact('Assigned Device', trap.deviceCode ?? 'Not assigned'),
-                _fact(
-                  'Device Status',
-                  trap.deviceStatus,
-                  valueColor: offline ? offlineStatus : onlineStatus,
-                  key: const ValueKey('monitoring-device-status'),
-                ),
-                _fact(
-                  'Last Seen',
-                  trap.lastSeenAt == null
-                      ? 'Not available'
-                      : '${relativeTime(trap.lastSeenAt!)} · ${readingTime(trap.lastSeenAt!)}',
-                ),
-                _fact(
-                  'Last Telemetry',
-                  reading == null ? 'No data' : readingTime(reading.recordedAt),
-                ),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final columns = constraints.maxWidth >= 760
+                    ? 3
+                    : constraints.maxWidth >= 520
+                    ? 2
+                    : 1;
+                const gap = 24.0;
+                final factWidth =
+                    (constraints.maxWidth - gap * (columns - 1)) / columns;
+                return Wrap(
+                  spacing: gap,
+                  runSpacing: 14,
+                  children: [
+                    _fact(
+                      'Waste Level',
+                      reading?.wasteLevel == null
+                          ? 'No data'
+                          : '${cleanNumber(reading!.wasteLevel!)}%',
+                      width: factWidth,
+                    ),
+                    _fact(
+                      'Current Condition',
+                      trap.sensorState,
+                      width: factWidth,
+                    ),
+                    _fact(
+                      'Distance to Waste Surface',
+                      reading?.ultrasonicDistance == null
+                          ? 'Not available'
+                          : '${cleanNumber(reading!.ultrasonicDistance!)} cm',
+                      width: factWidth,
+                    ),
+                    _fact(
+                      'Assigned Device',
+                      trap.deviceCode ?? 'Not assigned',
+                      width: factWidth,
+                    ),
+                    _fact(
+                      'Device Status',
+                      trap.deviceStatus,
+                      width: factWidth,
+                      valueColor: offline ? offlineStatus : onlineStatus,
+                      key: const ValueKey('monitoring-device-status'),
+                    ),
+                    _fact(
+                      'Last Seen',
+                      trap.lastSeenAt == null
+                          ? 'Not available'
+                          : '${relativeTime(trap.lastSeenAt!)} · ${readingTime(trap.lastSeenAt!)}',
+                      width: factWidth,
+                    ),
+                    _fact(
+                      'Last Telemetry',
+                      reading == null
+                          ? 'No data'
+                          : readingTime(reading.recordedAt),
+                      width: factWidth,
+                    ),
+                  ],
+                );
+              },
             ),
             if (reading == null) ...[
               const SizedBox(height: 18),
@@ -483,31 +535,34 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
-                  children: [
-                    Icon(
-                      alert.severity == 'CRITICAL'
-                          ? Icons.error_outline
-                          : Icons.warning_amber_outlined,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${alert.label} · ${alert.status}',
-                            style: const TextStyle(fontWeight: FontWeight.w800),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final details = Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          alert.severity == 'CRITICAL'
+                              ? Icons.error_outline
+                              : Icons.warning_amber_outlined,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${alert.label} · ${alert.status}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              Text(alert.message),
+                            ],
                           ),
-                          Text(
-                            alert.message,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    TextButton(
+                        ),
+                      ],
+                    );
+                    final action = TextButton(
                       key: Key('monitoring-alert-${alert.id}'),
                       onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(
@@ -520,8 +575,28 @@ class _MonitoringScreenState extends State<MonitoringScreen>
                         ),
                       ),
                       child: const Text('View Alert'),
-                    ),
-                  ],
+                    );
+                    if (constraints.maxWidth < 520) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          details,
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: action,
+                          ),
+                        ],
+                      );
+                    }
+                    return Row(
+                      children: [
+                        Expanded(child: details),
+                        const SizedBox(width: 8),
+                        action,
+                      ],
+                    );
+                  },
                 ),
               ),
             ],
@@ -531,22 +606,27 @@ class _MonitoringScreenState extends State<MonitoringScreen>
     );
   }
 
-  Widget _fact(String label, String value, {Color? valueColor, Key? key}) =>
-      SizedBox(
-        key: key,
-        width: 250,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: Theme.of(context).textTheme.bodySmall),
-            const SizedBox(height: 3),
-            Text(
-              value,
-              style: TextStyle(color: valueColor, fontWeight: FontWeight.w700),
-            ),
-          ],
+  Widget _fact(
+    String label,
+    String value, {
+    required double width,
+    Color? valueColor,
+    Key? key,
+  }) => SizedBox(
+    key: key,
+    width: width,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: 3),
+        Text(
+          value,
+          style: TextStyle(color: valueColor, fontWeight: FontWeight.w700),
         ),
-      );
+      ],
+    ),
+  );
 
   Widget _sensorOverview(GreaseTrapMonitoring trap) {
     final reading = trap.reading;

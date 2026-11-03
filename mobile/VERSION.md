@@ -2,7 +2,30 @@
 
 ## Current Version
 
-0.9.23+42
+0.9.25+45
+
+## 0.9.25+45 - 2026-11-03
+
+- Added production breakpoints for compact phones, tablets, browser windows,
+  landscape devices, and enlarged accessibility text.
+- Made Monitoring facts use the available card width instead of a fixed width
+  and stacked active-alert actions on narrow screens.
+- Made alert, incentive, and oil-surrender detail rows switch to a readable
+  vertical layout on compact screens.
+- Made oil-surrender summaries and history cards reflow without clipping.
+- Prevented short landscape phones from forcing the split login layout.
+- Added responsive dashboard coverage for 320 px phones, tablets, and large
+  text scaling.
+- Built the production-API debug artifact as
+  `aquasense-owner-v0.9.25+45-production-api-debug.apk`.
+
+## 0.9.24+44 - 2026-11-03
+
+- Fixed the owner Monitoring card on narrow phones so the grease-trap name,
+  establishment, and assignment label retain the full available width.
+- Moved long sensor-state badges below the identity block on compact screens.
+- Built the Android testing artifact with the production HTTPS mobile API as
+  `aquasense-owner-v0.9.24+44-production-api-debug.apk`.
 
 ## 0.9.23+42 - 2026-11-02
 

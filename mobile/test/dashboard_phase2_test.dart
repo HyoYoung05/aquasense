@@ -489,6 +489,41 @@ void main() {
     expect(destination, 5);
   });
 
+  testWidgets('dashboard reflows on compact phones, tablets, and large text', (
+    tester,
+  ) async {
+    for (final configuration in [
+      (const Size(320, 568), 1.0),
+      (const Size(390, 844), 1.4),
+      (const Size(1024, 768), 1.0),
+    ]) {
+      await tester.binding.setSurfaceSize(configuration.$1);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(
+              size: configuration.$1,
+              textScaler: TextScaler.linear(configuration.$2),
+            ),
+            child: Scaffold(
+              body: DashboardContent(
+                snapshot: snapshot(),
+                refreshing: false,
+                refreshError: null,
+                onRefresh: () async {},
+                onNavigate: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Quick actions'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
+    await tester.binding.setSurfaceSize(null);
+  });
+
   group('dashboard refresh and authentication', () {
     late Phase2Store store;
     late Phase2Server server;

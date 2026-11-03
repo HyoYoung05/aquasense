@@ -53,9 +53,10 @@ class _LoginScreenState extends State<LoginScreen> {
     backgroundColor: forest,
     body: LayoutBuilder(
       builder: (context, constraints) {
-        final landscape = constraints.maxWidth >= 760;
+        final splitView =
+            constraints.maxWidth >= 760 && constraints.maxHeight >= 560;
         final story = _StoryPanel(
-          compact: !landscape || constraints.maxHeight < 650,
+          compact: !splitView || constraints.maxHeight < 650,
         );
         final formPanel = _FormPanel(
           form: form,
@@ -69,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
           onSubmit: submit,
         );
 
-        if (landscape) {
+        if (splitView) {
           return SafeArea(
             child: Row(
               children: [
@@ -222,7 +223,10 @@ class _FormPanel extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     color: const Color(0xFFFDFEFD),
     constraints: const BoxConstraints(minHeight: 520),
-    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+    padding: EdgeInsets.symmetric(
+      horizontal: MediaQuery.sizeOf(context).width < 360 ? 18 : 28,
+      vertical: 32,
+    ),
     child: Center(
       child: SingleChildScrollView(
         child: ConstrainedBox(

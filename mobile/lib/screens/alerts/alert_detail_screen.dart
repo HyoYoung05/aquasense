@@ -162,18 +162,29 @@ class _AlertDetailScreenState extends State<AlertDetailScreen> {
   );
   Widget _row(String label, String value) => Padding(
     padding: const EdgeInsets.only(bottom: 12),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 145,
-          child: Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-        ),
-        Expanded(child: Text(value)),
-      ],
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        final compact =
+            constraints.maxWidth < 420 ||
+            MediaQuery.textScalerOf(context).scale(1) > 1.3;
+        final labelWidget = Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        );
+        if (compact) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [labelWidget, const SizedBox(height: 3), Text(value)],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(width: 145, child: labelWidget),
+            Expanded(child: Text(value)),
+          ],
+        );
+      },
     ),
   );
 }

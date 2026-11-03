@@ -253,16 +253,18 @@ class _OverviewCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 12,
+            runSpacing: 8,
             children: [
-              const Expanded(
-                child: Text(
-                  'Oil Surrender',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                  ),
+              const Text(
+                'Oil Surrender',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               Chip(label: Text('$pendingCount pending')),
@@ -319,38 +321,69 @@ class _SurrenderCard extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            const CircleAvatar(child: Icon(Icons.oil_barrel_outlined)),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final identity = Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const CircleAvatar(child: Icon(Icons.oil_barrel_outlined)),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.transactionCode,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${cleanNumber(item.quantity, decimals: 3)} ${item.unit}',
+                      ),
+                      Text(
+                        readingTime(item.submittedAt),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+            final compact =
+                constraints.maxWidth < 430 ||
+                MediaQuery.textScalerOf(context).scale(1) > 1.3;
+            if (compact) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    item.transactionCode,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${cleanNumber(item.quantity, decimals: 3)} ${item.unit}',
-                  ),
-                  Text(
-                    readingTime(item.submittedAt),
-                    style: Theme.of(context).textTheme.bodySmall,
+                  identity,
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      _StatusChip(status: item.status),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.chevron_right),
+                    ],
                   ),
                 ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              );
+            }
+            return Row(
               children: [
-                _StatusChip(status: item.status),
-                const SizedBox(height: 4),
-                const Icon(Icons.chevron_right),
+                Expanded(child: identity),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _StatusChip(status: item.status),
+                    const SizedBox(height: 4),
+                    const Icon(Icons.chevron_right),
+                  ],
+                ),
               ],
-            ),
-          ],
+            );
+          },
         ),
       ),
     ),

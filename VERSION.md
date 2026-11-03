@@ -1,6 +1,25 @@
 # AQUASENSE+ Version History
 
-1.4.27
+1.4.28
+
+## Website/backend 1.4.28, Flutter owner app 0.9.25+45, and ESP32 firmware 0.8.15
+
+Date: 2026-11-03
+
+- Fixed production incentive-rule creation when Development/Test or Active is
+  unchecked by binding both flags to MySQL as explicit `0` or `1` values.
+- Added regression coverage for strict SQL mode and a safe in-form database
+  error instead of redirecting administrators to the generic unavailable page.
+
+## Website/backend 1.4.27, Flutter owner app 0.9.25+45, and ESP32 firmware 0.8.15
+
+Date: 2026-11-03
+
+- Hardened the Flutter owner UI for compact phones, tablets, browser windows,
+  landscape devices, and enlarged accessibility text.
+- Reflowed Monitoring facts, active alerts, detail rows, and oil-surrender
+  records so production content does not clip or overflow on narrow screens.
+- Kept owner-only API scope and production behavior unchanged.
 
 ## Website/backend 1.4.27, Flutter owner app 0.9.23+42, and ESP32 firmware 0.8.14
 

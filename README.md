@@ -2,11 +2,15 @@
 
 ## Project Overview
 
-Version **1.4.27** treats an active device with an active grease-trap assignment
+Version **1.4.28** with Flutter owner app **0.9.25+45** fixes production
+incentive-rule saving by binding unchecked Active and Development/Test fields
+as strict numeric database values. It also keeps the rule form visible with a
+safe, actionable error if a database write fails. An active device with an active grease-trap assignment
 as Online without waiting for a heartbeat. Physical connectivity is checked
 manually. ESP32-reported fill percentages are accepted without grease-trap
 ultrasonic calibration, and owner APIs remain scoped to the signed-in owner's
-linked establishment.
+linked establishment. The owner app now reflows across compact phones,
+tablets, landscape displays, browsers, and enlarged accessibility text.
 
 AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 six-sensor firmware.
 
