@@ -2,7 +2,27 @@
 
 ## Project Overview
 
-Version **1.4.28** with Flutter owner app **0.9.25+45** fixes production
+Owner app **0.9.29+49** fixes the login footer position and removes the empty
+dark area below the form on tall phones. Narrow-screen footer labels stack.
+
+Version **1.4.32**, with owner app 0.9.28+48, keeps the sign-in header and
+footer in page flow to prevent overlap, improves text and artwork contrast,
+and reduces mobile sign-in spacing. Sign-in instructions use plain words.
+
+Version 1.4.31, with owner app 0.9.27+47, adds a quick walkthrough
+and user manual under Settings > Help and guides. Website staff can also use
+the Help and guides sidebar link. Guides use short steps and plain words.
+
+Version 1.4.30, with owner app 0.9.26+46, improves chip, secondary text,
+and chart tooltip contrast. Browser sessions are isolated between deployment
+paths; expired sign-in forms receive fresh tokens and retry instructions.
+
+Version 1.4.29 isolates login throttling by normalized email/contact number
+and website/mobile channel, so failed logins do not lock out other users on the
+same network. The configured cooldown remains enforced for each identifier.
+No database migration or new APK is required for this backend fix.
+
+Website 1.4.28 with Flutter owner app **0.9.25+45** fixes production
 incentive-rule saving by binding unchecked Active and Development/Test fields
 as strict numeric database values. It also keeps the rule form visible with a
 safe, actionable error if a database write fails. An active device with an active grease-trap assignment

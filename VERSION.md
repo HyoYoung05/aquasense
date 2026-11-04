@@ -1,6 +1,50 @@
 # AQUASENSE+ Version History
 
-1.4.28
+1.4.32
+
+## Flutter owner app 0.9.29+49 (website/backend remains 1.4.32)
+
+Date: 2026-11-04
+
+- Fixed the login footer and tall-screen background. Short screens scroll the
+  footer after the form; narrow screens stack the footer labels.
+
+## Website/backend 1.4.32 and Flutter owner app 0.9.28+48
+
+Date: 2026-11-04
+
+- Moved sign-in header and footer into page flow so wrapped content and short
+  screens cannot cover the login form.
+- Improved sign-in contrast, artwork opacity, touch targets, mobile spacing,
+  and plain-language descriptions while preserving the green palette and logo.
+- Added compact, landscape, and tablet login layout checks.
+
+## Website/backend 1.4.31 and Flutter owner app 0.9.27+47
+
+Date: 2026-11-04
+
+- Added Help and guides to app and website Settings, with a quick walkthrough
+  and a plain-language user manual split into topics.
+- Website guidance matches the signed-in role; staff can also open the guide
+  from the sidebar without gaining access to administration settings.
+
+## Website/backend 1.4.30 and Flutter owner app 0.9.26+46
+
+Date: 2026-11-04
+
+- Isolated browser session cookies between deployment paths and refreshed
+  expired login forms with a new CSRF token and clear retry instructions.
+- Fixed pale-chip text contrast across monitoring, alerts, home, surrender,
+  and incentives; increased secondary text contrast and chart tooltip contrast.
+
+## Website/backend 1.4.29
+
+Date: 2026-11-04
+
+- Isolated sign-in attempt budgets by normalized identifier and website/mobile
+  channel. One user's failures no longer lock out other users on a shared IP.
+- Retained the configured attempt limit and cooldown. Existing unscoped attempt
+  records no longer cause shared-network lockouts; no database migration is needed.
 
 ## Website/backend 1.4.28, Flutter owner app 0.9.25+45, and ESP32 firmware 0.8.15
 

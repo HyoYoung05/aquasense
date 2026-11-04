@@ -24,6 +24,7 @@ $navLink = static function(string $key,string $symbol,string $label,string $path
 <?= $navLink('incentives','gift','Incentives','admin/incentives.php') ?>
 <?= $navLink('compliance-ledger','ledger','Compliance Ledger','admin/compliance-ledger.php') ?>
 <?= $navLink('reports','chart','Reports','admin/reports.php') ?>
+<?= $navLink('user-guide','ledger','Help and guides','admin/user-guide.php') ?>
 <?php if(can_manage_administration($user)): ?><p class="nav-label">ADMINISTRATION</p><?= $navLink('users','users','User Accounts','admin/users.php') ?><?= $navLink('settings','settings','Alert Settings','admin/settings.php') ?><?php endif; ?>
 </nav><div class="sidebar-bottom"><div class="program-note"><?= icon('shield') ?><strong>Release monitoring</strong><p>Operational records, alerts, compliance, and traceable exports.</p></div><div class="sidebar-version"><span class="status-dot"></span> Production release <span>v<?= e(APP_VERSION) ?></span></div></div>
 </aside><button type="button" class="sidebar-backdrop" data-menu-close aria-label="Close navigation" tabindex="-1"></button>

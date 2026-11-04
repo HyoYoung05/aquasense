@@ -2,7 +2,30 @@
 
 ## Current Version
 
-0.9.25+45
+0.9.29+49
+
+## 0.9.29+49 - 2026-11-04
+
+- Kept the login footer at the bottom on tall screens and below content on short screens.
+- Removed the empty dark area below the form; footer labels stack on narrow screens.
+
+## 0.9.28+48 - 2026-11-04
+
+- Reduced login hero spacing and background artwork opacity.
+- Simplified owner sign-in instructions and kept footer text in the form flow.
+- Added layout checks for compact phones, landscape screens, and tablets.
+
+## 0.9.27+47 - 2026-11-04
+
+- Added Settings > Help and guides with a step-by-step walkthrough.
+- Added a user manual with tap-to-open topics for the owner's daily tasks,
+  account, permissions, and common problems, using simple words.
+
+## 0.9.26+46 - 2026-11-04
+
+- Fixed unreadable white labels on pale mint chips across owner screens.
+- Explicitly styled selected/unselected chips and chart tooltips.
+- Increased secondary text contrast while preserving the green color scheme.
 
 ## 0.9.25+45 - 2026-11-03
 

@@ -94,16 +94,16 @@ function attempt_login(string $identifier, string $password): ?string
     $identifier = trim($identifier);
     $email = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? strtolower($identifier) : '';
     $contactNumber = normalize_contact_number($identifier) ?? '';
-    $emailHash = hash('sha256', strtolower($email !== '' ? $email : $contactNumber));
+    $emailHash = login_attempt_hash($identifier, 'website');
     $cutoff = gmdate('Y-m-d H:i:s', time() - $config['login_window_minutes'] * 60);
     $statement = db()->prepare('SELECT COUNT(*) FROM login_attempts
-        WHERE attempted_at >= ? AND (email_hash = ? OR ip_address = ?)');
-    $statement->execute([$cutoff, $emailHash, client_ip()]);
+        WHERE attempted_at >= ? AND email_hash = ?');
+    $statement->execute([$cutoff, $emailHash]);
     if ((int) $statement->fetchColumn() >= $config['login_max_attempts']) {
         return 'Too many sign-in attempts. Please try again in ' . (int) $config['login_window_minutes'] . ' minutes.';
     }
 
-    // Count before verifying so concurrent attempts also consume the shared budget.
+    // Reserve an attempt for this identifier and channel; shared networks stay independent.
     $statement = db()->prepare('INSERT INTO login_attempts (email_hash, ip_address) VALUES (?, ?)');
     $statement->execute([$emailHash, client_ip()]);
     $attemptId = (int) db()->lastInsertId();

@@ -114,6 +114,17 @@ function valid_csrf(): bool
         && hash_equals($_SESSION['csrf_token'], $token);
 }
 
+function login_attempt_hash(string $identifier, string $channel): string
+{
+    if (!in_array($channel, ['website', 'mobile'], true)) {
+        throw new InvalidArgumentException('Unknown login channel.');
+    }
+    $identifier = trim($identifier);
+    $normalized = filter_var($identifier, FILTER_VALIDATE_EMAIL)
+        ? strtolower($identifier) : (normalize_contact_number($identifier) ?? strtolower($identifier));
+    return hash('sha256', $channel . ':' . $normalized);
+}
+
 function post_string(string $key): string
 {
     $value = $_POST[$key] ?? '';

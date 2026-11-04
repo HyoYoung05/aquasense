@@ -14,7 +14,7 @@
 <header class="auth-page-header">
     <a class="brand brand-light" href="<?= e(url()) ?>"><span class="brand-symbol"><img class="official-logo" src="<?= e(url('assets/images/barangay-san-antonio-logo.png')) ?>" alt="" width="512" height="512" decoding="async"></span><span>AQUASENSE<span class="brand-plus">+</span></span></a>
     <span class="tag">Administrative website</span>
-    <span class="auth-environment"><?= e(ucfirst((string) $config['environment'])) ?> environment</span>
+    <span class="auth-environment">Barangay staff sign-in</span>
 </header>
 <div class="auth-shell">
     <div class="water-art" aria-hidden="true">
@@ -23,8 +23,8 @@
     <aside class="auth-story" aria-label="About AQUASENSE+">
         <div class="story-copy">
             <span class="eyebrow light">CLEANER WATER. STRONGER COMMUNITIES.</span>
-            <h1>Small actions.<br>A cleaner<br><span>San Antonio.</span></h1>
-            <p>A shared workspace for responsible waste oil management and a healthier barangay.</p>
+            <h1>Small actions.<br> A cleaner<br> <span>San Antonio.</span></h1>
+            <p>Check grease traps, review warnings, and keep track of used oil and rice rewards.</p>
         </div>
     </aside>
     <div class="auth-main">

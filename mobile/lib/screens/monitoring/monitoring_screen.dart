@@ -898,7 +898,25 @@ class _TelemetryChart extends StatelessWidget {
             maxY: metric == SensorMetric.wasteLevel ? 100 : null,
             gridData: const FlGridData(show: true),
             borderData: FlBorderData(show: true),
-            lineTouchData: const LineTouchData(enabled: true),
+            lineTouchData: LineTouchData(
+              enabled: true,
+              touchTooltipData: LineTouchTooltipData(
+                getTooltipColor: (_) => forest,
+                fitInsideHorizontally: true,
+                fitInsideVertically: true,
+                getTooltipItems: (spots) => spots
+                    .map(
+                      (spot) => LineTooltipItem(
+                        '${cleanNumber(spot.y)} ${metric.unit}',
+                        const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
             titlesData: FlTitlesData(
               topTitles: const AxisTitles(
                 sideTitles: SideTitles(showTitles: false),

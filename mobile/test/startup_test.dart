@@ -22,6 +22,66 @@ class StartupTokenStore implements TokenStore {
 }
 
 void main() {
+  testWidgets('Tall login fills the screen and footer stays below the form', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(440, 956);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      startup.buildApplication(
+        apiBaseUrl: 'https://api.example.test/api/mobile',
+        releaseMode: true,
+        client: MockClient((_) async => http.Response('{}', 500)),
+        tokenStore: StartupTokenStore(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final footer = tester.getRect(find.byKey(const ValueKey('login-footer')));
+    expect(footer.bottom, closeTo(956, 1));
+    expect(
+      footer.top,
+      greaterThan(tester.getRect(find.text('Sign in')).bottom),
+    );
+    expect(tester.takeException(), isNull);
+  });
+  for (final size in [
+    const Size(320, 568),
+    const Size(568, 320),
+    const Size(1024, 768),
+  ]) {
+    testWidgets('Login stays readable and scrolls at $size with large text', (
+      tester,
+    ) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final app = startup.buildApplication(
+        apiBaseUrl: 'https://api.example.test/api/mobile',
+        releaseMode: true,
+        client: MockClient((_) async => http.Response('{}', 500)),
+        tokenStore: StartupTokenStore(),
+      );
+      await tester.pumpWidget(
+        MediaQuery(
+          data: MediaQueryData(
+            size: size,
+            textScaler: const TextScaler.linear(1.5),
+          ),
+          child: app,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Sign in'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.ensureVisible(find.textContaining('Owner App v'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+  }
   testWidgets('valid HTTPS configuration initializes the normal login app', (
     tester,
   ) async {

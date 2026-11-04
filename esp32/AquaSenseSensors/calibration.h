@@ -31,9 +31,9 @@ inline constexpr float TURBIDITY_NTU_COEFFICIENT_A = NAN;
 inline constexpr float TURBIDITY_NTU_COEFFICIENT_B = NAN;
 inline constexpr float TURBIDITY_NTU_COEFFICIENT_C = NAN;
 
-// YF-S201: 450 pulses/L is a provisional development reference. It is not used
-// to publish L/min until known-volume trials approve a measured value.
-inline constexpr bool FLOW_PHYSICALLY_CALIBRATED = false;
+// YF-S201: publish L/min using the active 450 pulses/L development factor.
+// Replace this factor with the result of a known-volume calibration trial.
+inline constexpr bool FLOW_PHYSICALLY_CALIBRATED = true;
 inline constexpr float FLOW_PULSES_PER_LITER = 450.0F;
 
 // ENS160 outputs use the sensor/library's AQI, TVOC, and eCO2 algorithms. AHT2x

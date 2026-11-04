@@ -261,7 +261,12 @@ try {
     }
     check(mobile_reading_status($thresholds, ['waste_level_percent'=>32, 'temperature_c'=>40], $settings) === 'EMULSION WARNING', 'Backend temperature boundary');
     $query = $pdo->prepare('INSERT INTO login_attempts (email_hash, ip_address) VALUES (?, ?)');
-    for ($i = 0; $i < $config['login_max_attempts']; $i++) $query->execute([hash('sha256', $emails[1]), '192.0.2.1']);
+    for ($i = 0; $i < $config['login_max_attempts']; $i++) $query->execute([login_attempt_hash($emails[1], 'website'), '127.0.0.1']);
+    check(call_api('login.php', ['email'=>$emails[1], 'password'=>'incorrect-password'])['status'] === 401, 'Website failures on the same IP do not throttle mobile login');
+    for ($i = 0; $i < $config['login_max_attempts']; $i++) $query->execute([login_attempt_hash('unrelated-owner@example.test', 'mobile'), '127.0.0.1']);
+    check(call_api('login.php', ['email'=>$emails[1], 'password'=>'incorrect-password'])['status'] === 401, 'Another mobile identifier on the same IP does not throttle this owner');
+    $pdo->prepare('DELETE FROM login_attempts WHERE email_hash=?')->execute([login_attempt_hash('unrelated-owner@example.test', 'mobile')]);
+    for ($i = 0; $i < $config['login_max_attempts']; $i++) $query->execute([login_attempt_hash($emails[1], 'mobile'), '192.0.2.1']);
     check(call_api('login.php', ['email'=>$emails[1], 'password'=>$password])['status'] === 429, 'API sign-in throttling enforced');
     echo "$checks checks passed.\n";
 } finally {
@@ -279,5 +284,5 @@ try {
         $pdo->prepare('DELETE FROM audit_logs WHERE user_id = ?')->execute([$id]);
         $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$id]);
     }
-    foreach ($cleanupEmails as $email) $pdo->prepare('DELETE FROM login_attempts WHERE email_hash = ?')->execute([hash('sha256', $email)]);
+    foreach ($cleanupEmails as $email) $pdo->prepare('DELETE FROM login_attempts WHERE email_hash IN (?, ?, ?)')->execute([hash('sha256', $email), login_attempt_hash($email, 'website'), login_attempt_hash($email, 'mobile')]);
 }

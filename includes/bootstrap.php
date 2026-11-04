@@ -42,7 +42,8 @@ if (PHP_SAPI !== 'cli') {
     header('Cache-Control: no-store, private');
     ini_set('session.use_strict_mode', '1');
     ini_set('session.use_only_cookies', '1');
-    session_name('aquasense_session');
+    // Isolate session cookies and CSRF tokens between deployment paths.
+    session_name('aquasense_' . substr(hash('sha256', (string) $config['base_path']), 0, 12));
     session_cache_limiter('');
     session_set_cookie_params([
         'lifetime' => 0,

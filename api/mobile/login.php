@@ -11,10 +11,10 @@ $password = is_string($data['password'] ?? null) ? $data['password'] : '';
 if (strlen($identifier) > 190 || ($email === '' && $contactNumber === '') || $password === '' || strlen($password) > 1024) {
     api_fail('Enter your registered email/contact number and password.', 422);
 }
-$emailHash = hash('sha256', $email !== '' ? $email : $contactNumber);
+$emailHash = login_attempt_hash($identifier, 'mobile');
 $cutoff = gmdate('Y-m-d H:i:s', time() - $config['login_window_minutes'] * 60);
-$query = db()->prepare('SELECT COUNT(*) FROM login_attempts WHERE attempted_at >= ? AND (email_hash = ? OR ip_address = ?)');
-$query->execute([$cutoff, $emailHash, client_ip()]);
+$query = db()->prepare('SELECT COUNT(*) FROM login_attempts WHERE attempted_at >= ? AND email_hash = ?');
+$query->execute([$cutoff, $emailHash]);
 if ((int) $query->fetchColumn() >= $config['login_max_attempts']) {
     header('Retry-After: ' . ($config['login_window_minutes'] * 60));
     api_fail('Too many sign-in attempts. Please try again later.', 429);

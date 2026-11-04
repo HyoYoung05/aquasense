@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 // Shared with the administrative website in assets/css/style.css.
 const ink = Color(0xFF203B38);
-const muted = Color(0xFF71807D);
+const muted = Color(0xFF596B66);
 const emerald = Color(0xFF197B66);
 const forest = Color(0xFF103F3B);
 const mint = Color(0xFFACD8BA);
@@ -134,7 +134,12 @@ ThemeData ownerTheme() {
       selectedColor: emerald,
       side: const BorderSide(color: line),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
-      labelStyle: const TextStyle(fontWeight: FontWeight.w600),
+      labelStyle: const TextStyle(color: forest, fontWeight: FontWeight.w600),
+      secondaryLabelStyle: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w600,
+      ),
+      checkmarkColor: Colors.white,
     ),
     navigationRailTheme: const NavigationRailThemeData(
       backgroundColor: Colors.white,

@@ -14,7 +14,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
     if (!valid_csrf()) {
         http_response_code(403);
-        $errors['form'] = 'This form has expired. Please try signing in again.';
+        unset($_SESSION['csrf_token']);
+        $errors['form'] = 'Your sign-in form was refreshed because the session expired or changed in another tab. Enter your password again and select Sign in.';
     } else {
         if (strlen($identifier) > 190 || (filter_var($identifier, FILTER_VALIDATE_EMAIL) === false
             && normalize_contact_number($identifier) === null)) {
@@ -38,10 +39,10 @@ require dirname(__DIR__) . '/includes/auth-header.php';
 ?>
 <div class="login-intro">
 <div class="welcome-icon"><?= icon('shield') ?></div>
-<span class="eyebrow">BARANGAY OPERATIONS</span>
+<span class="eyebrow">BARANGAY STAFF</span>
 <h2>Welcome back.</h2>
-<p class="auth-description">Sign in to your AQUASENSE+ workspace.</p>
-<div class="development-note"><span class="status-dot"></span><div><strong>AQUASENSE+ 1.0</strong><p>Monitoring, alerts, compliance, and reporting use the configured backend.</p></div></div>
+<p class="auth-description">Use your staff account to check traps, alerts, and oil records.</p>
+<div class="development-note"><span class="status-dot"></span><div><strong>Need an account?</strong><p>Ask your Barangay Admin for your sign-in details.</p></div></div>
 </div>
 <div class="login-fields">
 <?php if ($notice): ?><div class="notice" role="status"><?= e($notice) ?></div><?php endif; ?>

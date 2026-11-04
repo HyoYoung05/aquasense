@@ -22,9 +22,10 @@
 .official-logo{display:block;width:100%;height:100%;object-fit:contain}.brand-symbol .official-logo{width:39px;height:39px}.workspace-mark .official-logo{width:28px;height:28px}.workspace-mark:has(.official-logo){border:0;background:transparent;padding:0}
 /* One full-page teal background, with the artwork centered in the viewport. */
 .auth-page{
-    min-height:100vh;max-width:100%;overflow-x:hidden;color:#edf7f0;
+    min-height:100vh;min-height:100svh;max-width:100%;overflow-x:hidden;color:#edf7f0;
+    display:flex;flex-direction:column;
     background:radial-gradient(ellipse at 50% 45%,#197b66 0%,#174d43 45%,#103f3b 100%);
-    background-attachment:fixed;
+    background-attachment:scroll;
 }
 .auth-shell{position:relative;isolation:isolate;min-height:100vh;background:transparent}
 .auth-story,.auth-main{position:relative;z-index:1;background:transparent}
@@ -33,7 +34,7 @@
     position:fixed;inset:0;z-index:0;
     display:grid;place-items:center;
     width:100%;height:100%;min-height:0;margin:0;
-    background:transparent;opacity:.24;pointer-events:none;
+    background:transparent;opacity:.14;pointer-events:none;
 }
 .water-drop{
     position:static;left:auto;top:auto;transform:none;
@@ -80,7 +81,7 @@
     display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);
     align-items:center;gap:clamp(20px,2vw,28px);max-width:800px;
     padding:clamp(24px,2.4vw,32px);
-    background:rgba(16,63,59,.38);border-color:#acd8ba59;
+    background:rgba(16,63,59,.92);border-color:#acd8ba59;
     box-shadow:0 12px 36px #071e1b1f;backdrop-filter:blur(4px);
 }
 .login-intro,.login-fields{min-width:0}
@@ -112,7 +113,7 @@
 /* Screen-edge branding stays separate from the centered story and sign-in card. */
 .auth-page{--auth-edge-x:clamp(16px,3vw,48px);--auth-edge-y:20px}
 .auth-page-header,.auth-page-footer{
-    position:fixed;inset-inline:0;z-index:10;
+    position:relative;inset-inline:auto;z-index:1;flex-shrink:0;
     display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
     align-items:center;gap:16px;padding:var(--auth-edge-y) var(--auth-edge-x);
     background:#103f3bcc;backdrop-filter:blur(8px);
@@ -123,13 +124,21 @@
     justify-self:center;background:#acd8ba12;border-color:#acd8ba40;color:#d3ebd8;
 }
 .auth-environment{justify-self:end;font-size:12px;color:#bdd0c8}
-.auth-page-footer{bottom:0;font-size:11px;color:#bdd0c8}
+.auth-page-footer{bottom:auto;font-size:12px;color:#d3e4dc;padding-bottom:calc(var(--auth-edge-y) + env(safe-area-inset-bottom,0px))}
 .auth-page-footer>.story-bottom{display:flex;justify-self:start;margin:0;padding:0;min-width:0}
 .auth-version{justify-self:center;text-align:center}
 .auth-authorization{justify-self:end;text-align:right;max-width:240px}
-.auth-page .auth-shell{padding-block:112px 104px}
+.auth-page .auth-shell{flex:1;min-height:0;width:100%;padding-block:clamp(24px,4vh,48px);align-items:center}
 .auth-page .auth-story,.auth-page .auth-main{min-height:0}
-.auth-page .field input{scroll-margin-block:140px}
+.auth-page .field input{scroll-margin-block:24px;font-size:16px;min-height:48px}
+.auth-page .field label{font-size:14px}
+.auth-page .field-label{flex-wrap:wrap;gap:4px 12px}
+.auth-page .field-label a{display:inline-flex;align-items:center;min-height:44px;font-size:13px}
+.auth-page .password-toggle{min-width:44px;min-height:44px;right:2px;top:2px;color:#d3e4dc}
+.auth-page .auth-description,.auth-page .access-note p,.auth-page .development-note p{color:#d3e4dc;line-height:1.6;font-size:14px}
+.auth-login .story-copy p{color:#d3e4dc;font-size:15px}
+.auth-login .welcome-icon{margin-bottom:16px}
+.auth-login .story-copy{padding-block:16px}
 @media(max-width:760px){
     .auth-page-header{grid-template-columns:minmax(0,1fr) auto;gap:12px}
     .auth-page-header>.tag{grid-column:1/-1;grid-row:2}
@@ -138,7 +147,13 @@
     .auth-page-footer>.story-bottom{grid-column:1;grid-row:1;gap:8px}
     .auth-authorization{grid-column:2;grid-row:1;font-size:10px}
     .auth-version{grid-column:1/-1;grid-row:2;font-size:10px}
-    .auth-page .auth-shell{padding-block:148px 132px}
+    .auth-page .auth-shell{padding-block:20px 28px}
+    .auth-login .story-copy{margin:0;padding:0}
+    .auth-login .story-copy h1{font-size:clamp(28px,7vw,36px);margin:10px 0}
+    .auth-login .story-copy h1 br{display:none}
+    .auth-login .story-copy h1 span::before{content:' '}
+    .auth-page .auth-form-area{margin:0 auto}
+    .auth-shell>.water-art{opacity:.10}
 }
 @media(max-width:480px){
     .auth-page-header>.brand{font-size:18px;gap:6px}

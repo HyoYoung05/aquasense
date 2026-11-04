@@ -50,11 +50,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: forest,
+    backgroundColor: const Color(0xFFFDFEFD),
     body: LayoutBuilder(
       builder: (context, constraints) {
         final splitView =
-            constraints.maxWidth >= 760 && constraints.maxHeight >= 560;
+            constraints.maxWidth >= 760 &&
+            constraints.maxHeight >= 560 &&
+            MediaQuery.textScalerOf(context).scale(16) <= 20;
         final story = _StoryPanel(
           compact: !splitView || constraints.maxHeight < 650,
         );
@@ -75,7 +77,15 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Row(
               children: [
                 Expanded(flex: 46, child: story),
-                Expanded(flex: 54, child: formPanel),
+                Expanded(
+                  flex: 54,
+                  child: Column(
+                    children: [
+                      Expanded(child: formPanel),
+                      const _LoginFooter(),
+                    ],
+                  ),
+                ),
               ],
             ),
           );
@@ -83,7 +93,23 @@ class _LoginScreenState extends State<LoginScreen> {
 
         return SafeArea(
           child: SingleChildScrollView(
-            child: Column(children: [story, formPanel]),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight:
+                    constraints.maxHeight -
+                    MediaQuery.paddingOf(context).vertical,
+              ),
+              child: IntrinsicHeight(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    story,
+                    Expanded(child: formPanel),
+                    const _LoginFooter(),
+                  ],
+                ),
+              ),
+            ),
           ),
         );
       },
@@ -99,7 +125,7 @@ class _StoryPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     width: double.infinity,
-    constraints: BoxConstraints(minHeight: compact ? 270 : double.infinity),
+    constraints: BoxConstraints(minHeight: compact ? 220 : double.infinity),
     padding: EdgeInsets.fromLTRB(
       compact ? 24 : 44,
       compact ? 24 : 40,
@@ -120,7 +146,7 @@ class _StoryPanel extends StatelessWidget {
           right: compact ? -24 : -54,
           bottom: compact ? -70 : 54,
           child: Opacity(
-            opacity: compact ? .22 : .38,
+            opacity: compact ? .12 : .18,
             child: Image.asset(
               'assets/images/water-drop-splash.png',
               width: compact ? 220 : 420,
@@ -131,8 +157,12 @@ class _StoryPanel extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const OwnerBrand(light: true, showPortalLabel: true),
-            SizedBox(height: compact ? 42 : 88),
+            const FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: OwnerBrand(light: true, showPortalLabel: true),
+            ),
+            SizedBox(height: compact ? 24 : 48),
             const Text(
               'CLEANER WATER. STRONGER COMMUNITIES.',
               style: TextStyle(
@@ -166,7 +196,7 @@ class _StoryPanel extends StatelessWidget {
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 390),
                 child: const Text(
-                  'Monitor your grease trap, review alerts, and track oil surrenders from your owner workspace.',
+                  'Check your grease trap, read warnings, and keep track of the oil you hand over.',
                   style: TextStyle(
                     color: Color(0xFFBDD0C8),
                     height: 1.6,
@@ -225,7 +255,7 @@ class _FormPanel extends StatelessWidget {
     constraints: const BoxConstraints(minHeight: 520),
     padding: EdgeInsets.symmetric(
       horizontal: MediaQuery.sizeOf(context).width < 360 ? 18 : 28,
-      vertical: 32,
+      vertical: 24,
     ),
     child: Center(
       child: SingleChildScrollView(
@@ -246,7 +276,7 @@ class _FormPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Sign in to access your karinderya owner workspace.',
+                    'Sign in to check your shop and grease trap.',
                     style: TextStyle(color: muted, fontSize: 15),
                   ),
                   const SizedBox(height: 30),
@@ -337,32 +367,12 @@ class _FormPanel extends StatelessWidget {
                       SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Use the owner account registered by your Barangay. Administrative accounts cannot access this app.',
+                          'Use the owner account given by your Barangay. Need help signing in? Ask your Barangay Admin.',
                           style: TextStyle(
                             color: muted,
                             fontSize: 12,
                             height: 1.55,
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 26),
-                  const Divider(),
-                  const SizedBox(height: 12),
-                  const Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Barangay San Antonio',
-                          style: TextStyle(color: muted, fontSize: 11),
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          'Owner App v$appVersion',
-                          textAlign: TextAlign.right,
-                          style: TextStyle(color: muted, fontSize: 11),
                         ),
                       ),
                     ],
@@ -373,6 +383,41 @@ class _FormPanel extends StatelessWidget {
           ),
         ),
       ),
+    ),
+  );
+}
+
+class _LoginFooter extends StatelessWidget {
+  const _LoginFooter();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    key: const ValueKey('login-footer'),
+    padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Divider(),
+        const SizedBox(height: 12),
+        Builder(
+          builder: (context) {
+            const name = Text(
+              'Barangay San Antonio',
+              style: TextStyle(color: muted, fontSize: 12),
+            );
+            const version = Text(
+              'Owner App v$appVersion',
+              style: TextStyle(color: muted, fontSize: 12),
+            );
+            return const Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              spacing: 16,
+              runSpacing: 6,
+              children: [name, version],
+            );
+          },
+        ),
+      ],
     ),
   );
 }

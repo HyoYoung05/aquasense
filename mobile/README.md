@@ -1,6 +1,12 @@
 # AQUASENSE+ Carinderia Owner App
 
-Flutter owner application for AQUASENSE+. Version **0.9.25+45** aligns the app
+Flutter owner application for AQUASENSE+. Version **0.9.29+49** fills tall login
+screens with the light form surface and keeps the footer at the bottom. On short
+screens the form and footer scroll together. Version 0.9.28+48 reduces login
+spacing and artwork opacity and makes sign-in instructions easier to read.
+Version 0.9.27+47 adds a quick
+walkthrough and user manual in Settings > Help and guides. Version 0.9.26+46 fixes chip and
+chart tooltip contrast while preserving the green color scheme. It aligns the app
 with the administrative website's AQUASENSE+ visual system while retaining the
 Mobile Phase 7 owner-only foundation and Phase 4 sensor contract. The app now
 uses the website's emerald, deep-green, mint, canvas, border, typography, form,

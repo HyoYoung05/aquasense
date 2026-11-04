@@ -42,7 +42,9 @@ Surrender, incentive, monitoring, and history responses are owner-scoped. Admini
 Authentication: 32 random bytes encoded as hex; only SHA-256 token hashes stored.
 A SHA-256 fingerprint of the password hash invalidates tokens on password changes.
 Tokens default to 86400 seconds (PHP mobile_token_lifetime_seconds); no refresh
-endpoint yet. Login shares website login_attempts throttling by email hash/IP.
+endpoint yet. Login uses login_attempts with a mobile-specific normalized
+email/contact hash. Website attempts and other users on a shared IP do not
+consume the mobile identifier's attempt budget.
 Logout removes the token and is idempotent, including expired/disabled accounts.
 Every protected request checks account activation, owner role and token expiry.
 

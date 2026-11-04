@@ -120,6 +120,8 @@ try {
     check(str_contains(strtolower($form['headers']), 'content-security-policy:') && str_contains(strtolower($form['headers']), 'cache-control: no-store'), 'CSP and private no-store response headers');
     $response = request($anonymous, '/public/login.php', ['email' => $fixtureEmails['administrator'], 'password' => $password]);
     check($response['status'] === 403, 'Missing login CSRF token is rejected');
+    check(token($response) !== token($form), 'Expired login form receives a fresh CSRF token');
+    $form = $response;
     $response = request($anonymous, '/public/login.php', ['csrf_token' => token($form), 'email' => '<script>alert(1)</script>', 'password' => 'invalid']);
     check(str_contains($response['body'], 'Enter a valid email address or contact number.') && !str_contains($response['body'], '<script>alert(1)</script>'), 'Invalid input is validated and safely escaped');
     $response = login($anonymous, "' OR 1=1 --@example.test", 'invalid');
@@ -182,8 +184,15 @@ try {
     $rateEmail = 'foundation-rate-' . bin2hex(random_bytes(5)) . '@example.test';
     $fixtureEmails['rate'] = $rateEmail;
     $insert = $pdo->prepare('INSERT INTO login_attempts (email_hash, ip_address) VALUES (?, ?)');
+    $otherRateEmail = 'foundation-other-' . bin2hex(random_bytes(5)) . '@example.test';
+    $fixtureEmails['other_rate'] = $otherRateEmail;
     for ($i = 0; $i < (int) $config['login_max_attempts']; $i++) {
-        $insert->execute([hash('sha256', $rateEmail), '192.0.2.123']);
+        $insert->execute([login_attempt_hash($otherRateEmail, 'website'), '127.0.0.1']);
+        $insert->execute([login_attempt_hash($rateEmail, 'mobile'), '127.0.0.1']);
+    }
+    check(!str_contains(login(client(), $rateEmail, 'invalid')['body'], 'Too many sign-in attempts.'), 'Other website users and mobile failures do not consume this website login budget');
+    for ($i = 0; $i < (int) $config['login_max_attempts']; $i++) {
+        $insert->execute([login_attempt_hash($rateEmail, 'website'), '192.0.2.123']);
     }
     check(str_contains(login(client(), $rateEmail, 'invalid')['body'], 'Too many sign-in attempts.'), 'Server-side sign-in rate limiting is enforced');
 
@@ -223,6 +232,6 @@ try {
     }
     $fixtureEmails[] = "' or 1=1 --@example.test";
     foreach ($fixtureEmails as $email) {
-        db()->prepare('DELETE FROM login_attempts WHERE email_hash = ?')->execute([hash('sha256', strtolower($email))]);
+        db()->prepare('DELETE FROM login_attempts WHERE email_hash IN (?, ?, ?)')->execute([hash('sha256', strtolower($email)), login_attempt_hash($email, 'website'), login_attempt_hash($email, 'mobile')]);
     }
 }

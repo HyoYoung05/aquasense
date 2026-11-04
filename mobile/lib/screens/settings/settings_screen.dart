@@ -4,6 +4,7 @@ import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/notification_permission_service.dart';
 import '../../theme/app_theme.dart';
+import 'user_guide_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final AuthService auth;
@@ -354,6 +355,25 @@ class _SettingsScreenState extends State<SettingsScreen>
                 const Text(
                   'Manage your owner account, password, and application permissions.',
                   style: TextStyle(color: muted),
+                ),
+                const SizedBox(height: 20),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(
+                      Icons.menu_book_outlined,
+                      color: emerald,
+                    ),
+                    title: const Text('Help and guides'),
+                    subtitle: const Text(
+                      'Step-by-step walkthrough and user manual',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const UserGuideScreen(),
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 const _SettingsSectionHeading(
