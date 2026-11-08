@@ -2,6 +2,21 @@
 
 1.4.32
 
+## Partial telemetry, firmware 0.8.17 and owner app 0.9.33+53
+
+Date: 2026-11-08
+
+- Accept independent sensor measurements when ultrasonic distance is unavailable.
+  Apply migration 018 before deploying the API update.
+- Store unknown level as NULL and preserve existing level alerts until a valid
+  measurement shows recovery. Other sensor alerts continue independently.
+- Integrate ENS160+AHT2x polling and measured environmental compensation.
+- Show Ambient Temperature in the owner app and remove Odor from current and
+  historical displays. Historical database records are preserved.
+- Validated 25 partial-telemetry backend checks, monitoring UI tests, firmware
+  compilation and the production-API APK build. Production activation requires
+  deploying the database/API changes; GitHub updates alone do not deploy them.
+
 ## Dependency maintenance - 2026-11-05
 
 - Synced the mobile dependency lockfile with Flutter 3.44 / Dart 3.12.

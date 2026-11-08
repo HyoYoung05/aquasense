@@ -14,10 +14,10 @@ Deploy in this order:
    includes/mobile-monitoring.php and includes/monitoring.php. Also update
    includes/oil-surrender.php and the admin monitoring/device/trap detail pages
    so missing levels are not presented as zero.
-4. Upload firmware built from aquasense-esp32/AquaSenseSensors to the current
+4. Upload firmware built from esp32/AquaSenseSensors to the current
    physical port (COM7 during diagnosis). Keep the ignored AQS-003 credentials,
    trap 3 identity, hardware profile and production HTTPS endpoint.
-5. Install owner app 0.9.30+50 built with config/api.production.json. This APK
+5. Install owner app 0.9.33+53 built with config/api.production.json. This APK
    uses the existing local debug signing opt-in; production API configuration
    does not imply that a production signing key is available.
 6. Verify serial HTTP 201, a newer production sensor_readings row, and fresh

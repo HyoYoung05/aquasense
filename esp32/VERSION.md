@@ -2,7 +2,21 @@
 
 ## Current version
 
-0.8.7
+0.8.17
+
+## 0.8.17 - ENS160 + AHT2x polling - 2026-11-08
+
+- Scan I2C at startup and initialize AHT2x before ENS160.
+- Read the combination sensor every two seconds and use measured AHT2x
+  temperature/humidity for ENS160 compensation after startup defaults.
+- Keep air-quality readings unavailable until ENS160 reports normal operation.
+- Retain optional interrupts, range checks, independent sensors, and paced retries.
+
+## 0.8.16 - Partial sensor telemetry - 2026-11-04
+
+- Queue available sensor measurements independently of ultrasonic validity.
+- Omit missing distance from JSON instead of blocking the entire record.
+- Requires database migration 018 and the matching telemetry API update.
 
 ## 0.8.7 - Independent device connectivity heartbeat - 2026-11-01
 

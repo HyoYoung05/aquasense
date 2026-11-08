@@ -2,7 +2,26 @@
 
 ## Current Version
 
-0.9.29+49
+0.9.33+53
+
+## 0.9.33+53 - 2026-11-08
+
+- Removed Odor from current sensors, history rows, and chart metric selection.
+- Passed all 14 monitoring checks and built the production-API release APK.
+
+## 0.9.32+52 - 2026-11-08
+
+- Replaced Air Quality in current sensors with AHT2x ambient temperature in Celsius.
+- Show unavailable temperature explicitly when no measurement arrives.
+
+## 0.9.31+51 - 2026-11-08
+
+- Rebuilt the production owner app alongside the ENS160+AHT2x firmware update.
+
+## 0.9.30+50 - 2026-11-04
+
+- Support partial telemetry with an unavailable level instead of a fabricated zero.
+- Preserve independent working sensors when ultrasonic distance is unavailable.
 
 ## Dependency maintenance - 2026-11-05
 
