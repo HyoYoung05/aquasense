@@ -19,6 +19,7 @@ function phase3_monitoring_latest():array
         $sensorState=!(bool)$row['trap_active']?'INACTIVE':(!$row['device_id']?'AWAITING DEVICE':(!$row['reading_id']?'AWAITING TELEMETRY':($deviceState!=='ONLINE'?'OFFLINE':$row['level_status'])));
         foreach(['establishment_id','grease_trap_id','assignment_id','device_id','reading_id'] as $key)$row[$key]=$row[$key]===null?null:(int)$row[$key];
         foreach(['empty_distance_cm','full_distance_cm','low_threshold','medium_threshold','high_threshold','critical_threshold','ultrasonic_distance_cm','waste_level_percent','device_reported_percent','temperature_c','turbidity_ntu','turbidity_raw_adc','flow_rate_lpm','flow_pulse_count','gas_value','odor_value','gas_raw_adc','ambient_temperature_c','humidity_percent','ens160_aqi','tvoc_ppb','eco2_ppm'] as $key)$row[$key]=$row[$key]===null?null:(float)$row[$key];
+        if ($row['reading_id'] && $row['waste_level_percent'] === null) $sensorState='LEVEL UNAVAILABLE';
         $row['device_status']=$deviceState;$row['sensor_state']=$sensorState;$row['is_simulated']=(bool)($row['is_simulated']??false);$row['is_test']=(bool)($row['is_test']??false);$row['active_alerts']=[];
         if($row['assignment_id']){$alertQuery->execute([$row['assignment_id']]);foreach($alertQuery->fetchAll() as $alert){$alert['label']=phase4_alert_label($alert['alert_type']);$row['active_alerts'][]=$alert;}}
     }unset($row);

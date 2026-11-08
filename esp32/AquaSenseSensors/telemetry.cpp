@@ -164,7 +164,7 @@ void createPendingTelemetry(const float distanceCm, const SensorData& sensors,
 }
 
 TelemetryResult sendPendingTelemetry(const PendingTelemetry& pending) {
-  if (!pending.active || !isfinite(pending.ultrasonicDistanceCm)) {
+  if (!pending.active) {
     return {TelemetryOutcome::kLocalConfigurationFailure, 0,
             AquaSenseConfig::CONFIGURATION_RETRY_MS};
   }
@@ -176,11 +176,9 @@ TelemetryResult sendPendingTelemetry(const PendingTelemetry& pending) {
   char json[768];
   int jsonLength = snprintf(
       json, sizeof(json),
-      "{\"device_id\":\"%s\",\"grease_trap_id\":%lu,"
-      "\"ultrasonic_distance\":%.2f",
+      "{\"device_id\":\"%s\",\"grease_trap_id\":%lu",
       AquaSenseConfig::DEVICE_CODE,
-      static_cast<unsigned long>(AquaSenseConfig::GREASE_TRAP_ID),
-      pending.ultrasonicDistanceCm);
+      static_cast<unsigned long>(AquaSenseConfig::GREASE_TRAP_ID));
   auto appendFloat = [&](const char* field, const float value) {
     if (jsonLength < 0 || jsonLength >= static_cast<int>(sizeof(json))) return;
     const int added = snprintf(json + jsonLength, sizeof(json) - jsonLength,
@@ -202,6 +200,9 @@ TelemetryResult sendPendingTelemetry(const PendingTelemetry& pending) {
       jsonLength += added;
     }
   };
+  if (isfinite(pending.ultrasonicDistanceCm)) {
+    appendFloat("ultrasonic_distance", pending.ultrasonicDistanceCm);
+  }
   if (pending.hasWastewaterTemperature) {
     appendFloat("temperature", pending.wastewaterTemperatureC);
   }

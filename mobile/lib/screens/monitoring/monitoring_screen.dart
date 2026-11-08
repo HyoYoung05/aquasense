@@ -640,11 +640,6 @@ class _MonitoringScreenState extends State<MonitoringScreen>
         : reading?.flowPulseCount != null
         ? 'Not calibrated'
         : 'Not connected';
-    final airQualityParts = <String>[
-      if (reading?.ens160Aqi != null) measured(reading!.ens160Aqi, 'AQI', ''),
-      if (reading?.tvocPpb != null) measured(reading!.tvocPpb, 'ppb TVOC', ''),
-      if (reading?.eco2Ppm != null) measured(reading!.eco2Ppm, 'ppm eCO2', ''),
-    ];
     final gas = reading?.gasValue != null
         ? measured(reading!.gasValue, 'calibrated', 'Not connected')
         : measured(reading?.gasRawAdc, 'ADC (raw)', 'Not connected');
@@ -657,16 +652,11 @@ class _MonitoringScreenState extends State<MonitoringScreen>
       ('Turbidity', turbidity, Icons.opacity_outlined),
       ('Flow Rate', flow, Icons.air_outlined),
       (
-        'Air Quality',
-        airQualityParts.isEmpty ? 'Not connected' : airQualityParts.join(' · '),
-        Icons.air_outlined,
+        'Ambient Temperature',
+        measured(reading?.ambientTemperature, '°C', 'Not available'),
+        Icons.device_thermostat_outlined,
       ),
       ('Gas', gas, Icons.co2_outlined),
-      (
-        'Odor',
-        measured(reading?.odorValue, 'raw', 'Not connected'),
-        Icons.sensors_outlined,
-      ),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -993,7 +983,6 @@ class _HistoryTile extends StatelessWidget {
         '${cleanNumber(point.flowPulseCount!)} pulses',
       if (point.gasValue != null)
         'Gas ${cleanNumber(point.gasValue!)} calibrated',
-      if (point.odorValue != null) 'Odor ${cleanNumber(point.odorValue!)} raw',
       if (point.gasRawAdc != null)
         'MQ-135 ${cleanNumber(point.gasRawAdc!)} ADC',
       if (point.ambientTemperature != null)

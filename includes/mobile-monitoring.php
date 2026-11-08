@@ -5,6 +5,7 @@ require_once __DIR__.'/monitoring.php';
 
 function mobile_reading_status(array $trap, array $reading, array $settings): string
 {
+    if ($reading['waste_level_percent'] === null) return 'LEVEL UNAVAILABLE';
     $level = (float) $reading['waste_level_percent'];
     if ($level >= (float) $settings['overflow_threshold']) {
         return 'OVERFLOW';
@@ -60,7 +61,7 @@ function mobile_dashboard(int $ownerId): array
                 'device_code' => $trap['device_code'],
                 'device_status' => $deviceStatus,
                 'is_stale' => $stale, 'reading' => !$reading ? null : [
-                    'waste_level_percent' => (float) $reading['waste_level_percent'],
+                    'waste_level_percent' => $reading['waste_level_percent'] === null ? null : (float) $reading['waste_level_percent'],
                     'temperature_c' => $reading['temperature_c'] === null ? null : (float) $reading['temperature_c'],
                     'ultrasonic_distance_cm' => $reading['ultrasonic_distance_cm'] === null ? null : (float) $reading['ultrasonic_distance_cm'],
                     'is_test' => (bool) $reading['is_test'],

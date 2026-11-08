@@ -6,6 +6,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('partial telemetry preserves unknown level and valid temperature', () {
+    final reading = SensorReading.fromJson({
+      'waste_level_percent': null,
+      'ultrasonic_distance_cm': null,
+      'temperature_c': 30.25,
+      'is_simulated': false,
+      'is_test': false,
+      'recorded_at': '2026-11-04T05:30:00Z',
+    });
+    expect(reading.wasteLevel, isNull);
+    expect(reading.ultrasonicDistance, isNull);
+    expect(reading.temperature, 30.25);
+  });
   Map<String, dynamic> payload() => {
     'waste_level_percent': 75,
     'temperature_c': null,

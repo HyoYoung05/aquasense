@@ -407,7 +407,7 @@ function phase5_sensor_evidence(PDO $pdo, array $surrender): array
         'readings' => $readings,
         'before' => $before,
         'after' => $after,
-        'level_change' => $before && $after
+        'level_change' => $before && $after && $before['waste_level_percent'] !== null && $after['waste_level_percent'] !== null
             ? round((float) $after['waste_level_percent'] - (float) $before['waste_level_percent'], 2)
             : null,
     ];

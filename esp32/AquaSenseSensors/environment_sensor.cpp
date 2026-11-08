@@ -57,6 +57,10 @@ bool tryBeginEns160(SensorData& data) {
   }
   Serial.printf("[ENS160] Detected at I2C address 0x%02X\n", ens160Address);
   ens160->setPWRMode(ENS160_STANDARD_MODE);
+  // Startup compensation from the supplied combined-sensor sketch; this is
+  // replaced by measured AHT2x values as soon as a valid reading is available.
+  ens160->setTempAndHum(25.0F, 50.0F);
+  Serial.println(F("[ENS160] READY; waiting for normal sensor status"));
   if (AquaSenseConfig::ENS160_USE_INTERRUPT) {
     const uint8_t mode = static_cast<uint8_t>(ens160->eINTModeEN) |
                          static_cast<uint8_t>(ens160->eINTPinPP) |
@@ -86,6 +90,7 @@ bool tryBeginAht2x(SensorData& data) {
     return false;
   }
   data.aht2xState = SensorState::kUnavailable;
+  Serial.println(F("[AHT2x] READY"));
   return true;
 #else
   (void)data;
@@ -95,6 +100,15 @@ bool tryBeginAht2x(SensorData& data) {
 }
 
 void environmentSensorsBegin(SensorData& data) {
+  if (AquaSenseConfig::ENABLE_ENS160 || AquaSenseConfig::ENABLE_AHT2X) {
+    Serial.println(F("[I2C] Scanning ENS160 + AHT2x bus"));
+    for (uint8_t address = 0x08; address <= 0x77; ++address) {
+      Wire.beginTransmission(address);
+      if (Wire.endTransmission() == 0) {
+        Serial.printf("[I2C] Detected: 0x%02X\n", address);
+      }
+    }
+  }
   data.ens160State = AquaSenseConfig::ENABLE_ENS160
                          ? SensorState::kUnavailable
                          : SensorState::kDisabled;
@@ -104,8 +118,12 @@ void environmentSensorsBegin(SensorData& data) {
   const uint32_t nowMs = millis();
   lastEnsInitMs = nowMs;
   lastAhtInitMs = nowMs;
-  ens160Initialized = tryBeginEns160(data);
   aht2xInitialized = tryBeginAht2x(data);
+  ens160Initialized = tryBeginEns160(data);
+  if (AquaSenseConfig::ENABLE_AHT2X && !aht2xInitialized)
+    Serial.println(F("[AHT2x] FAILED; retry scheduled"));
+  if (AquaSenseConfig::ENABLE_ENS160 && !ens160Initialized)
+    Serial.println(F("[ENS160] FAILED; retry scheduled"));
   lastEnsReadMs = nowMs - AquaSenseConfig::ENS160_INTERVAL_MS;
   lastAhtReadMs = nowMs - AquaSenseConfig::AHT2X_INTERVAL_MS;
 }
@@ -162,8 +180,9 @@ void environmentSensorsUpdate(const uint32_t nowMs, SensorData& data) {
     ens160->setTempAndHum(data.ambientTemperatureC, data.humidityPercent);
   }
   const uint8_t status = ens160->getENS160Status();
-  if (status == ens160->eWarmUpPhase ||
-      status == ens160->eInitialStartUpPhase) {
+  const bool sensorReportsWarmup = status == ens160->eWarmUpPhase ||
+                                   status == ens160->eInitialStartUpPhase;
+  if (sensorReportsWarmup) {
     data.ens160Valid = false;
     data.ens160State = SensorState::kWarmingUp;
     return;

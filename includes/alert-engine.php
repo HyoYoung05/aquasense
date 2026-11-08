@@ -73,12 +73,15 @@ function phase4_resolve_recovered(PDO $pdo,int $assignmentId,array $types,string
 function phase4_evaluate_telemetry(PDO $pdo,array $assignment,int $readingId,array $reading,string $at): array
 {
     $settings=phase4_numeric_settings($pdo);$assignmentId=(int)$assignment['assignment_id'];$active=[];
-    $level=(float)$reading['waste_level_percent'];$levelTypes=['HIGH_LEVEL','CRITICAL_LEVEL','OVERFLOW_WARNING','OVERFLOW'];
+    $level=$reading['waste_level_percent'];$levelTypes=['HIGH_LEVEL','CRITICAL_LEVEL','OVERFLOW_WARNING','OVERFLOW'];
+    if ($level !== null) {
+    $level=(float)$level;
     if($level >= $settings['overflow_threshold'])$active['OVERFLOW']=$settings['overflow_threshold'];
     elseif($level >= (float)$assignment['critical_threshold']){$active['CRITICAL_LEVEL']=(float)$assignment['critical_threshold'];$active['OVERFLOW_WARNING']=(float)$assignment['critical_threshold'];}
     elseif($level >= (float)$assignment['high_threshold'])$active['HIGH_LEVEL']=(float)$assignment['high_threshold'];
     phase4_resolve_recovered($pdo,$assignmentId,array_values(array_diff($levelTypes,array_keys($active))),$at);
     foreach($active as $type=>$threshold)phase4_upsert_alert($pdo,$assignmentId,$readingId,$type,$level,$threshold,$at);
+    }
 
     $temperature=$reading['temperature_c'];$temperatureTypes=[];
     if($temperature!==null){$temperature=(float)$temperature;if($temperature >= $settings['emulsion_temperature_threshold'])$temperatureTypes['EMULSION_WARNING']=$settings['emulsion_temperature_threshold'];if($temperature >= $settings['high_temperature_threshold'])$temperatureTypes['HIGH_TEMPERATURE']=$settings['high_temperature_threshold'];phase4_resolve_recovered($pdo,$assignmentId,array_values(array_diff(['HIGH_TEMPERATURE','EMULSION_WARNING'],array_keys($temperatureTypes))),$at);foreach($temperatureTypes as $type=>$threshold)phase4_upsert_alert($pdo,$assignmentId,$readingId,$type,$temperature,$threshold,$at);}

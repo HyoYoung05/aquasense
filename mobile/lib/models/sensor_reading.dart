@@ -1,5 +1,5 @@
 class SensorReading {
-  final double wasteLevel;
+  final double? wasteLevel;
   final double? temperature, ultrasonicDistance;
   final bool isSimulated, isTest;
   final DateTime recordedAt;
@@ -18,7 +18,7 @@ class SensorReading {
     final isSimulated = json['is_simulated'];
     final isTest = json['is_test'];
     final recordedAt = json['recorded_at'];
-    if (wasteLevel is! num ||
+    if ((wasteLevel != null && wasteLevel is! num) ||
         (temperature != null && temperature is! num) ||
         (distance != null && distance is! num) ||
         isSimulated is! bool ||
@@ -31,7 +31,7 @@ class SensorReading {
       throw const FormatException('Invalid sensor reading time.');
     }
     return SensorReading(
-      wasteLevel: wasteLevel.toDouble(),
+      wasteLevel: (wasteLevel as num?)?.toDouble(),
       temperature: (temperature as num?)?.toDouble(),
       isSimulated: isSimulated,
       isTest: isTest as bool? ?? false,

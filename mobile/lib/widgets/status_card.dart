@@ -124,7 +124,9 @@ class StatusCard extends StatelessWidget {
                   label: stale ? 'Last waste level' : 'Waste level',
                   value: reading == null
                       ? 'Not available'
-                      : '${cleanNumber(reading.wasteLevel)}%',
+                      : reading.wasteLevel == null
+                      ? 'Not available'
+                      : '${cleanNumber(reading.wasteLevel!)}%',
                 ),
                 SensorCard(
                   icon: Icons.straighten,

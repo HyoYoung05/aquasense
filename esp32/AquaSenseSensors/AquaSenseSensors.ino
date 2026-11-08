@@ -110,15 +110,18 @@ void captureTelemetry(const uint32_t nowMs) {
   if (!networkConfigurationValid ||
       !timeReached(nowMs, nextTelemetryCaptureMs)) return;
   nextTelemetryCaptureMs = nowMs + AquaSenseConfig::TELEMETRY_INTERVAL_MS;
-  if (latestReading.status != UltrasonicStatus::kOk ||
-      !isfinite(latestReading.medianDistanceCm)) {
-    Serial.println(F("[QUEUE] Not enqueued: ultrasonic reading is invalid"));
-    Serial.println(F("[QUEUE] No fake zero, fill, or safe state was stored"));
+  const float distance = latestReading.status == UltrasonicStatus::kOk
+                             ? latestReading.medianDistanceCm : NAN;
+  PendingTelemetry pending{};
+  createPendingTelemetry(distance, sensorData,
+                         ++telemetryQueueSequence, nowMs, pending);
+  if (!isfinite(distance) && !pending.hasWastewaterTemperature &&
+      !pending.hasTurbidityRaw && !pending.hasTurbidityNtu &&
+      !pending.hasFlowPulseCount && !pending.hasFlowRate &&
+      !pending.hasEns160 && !pending.hasAht2x && !pending.hasGasRaw) {
+    Serial.println(F("[QUEUE] No valid sensors available; heartbeat continues"));
     return;
   }
-  PendingTelemetry pending{};
-  createPendingTelemetry(latestReading.medianDistanceCm, sensorData,
-                         ++telemetryQueueSequence, nowMs, pending);
   const bool droppedOldest = telemetryQueue.enqueue(pending);
   if (droppedOldest) {
     Serial.println(F("[QUEUE] Full: dropped oldest unsent record to preserve recent data"));
