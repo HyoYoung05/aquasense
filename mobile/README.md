@@ -1,5 +1,8 @@
 # AQUASENSE+ Carinderia Owner App
 
+The checked-in dependency lockfile requires Flutter **3.44+** and Dart **3.12+**.
+The Windows plugin files include permission-handler registration.
+
 Flutter owner application for AQUASENSE+. Version **0.9.29+49** fills tall login
 screens with the light form surface and keeps the footer at the bottom. On short
 screens the form and footer scroll together. Version 0.9.28+48 reduces login

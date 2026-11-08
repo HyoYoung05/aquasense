@@ -2,6 +2,9 @@
 
 ## Project Overview
 
+The current mobile dependency lockfile requires Flutter **3.44+** and Dart
+**3.12+**. Windows builds include the permission-handler plugin registration.
+
 Owner app **0.9.29+49** fixes the login footer position and removes the empty
 dark area below the form on tall phones. Narrow-screen footer labels stack.
 

@@ -2,6 +2,12 @@
 
 1.4.32
 
+## Dependency maintenance - 2026-11-05
+
+- Synced the mobile dependency lockfile with Flutter 3.44 / Dart 3.12.
+- Updated generated Windows files to register the permission-handler plugin.
+- No application release version or APK was changed in this maintenance update.
+
 ## Flutter owner app 0.9.29+49 (website/backend remains 1.4.32)
 
 Date: 2026-11-04

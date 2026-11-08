@@ -4,6 +4,12 @@
 
 0.9.29+49
 
+## Dependency maintenance - 2026-11-05
+
+- Updated resolved packages, including fl_chart, image_picker_android, and
+  permission_handler_windows, for Flutter 3.44 / Dart 3.12.
+- Synced Windows permission-handler registration. No APK was rebuilt.
+
 ## 0.9.29+49 - 2026-11-04
 
 - Kept the login footer at the bottom on tall screens and below content on short screens.
