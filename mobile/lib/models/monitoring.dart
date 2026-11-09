@@ -22,12 +22,7 @@ enum SensorMetric {
   flowRate('Flow', 'L/min'),
   flowPulseCount('Flow Pulses', 'pulses'),
   gas('Gas Sensor', 'raw'),
-  gasRaw('MQ-135 Raw', 'ADC'),
-  ambientTemperature('Ambient Temperature', '°C'),
-  humidity('Humidity', '% RH'),
-  airQualityIndex('ENS160 AQI', 'AQI'),
-  tvoc('ENS160 TVOC', 'ppb'),
-  eco2('ENS160 eCO2', 'ppm');
+  gasRaw('MQ-135 Raw', 'ADC');
 
   final String label;
   final String unit;
@@ -43,11 +38,6 @@ enum SensorMetric {
     SensorMetric.flowPulseCount => point.flowPulseCount,
     SensorMetric.gas => point.gasValue,
     SensorMetric.gasRaw => point.gasRawAdc,
-    SensorMetric.ambientTemperature => point.ambientTemperature,
-    SensorMetric.humidity => point.humidity,
-    SensorMetric.airQualityIndex => point.ens160Aqi,
-    SensorMetric.tvoc => point.tvocPpb,
-    SensorMetric.eco2 => point.eco2Ppm,
   };
 }
 
@@ -62,11 +52,6 @@ class MonitoringReading {
   final double? gasValue;
   final double? odorValue;
   final double? gasRawAdc;
-  final double? ambientTemperature;
-  final double? humidity;
-  final double? ens160Aqi;
-  final double? tvocPpb;
-  final double? eco2Ppm;
   final String condition;
   final bool isSimulated;
   final bool isTest;
@@ -83,11 +68,6 @@ class MonitoringReading {
     required this.gasValue,
     this.odorValue,
     this.gasRawAdc,
-    this.ambientTemperature,
-    this.humidity,
-    this.ens160Aqi,
-    this.tvocPpb,
-    this.eco2Ppm,
     required this.condition,
     required this.isSimulated,
     required this.isTest,
@@ -113,11 +93,6 @@ class MonitoringReading {
       gasValue: _number(json['gas_value']),
       odorValue: _number(json['odor_value']),
       gasRawAdc: _number(json['gas_raw_adc']),
-      ambientTemperature: _number(json['ambient_temperature_c']),
-      humidity: _number(json['humidity_percent']),
-      ens160Aqi: _number(json['ens160_aqi']),
-      tvocPpb: _number(json['tvoc_ppb']),
-      eco2Ppm: _number(json['eco2_ppm']),
       condition: (json['condition'] as String).trim(),
       isSimulated: json['is_simulated'] as bool,
       isTest: json['is_test'] as bool,
@@ -243,11 +218,6 @@ class TelemetryPoint {
   final double? gasValue;
   final double? odorValue;
   final double? gasRawAdc;
-  final double? ambientTemperature;
-  final double? humidity;
-  final double? ens160Aqi;
-  final double? tvocPpb;
-  final double? eco2Ppm;
   final String condition;
   final bool isSimulated;
   final bool isTest;
@@ -265,11 +235,6 @@ class TelemetryPoint {
     required this.gasValue,
     this.odorValue,
     this.gasRawAdc,
-    this.ambientTemperature,
-    this.humidity,
-    this.ens160Aqi,
-    this.tvocPpb,
-    this.eco2Ppm,
     required this.condition,
     required this.isSimulated,
     required this.isTest,
@@ -297,11 +262,6 @@ class TelemetryPoint {
       gasValue: _number(json['gas_value']),
       odorValue: _number(json['odor_value']),
       gasRawAdc: _number(json['gas_raw_adc']),
-      ambientTemperature: _number(json['ambient_temperature_c']),
-      humidity: _number(json['humidity_percent']),
-      ens160Aqi: _number(json['ens160_aqi']),
-      tvocPpb: _number(json['tvoc_ppb']),
-      eco2Ppm: _number(json['eco2_ppm']),
       condition: condition,
       isSimulated: json['is_simulated'] as bool,
       isTest: json['is_test'] as bool,

@@ -4,10 +4,8 @@
 
 #include "config.h"
 #include "calibration.h"
-#include "environment_sensor.h"
 #include "flow_sensor.h"
 #include "gas_sensor.h"
-#include "i2c_bus.h"
 #include "pins.h"
 #include "private_config.h"
 #include "sensor_data.h"
@@ -17,6 +15,7 @@
 #include "turbidity_sensor.h"
 #include "ultrasonic.h"
 #include "wifi_manager.h"
+#include "wifi_setup.h"
 
 namespace {
 
@@ -53,8 +52,6 @@ uint32_t minimumFreeHeap = UINT32_MAX;
 SensorState previousDs18b20State = SensorState::kDisabled;
 SensorState previousTurbidityState = SensorState::kDisabled;
 SensorState previousFlowState = SensorState::kDisabled;
-SensorState previousEns160State = SensorState::kDisabled;
-SensorState previousAht2xState = SensorState::kDisabled;
 SensorState previousMq135State = SensorState::kDisabled;
 
 bool timeReached(const uint32_t nowMs, const uint32_t targetMs) {
@@ -76,21 +73,7 @@ bool networkSettingsAreValid() {
                                url.startsWith("https://");
   const bool forbiddenLoopback = url.indexOf("localhost") >= 0 ||
                                  url.indexOf("127.0.0.1") >= 0;
-  const char* configuredSsids[] = {
-      AquaSenseSecrets::WIFI_SSID_1, AquaSenseSecrets::WIFI_SSID_2,
-      AquaSenseSecrets::WIFI_SSID_3, AquaSenseSecrets::WIFI_SSID_4,
-      AquaSenseSecrets::WIFI_SSID_5, AquaSenseSecrets::WIFI_SSID_6,
-      AquaSenseSecrets::WIFI_SSID_7, AquaSenseSecrets::WIFI_SSID_8,
-      AquaSenseSecrets::WIFI_SSID_9, AquaSenseSecrets::WIFI_SSID_10};
-  bool hasConfiguredWiFi = false;
-  for (const char* ssid : configuredSsids) {
-    if (strlen(ssid) > 0U && String(ssid) != "YOUR_WIFI_NAME") {
-      hasConfiguredWiFi = true;
-      break;
-    }
-  }
-  return hasConfiguredWiFi &&
-         supportedScheme && !forbiddenLoopback &&
+  return supportedScheme && !forbiddenLoopback &&
          url.indexOf("YOUR_") < 0 && deviceCredentialIsValid() &&
          AquaSenseConfig::GREASE_TRAP_ID > 0U;
 }
@@ -118,7 +101,7 @@ void captureTelemetry(const uint32_t nowMs) {
   if (!isfinite(distance) && !pending.hasWastewaterTemperature &&
       !pending.hasTurbidityRaw && !pending.hasTurbidityNtu &&
       !pending.hasFlowPulseCount && !pending.hasFlowRate &&
-      !pending.hasEns160 && !pending.hasAht2x && !pending.hasGasRaw) {
+      !pending.hasGasRaw) {
     Serial.println(F("[QUEUE] No valid sensors available; heartbeat continues"));
     return;
   }
@@ -220,10 +203,6 @@ void updateOptionalSensorFailureCounters() {
                              previousTurbidityState);
   trackSensorFaultTransition(AquaSenseConfig::ENABLE_FLOW,
                              sensorData.flowState, previousFlowState);
-  trackSensorFaultTransition(AquaSenseConfig::ENABLE_ENS160,
-                             sensorData.ens160State, previousEns160State);
-  trackSensorFaultTransition(AquaSenseConfig::ENABLE_AHT2X,
-                             sensorData.aht2xState, previousAht2xState);
   trackSensorFaultTransition(AquaSenseConfig::ENABLE_MQ135,
                              sensorData.mq135State, previousMq135State);
 }
@@ -253,7 +232,7 @@ const char* resetReasonName(const esp_reset_reason_t reason) {
 void printHardwareSummary() {
   Serial.println();
   Serial.println(F("AQUASENSE+"));
-  Serial.println(F("ESP32 Six-Sensor Firmware"));
+  Serial.println(F("ESP32 Five-Sensor Firmware"));
   Serial.printf("Firmware version: %s\n", AquaSenseConfig::FIRMWARE_VERSION);
   Serial.printf("Chip model: %s\n", ESP.getChipModel());
   Serial.printf("Chip revision: %u\n", ESP.getChipRevision());
@@ -278,7 +257,7 @@ void printHardwareSummary() {
                     ? "PRESENT"
                     : "NOT PRESENT - USE A MULTIMETER");
   Serial.println(F("Approved rails: 5V=VIN/HC-SR04/YF-S201/SEN0189/MQ-135"));
-  Serial.println(F("Approved rails: 3.3V=DS18B20/ENS160+AHT2x | common ground"));
+  Serial.println(F("Approved rails: 3.3V=DS18B20 | common ground"));
   Serial.println(F("Backup battery: NOT IMPLEMENTED - schematic not finalized"));
   Serial.printf("HC-SR04 pins: TRIG=GPIO%u | ECHO=GPIO%u\n",
                 static_cast<unsigned int>(AquaSensePins::ULTRASONIC_TRIG),
@@ -294,9 +273,7 @@ void printHardwareSummary() {
                 AquaSenseCalibration::DS18B20_REFERENCE_VALIDATED ? "VALIDATED" : "PENDING",
                 AquaSenseCalibration::TURBIDITY_NTU_CALIBRATED ? "CALIBRATED" : "INCOMPLETE",
                 AquaSenseCalibration::FLOW_PHYSICALLY_CALIBRATED ? "CALIBRATED" : "INCOMPLETE");
-  Serial.printf("Calibration: ENS160=%s | AHT2x=%s | MQ-135 ppm=%s\n",
-                AquaSenseCalibration::ENS160_RESPONSE_VALIDATED ? "VALIDATED" : "PENDING",
-                AquaSenseCalibration::AHT2X_REFERENCE_VALIDATED ? "VALIDATED" : "PENDING",
+  Serial.printf("Calibration: MQ-135 ppm=%s\n",
                 AquaSenseCalibration::MQ135_PPM_CALIBRATED ? "CALIBRATED" : "INCOMPLETE");
   Serial.printf("Device identity: %s | grease trap: %lu\n",
                 AquaSenseConfig::DEVICE_CODE,
@@ -306,9 +283,7 @@ void printHardwareSummary() {
                 AquaSensePins::DS18B20_DATA,
                 AquaSensePins::TURBIDITY_ANALOG,
                 AquaSensePins::FLOW_SIGNAL);
-  Serial.printf("Combo I2C: SDA=%u SCL=%u | optional ENS160 INT=%u | MQ-135=%u\n",
-                AquaSensePins::ENS160_SDA, AquaSensePins::ENS160_SCL,
-                AquaSensePins::ENS160_INT, AquaSensePins::MQ135_ANALOG);
+  Serial.printf("MQ-135 analog pin: GPIO%u\n", AquaSensePins::MQ135_ANALOG);
   Serial.println(F("Unverified sensor circuits remain disabled; unavailable is valid."));
   Serial.printf("RAM telemetry queue: %u records x %u bytes = %u bytes fixed\n",
                 static_cast<unsigned int>(telemetryQueue.capacity()),
@@ -323,7 +298,7 @@ void printHardwareSummary() {
 void printSixSensorLiveReport() {
   Serial.println();
   Serial.println(F("========================================"));
-  Serial.printf("AQUASENSE+ SIX-SENSOR LIVE REPORT #%lu\n",
+  Serial.printf("AQUASENSE+ FIVE-SENSOR LIVE REPORT #%lu\n",
                 static_cast<unsigned long>(++reportSequence));
   Serial.println(F("========================================"));
   Serial.println();
@@ -360,23 +335,18 @@ void printSystemHealth(const uint32_t nowMs) {
                 static_cast<unsigned int>(telemetryQueue.highWaterMark()),
                 static_cast<unsigned long>(telemetryQueue.droppedOldestCount()),
                 static_cast<unsigned long>(telemetryPermanentDiscardCount));
-  Serial.printf("Faults: sensor acquisitions=%lu | ultrasonic timeouts=%lu | I2C errors=%lu | I2C recoveries=%lu\n",
+  Serial.printf("Faults: sensor acquisitions=%lu | ultrasonic timeouts=%lu\n",
                 static_cast<unsigned long>(sensorErrorCount),
-                static_cast<unsigned long>(ultrasonicTimeoutCount),
-                static_cast<unsigned long>(i2cErrorCount()),
-                static_cast<unsigned long>(i2cRecoveryCount()));
+                static_cast<unsigned long>(ultrasonicTimeoutCount));
   printNetworkStatus();
 }
 
 void beginSensorProcessing(const uint32_t nowMs) {
   if (sensorProcessingStarted) return;
   ultrasonicBegin();
-  // Required integration order: 4A, 4B, 4C, 4D, then 4E.
   temperatureSensorBegin(sensorData);
   turbiditySensorBegin(sensorData);
   flowSensorBegin(sensorData);
-  i2cBusBegin();
-  environmentSensorsBegin(sensorData);
   gasSensorBegin(sensorData);
   lastStatusMs = nowMs;
   lastSensorStartMs = nowMs - AquaSenseConfig::SENSOR_INTERVAL_MS;
@@ -388,7 +358,7 @@ void beginSensorProcessing(const uint32_t nowMs) {
   sensorProcessingStarted = true;
   Serial.printf("[STARTUP] Wi-Fi connected after %lu ms; sensor processing unlocked\n",
                 static_cast<unsigned long>(nowMs - startupWiFiGateStartedMs));
-  Serial.println(F("[STARTUP] SIX-SENSOR LIVE REPORT will begin after the normal status interval"));
+  Serial.println(F("[STARTUP] FIVE-SENSOR LIVE REPORT will begin after the normal status interval"));
 }
 
 }  // namespace
@@ -406,10 +376,11 @@ void setup() {
     Serial.println(F("[CONFIG] Private Wi-Fi, API URL, and device credential loaded"));
     Serial.println(F("[CONFIG] Secrets are not printed"));
     networkBegin();
+    wifiSetupBegin();
     startupWiFiGateStartedMs = millis();
     Serial.println(F("[STARTUP] Wi-Fi gate active for the first connection"));
-    Serial.println(F("[STARTUP] Trying only networks configured in secrets.h for 60000 ms"));
-    Serial.println(F("[STARTUP] Sensor reads and SIX-SENSOR LIVE REPORT are paused"));
+    Serial.println(F("[STARTUP] Trying saved owner Wi-Fi, then configured fallback networks"));
+    Serial.println(F("[STARTUP] Sensor reads and FIVE-SENSOR LIVE REPORT are paused"));
   } else {
     Serial.println(F("[CONFIG] Private network/API settings are incomplete"));
     Serial.println(F("[CONFIG] Sensor processing is locked until valid secrets permit Wi-Fi"));
@@ -420,6 +391,8 @@ void setup() {
 
 void loop() {
   const uint32_t nowMs = millis();
+  if (networkConfigurationValid) wifiSetupUpdate(nowMs);
+  if (wifiSetupActive()) { delay(1); return; }
   if (networkConfigurationValid) networkUpdate(nowMs);
   if (!sensorProcessingStarted) {
     if (networkConfigurationValid && networkConnected()) {
@@ -468,7 +441,6 @@ void loop() {
   temperatureSensorUpdate(nowMs, sensorData);
   turbiditySensorUpdate(nowMs, sensorData);
   flowSensorUpdate(nowMs, sensorData);
-  environmentSensorsUpdate(nowMs, sensorData);
   gasSensorUpdate(nowMs, sensorData);
   updateOptionalSensorFailureCounters();
   handleHeartbeat(millis());

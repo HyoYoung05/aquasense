@@ -60,7 +60,11 @@ class _FakeRepository implements MonitoringRepository {
   }
 }
 
-MonitoringReading _reading({double? waste = 58}) => MonitoringReading(
+MonitoringReading _reading({
+  double? waste = 58,
+  double? gasValue = 725,
+  double? gasRawAdc = 1450,
+}) => MonitoringReading(
   wasteLevel: waste,
   ultrasonicDistance: 12.4,
   temperature: 31.5,
@@ -68,14 +72,9 @@ MonitoringReading _reading({double? waste = 58}) => MonitoringReading(
   turbidityRawAdc: 1820,
   flowRate: 1.8,
   flowPulseCount: 450,
-  gasValue: 725,
+  gasValue: gasValue,
   odorValue: 240,
-  gasRawAdc: 1450,
-  ambientTemperature: 29.8,
-  humidity: 68.2,
-  ens160Aqi: 2,
-  tvocPpb: 120,
-  eco2Ppm: 510,
+  gasRawAdc: gasRawAdc,
   condition: 'MEDIUM',
   isSimulated: false,
   isTest: true,
@@ -136,11 +135,6 @@ TelemetryPoint _point(
   gasValue: waste == null ? null : 725,
   odorValue: waste == null ? null : 240,
   gasRawAdc: waste == null ? null : 1450,
-  ambientTemperature: waste == null ? null : 29.8,
-  humidity: waste == null ? null : 68.2,
-  ens160Aqi: waste == null ? null : 2,
-  tvocPpb: waste == null ? null : 120,
-  eco2Ppm: waste == null ? null : 510,
   condition: 'MEDIUM',
   isSimulated: false,
   isTest: true,
@@ -213,7 +207,6 @@ void main() {
               'gas_value': null,
               'gas_raw_adc': null,
               'ambient_temperature_c': null,
-              'humidity_percent': null,
               'ens160_aqi': null,
               'tvoc_ppb': null,
               'eco2_ppm': null,
@@ -263,7 +256,6 @@ void main() {
               'odor_value': 240,
               'gas_raw_adc': 1450,
               'ambient_temperature_c': 29.8,
-              'humidity_percent': 68.2,
               'ens160_aqi': 2,
               'tvoc_ppb': 120,
               'eco2_ppm': 510,
@@ -281,8 +273,6 @@ void main() {
         expect(parsed.readings.single.odorValue, 240);
         expect(parsed.readings.single.turbidityRawAdc, 1820);
         expect(parsed.readings.single.gasRawAdc, 1450);
-        expect(parsed.readings.single.humidity, 68.2);
-        expect(parsed.readings.single.ens160Aqi, 2);
       }
     },
   );
@@ -402,7 +392,7 @@ void main() {
         SensorMetric.values.map((metric) => metric.label),
         isNot(contains('Odor Sensor')),
       );
-      expect(find.text('29.8 °C'), findsOneWidget);
+      expect(find.text('29.8 °C'), findsNothing);
       final sensorPanel = find.byKey(const Key('sensor-summary-panel'));
       expect(sensorPanel, findsOneWidget);
       expect(
@@ -410,9 +400,13 @@ void main() {
           of: sensorPanel,
           matching: find.text('Ambient Temperature'),
         ),
-        findsOneWidget,
+        findsNothing,
       );
       for (final removedLabel in [
+        'Ambient Temperature',
+        'ENS160 AQI',
+        'ENS160 TVOC',
+        'ENS160 eCO2',
         'Turbidity Raw',
         'Flow Pulses',
         'Air Quality',
@@ -422,6 +416,18 @@ void main() {
         expect(
           find.descendant(of: sensorPanel, matching: find.text(removedLabel)),
           findsNothing,
+        );
+      }
+      for (final removedMetric in [
+        'Ambient Temperature',
+        'Humidity',
+        'ENS160 AQI',
+        'ENS160 TVOC',
+        'ENS160 eCO2',
+      ]) {
+        expect(
+          SensorMetric.values.map((metric) => metric.label),
+          isNot(contains(removedMetric)),
         );
       }
       expect(find.text('AQS-001'), findsWidgets);
@@ -500,11 +506,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Awaiting Sensor Data'), findsWidgets);
     expect(find.text('No data'), findsWidgets);
-    expect(find.text('Not connected'), findsNWidgets(4));
+    expect(find.text('Not connected'), findsNWidgets(3));
     expect(
       find.descendant(
         of: find.byKey(const Key('sensor-summary-panel')),
-        matching: find.text('Not available'),
+        matching: find.text('Device offline'),
       ),
       findsOneWidget,
     );
@@ -519,6 +525,72 @@ void main() {
     auth.api.close();
     auth.dispose();
   });
+
+  testWidgets(
+    'startup waiting changes to real telemetry on automatic refresh',
+    (tester) async {
+      tester.view.physicalSize = const Size(900, 1500);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final missing = _reading(gasValue: null, gasRawAdc: null);
+      MonitoringSnapshot current(
+        MonitoringReading reading, {
+        bool stale = false,
+      }) => MonitoringSnapshot(
+        generatedAt: _at,
+        freshness: const Duration(minutes: 10),
+        traps: [_trap(reading: reading, stale: stale)],
+      );
+      final repository = _FakeRepository()..current = current(missing);
+      final auth = _auth();
+      await tester.pumpWidget(_app(repository, auth));
+      await tester.pumpAndSettle();
+      final panel = find.byKey(const Key('sensor-summary-panel'));
+      Finder panelText(String text) =>
+          find.descendant(of: panel, matching: find.text(text));
+      expect(panelText('Sensor warming up'), findsOneWidget);
+      expect(find.textContaining('Gas warm-up takes 3 minutes'), findsNothing);
+      expect(panelText('Not available'), findsNothing);
+      expect(panelText('Not connected'), findsNothing);
+
+      await tester.pump(const Duration(minutes: 2));
+      await tester.pumpAndSettle();
+      expect(panelText('Sensor warming up'), findsOneWidget);
+      expect(panelText('Please check wiring of sensor'), findsNothing);
+      // Refreshes must not restart the warm-up or fabricate readings on expiry.
+      await tester.pump(const Duration(minutes: 1));
+      await tester.pumpAndSettle();
+      expect(panelText('Please check wiring of sensor'), findsOneWidget);
+
+      repository.current = current(missing, stale: true);
+      await tester.pump(MonitoringScreen.refreshInterval);
+      await tester.pumpAndSettle();
+      expect(panelText('Please check wiring of sensor'), findsOneWidget);
+      expect(find.textContaining('Gas warm-up takes 3 minutes'), findsNothing);
+
+      repository.current = current(_reading(gasValue: null, gasRawAdc: 1200));
+      await tester.pump(MonitoringScreen.refreshInterval);
+      await tester.pumpAndSettle();
+      expect(panelText('1200 ADC (raw)'), findsOneWidget);
+      expect(panelText('Sensor warming up'), findsNothing);
+      expect(panelText('Please check wiring of sensor'), findsNothing);
+      expect(find.textContaining('Gas warm-up takes 3 minutes'), findsNothing);
+
+      repository.current = current(_reading());
+      await tester.pump(MonitoringScreen.refreshInterval);
+      await tester.pumpAndSettle();
+      expect(panelText('725 calibrated'), findsOneWidget);
+      repository.current = current(missing);
+      await tester.pump(MonitoringScreen.refreshInterval);
+      await tester.pumpAndSettle();
+      expect(panelText('Sensor warming up'), findsOneWidget);
+      expect(panelText('Please check wiring of sensor'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      auth.api.close();
+      auth.dispose();
+    },
+  );
 
   testWidgets('range and sensor selectors reload history without fake zeroes', (
     tester,
@@ -662,6 +734,22 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         expect(find.text('Telemetry History'), findsOneWidget);
+        final rangeRects = [
+          for (final range in HistoryRange.values)
+            tester.getRect(find.byKey(Key('range-${range.apiValue}'))),
+        ];
+        expect(rangeRects[0].top, rangeRects[1].top);
+        expect(rangeRects[1].top, rangeRects[2].top);
+        expect(rangeRects[3].top, rangeRects[4].top);
+        expect(rangeRects[4].top, rangeRects[5].top);
+        expect(rangeRects[3].top, greaterThan(rangeRects[0].bottom));
+        for (var column = 0; column < 3; column++) {
+          expect(
+            rangeRects[column].left,
+            closeTo(rangeRects[column + 3].left, 0.1),
+          );
+          expect(rangeRects[column].width, closeTo(rangeRects[0].width, 0.1));
+        }
         await tester.pumpWidget(const SizedBox());
         auth.api.close();
         auth.dispose();

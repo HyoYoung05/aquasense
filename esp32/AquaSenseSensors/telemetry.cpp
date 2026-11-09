@@ -149,15 +149,6 @@ void createPendingTelemetry(const float distanceCm, const SensorData& sensors,
   pending.flowPulseCount = sensors.flowPulseCount;
   pending.hasFlowRate = sensors.flowValid && isfinite(sensors.flowRateLpm);
   pending.flowRateLpm = sensors.flowRateLpm;
-  pending.hasEns160 = sensors.ens160Valid;
-  pending.ens160Aqi = sensors.ens160Aqi;
-  pending.ens160TvocPpb = sensors.ens160TvocPpb;
-  pending.ens160Eco2Ppm = sensors.ens160Eco2Ppm;
-  pending.hasAht2x = sensors.aht2xValid &&
-                     isfinite(sensors.ambientTemperatureC) &&
-                     isfinite(sensors.humidityPercent);
-  pending.ambientTemperatureC = sensors.ambientTemperatureC;
-  pending.humidityPercent = sensors.humidityPercent;
   pending.hasGasRaw = sensors.mq135RawValid;
   pending.gasRawAdc = sensors.mq135RawAdc;
   generateUuidV4(pending.readingUuid);
@@ -217,15 +208,6 @@ TelemetryResult sendPendingTelemetry(const PendingTelemetry& pending) {
   }
   if (pending.hasFlowRate) {
     appendFloat("flow_rate", pending.flowRateLpm);
-  }
-  if (pending.hasEns160) {
-    appendUnsigned("aqi", pending.ens160Aqi);
-    appendUnsigned("tvoc_ppb", pending.ens160TvocPpb);
-    appendUnsigned("eco2_ppm", pending.ens160Eco2Ppm);
-  }
-  if (pending.hasAht2x) {
-    appendFloat("ambient_temperature", pending.ambientTemperatureC);
-    appendFloat("humidity", pending.humidityPercent);
   }
   if (pending.hasGasRaw) appendUnsigned("gas_raw", pending.gasRawAdc);
   if (jsonLength >= 0 && jsonLength < static_cast<int>(sizeof(json))) {

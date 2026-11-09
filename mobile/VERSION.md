@@ -2,7 +2,46 @@
 
 ## Current Version
 
-0.9.33+53
+0.9.39+59
+
+## 0.9.39+59 - 2026-11-09
+
+- Removed ENS160+AHT2x measurements from Monitoring, history records, and chart choices.
+- Retained wastewater temperature, turbidity, flow, level alerts and MQ-135 Gas with its warm-up handling.
+
+## 0.9.38+58 - 2026-11-09
+
+- Renamed "Waiting for fresh telemetry" to "Sensor warming up" in Monitoring.
+- Start an independent 3-minute grace period for missing ambient/gas readings when the app observes the device online. Show "Please check wiring of sensor" after expiry until telemetry arrives.
+- Preserve the grace period across refreshes; clear it on a received measurement or offline status. Keep connection failures separate from sensor messages.
+
+## 0.9.37+57 - 2026-11-08
+
+- Removed the warm-up information notice above Current Sensors.
+- Use "Waiting for sensor reading" for ambient temperature and gas while awaiting measurements.
+- Arrange history ranges into two rows of three equal-width buttons in the requested order.
+
+## 0.9.36+56 - 2026-11-08
+
+- Show startup waiting text for absent ambient temperature and gas measurements on online devices.
+- Explain the firmware's 3-minute MQ-135 warm-up and independent ambient sensor initialization.
+- Replace waiting text automatically with real telemetry on the existing 5-second refresh.
+- Keep offline and stale telemetry distinct; do not infer confirmed warm-up or a countdown from missing values.
+
+## 0.9.35+55 - 2026-11-08
+
+- Keep Ambient Temperature visible in telemetry history when measurements are missing.
+- Wrap history sensor choices so they are visible without horizontal scrolling.
+- Label ambient temperature in each record and explain unavailable readings without inventing values.
+
+## 0.9.34+54 - 2026-11-08
+
+- Added Settings > Device Wi-Fi with local Bluetooth discovery, device setup
+  code, Wi-Fi name/password entry, connection confirmation and cancellation.
+- Use Espressif Security 1 provisioning with firmware 0.8.18; Wi-Fi
+  credentials are not sent to the production API or stored on the phone.
+- One-time ESP32 USB update is required. Physical pairing remains unverified
+  because the board was unavailable during implementation.
 
 ## 0.9.33+53 - 2026-11-08
 

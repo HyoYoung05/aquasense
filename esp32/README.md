@@ -1,5 +1,11 @@
 # AQUASENSE+ ESP32 Hardware — Final Phase 8
 
+Current firmware **0.8.19** removes the failed ENS160+AHT2x module, its drivers,
+I2C polling, fault reporting and telemetry fields. The remaining sensors are
+HC-SR04, DS18B20, SEN0189, YF-S201 and MQ-135. BLE owner Wi-Fi setup remains
+available. Use Huge APP (3MB No OTA/1MB SPIFFS) and disable erase-all when uploading.
+The notes below describe earlier hardware integration and test results.
+
 Firmware **0.8.7** adds an authenticated 30-second connectivity heartbeat that
 updates device `last_seen_at` without requiring valid sensor telemetry. A
 network-connected ESP32 therefore remains ONLINE while disconnected, invalid,
@@ -18,7 +24,7 @@ HC-SR04 -> ESP32 -> Wi-Fi -> PHP API -> MySQL/MariaDB -> website / Flutter
 
 The ESP32 never accesses MySQL. Public sensor gates remain disabled by default;
 an ignored local hardware profile enables only paths verified on one prototype.
-The current private COM10 profile enables all six official sensors. ENS160 now
+The historical private COM10 profile enabled all six official sensors. ENS160 then
 checks both `0x52` and `0x53`; AHT2x remains disabled because it is not an
 official seventh sensor. Physical wiring and calibration still determine
 whether each enabled input becomes valid.

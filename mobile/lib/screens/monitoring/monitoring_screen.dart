@@ -16,6 +16,7 @@ import '../alerts/alert_detail_screen.dart';
 
 class MonitoringScreen extends StatefulWidget {
   static const refreshInterval = Duration(seconds: 5);
+  static const sensorWarmupInterval = Duration(minutes: 3);
 
   final AuthService auth;
   final MonitoringRepository? repository;
@@ -36,6 +37,8 @@ class _MonitoringScreenState extends State<MonitoringScreen>
     with WidgetsBindingObserver {
   late final MonitoringRepository repository;
   Timer? refreshTimer;
+  final Map<(int, SensorMetric), Timer> sensorWarmupTimers = {};
+  final Set<(int, SensorMetric)> sensorWarmupExpired = {};
   MonitoringSnapshot? snapshot;
   TelemetryHistory? history;
   int? selectedTrapId;
@@ -63,6 +66,9 @@ class _MonitoringScreenState extends State<MonitoringScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     refreshTimer?.cancel();
+    for (final timer in sensorWarmupTimers.values) {
+      timer.cancel();
+    }
     super.dispose();
   }
 
@@ -91,6 +97,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
       if (!mounted) return;
       setState(() {
         snapshot = current;
+        _updateSensorWarmups(current);
         selectedTrapId = current.traps.isEmpty
             ? null
             : (current.traps.any((trap) => trap.greaseTrapId == selectedTrapId)
@@ -119,6 +126,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
       if (!mounted) return;
       setState(() {
         snapshot = current;
+        _updateSensorWarmups(current);
         if (!current.traps.any((trap) => trap.greaseTrapId == selectedTrapId)) {
           selectedTrapId = current.traps.isEmpty
               ? null
@@ -628,6 +636,38 @@ class _MonitoringScreenState extends State<MonitoringScreen>
     ),
   );
 
+  void _updateSensorWarmups(MonitoringSnapshot current) {
+    final missing = <(int, SensorMetric)>{};
+    for (final trap in current.traps) {
+      if (trap.deviceStatus != 'ONLINE') continue;
+      if (trap.reading?.gasValue == null && trap.reading?.gasRawAdc == null) {
+        missing.add((trap.greaseTrapId, SensorMetric.gas));
+      }
+    }
+    for (final key in sensorWarmupTimers.keys.toList()) {
+      if (!missing.contains(key)) {
+        sensorWarmupTimers.remove(key)?.cancel();
+        sensorWarmupExpired.remove(key);
+      }
+    }
+    for (final key in missing) {
+      sensorWarmupTimers.putIfAbsent(
+        key,
+        () => Timer(MonitoringScreen.sensorWarmupInterval, () {
+          if (mounted) setState(() => sensorWarmupExpired.add(key));
+        }),
+      );
+    }
+  }
+
+  String _sensorStartupStatus(GreaseTrapMonitoring trap, SensorMetric metric) {
+    if (trap.deviceStatus != 'ONLINE') return 'Device offline';
+    if (refreshError != null) return 'Waiting for connection';
+    return sensorWarmupExpired.contains((trap.greaseTrapId, metric))
+        ? 'Please check wiring of sensor'
+        : 'Sensor warming up';
+  }
+
   Widget _sensorOverview(GreaseTrapMonitoring trap) {
     final reading = trap.reading;
     String measured(double? value, String unit, String fallback) =>
@@ -642,7 +682,11 @@ class _MonitoringScreenState extends State<MonitoringScreen>
         : 'Not connected';
     final gas = reading?.gasValue != null
         ? measured(reading!.gasValue, 'calibrated', 'Not connected')
-        : measured(reading?.gasRawAdc, 'ADC (raw)', 'Not connected');
+        : measured(
+            reading?.gasRawAdc,
+            'ADC (raw)',
+            _sensorStartupStatus(trap, SensorMetric.gas),
+          );
     final sensors = [
       (
         'Wastewater Temperature',
@@ -651,11 +695,6 @@ class _MonitoringScreenState extends State<MonitoringScreen>
       ),
       ('Turbidity', turbidity, Icons.opacity_outlined),
       ('Flow Rate', flow, Icons.air_outlined),
-      (
-        'Ambient Temperature',
-        measured(reading?.ambientTemperature, '°C', 'Not available'),
-        Icons.device_thermostat_outlined,
-      ),
       ('Gas', gas, Icons.co2_outlined),
     ];
     return Column(
@@ -723,16 +762,23 @@ class _MonitoringScreenState extends State<MonitoringScreen>
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
+          Column(
             children: [
-              for (final option in HistoryRange.values)
-                ChoiceChip(
-                  key: Key('range-${option.apiValue}'),
-                  label: Text(option.label),
-                  selected: range == option,
-                  onSelected: (_) => _selectRange(option),
+              for (var row = 0; row < 2; row++)
+                Padding(
+                  padding: EdgeInsets.only(bottom: row == 0 ? 8 : 0),
+                  child: Row(
+                    children: [
+                      for (var column = 0; column < 3; column++) ...[
+                        if (column > 0) const SizedBox(width: 8),
+                        Expanded(
+                          child: _rangeChip(
+                            HistoryRange.values[row * 3 + column],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
             ],
           ),
@@ -802,24 +848,33 @@ class _MonitoringScreenState extends State<MonitoringScreen>
     ),
   );
 
+  Widget _rangeChip(HistoryRange option) => ChoiceChip(
+    key: Key('range-${option.apiValue}'),
+    showCheckmark: false,
+    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+    labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+    label: SizedBox(
+      width: double.infinity,
+      child: FittedBox(fit: BoxFit.scaleDown, child: Text(option.label)),
+    ),
+    selected: range == option,
+    onSelected: (_) => _selectRange(option),
+  );
+
   Widget _metricSelector(TelemetryHistory value) {
     final metrics = _availableMetrics(value);
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (final metric in metrics)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: ChoiceChip(
-                key: Key('metric-${metric.name}'),
-                label: Text(metric.label),
-                selected: selectedMetric == metric,
-                onSelected: (_) => setState(() => selectedMetric = metric),
-              ),
-            ),
-        ],
-      ),
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final metric in metrics)
+          ChoiceChip(
+            key: Key('metric-${metric.name}'),
+            label: Text(metric.label),
+            selected: selectedMetric == metric,
+            onSelected: (_) => setState(() => selectedMetric = metric),
+          ),
+      ],
     );
   }
 
@@ -865,6 +920,13 @@ class _TelemetryChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!history.readings.any((point) => metric.valueOf(point) != null)) {
+      return _InlineState(
+        icon: Icons.info_outline,
+        text:
+            'No ${metric.label.toLowerCase()} readings were received for this range.',
+      );
+    }
     final points = history.readings.reversed.toList(growable: false);
     final spots = <FlSpot>[];
     for (var index = 0; index < points.length; index++) {
@@ -985,12 +1047,6 @@ class _HistoryTile extends StatelessWidget {
         'Gas ${cleanNumber(point.gasValue!)} calibrated',
       if (point.gasRawAdc != null)
         'MQ-135 ${cleanNumber(point.gasRawAdc!)} ADC',
-      if (point.ambientTemperature != null)
-        'Ambient ${cleanNumber(point.ambientTemperature!)} °C',
-      if (point.humidity != null) '${cleanNumber(point.humidity!)}% RH',
-      if (point.ens160Aqi != null) 'AQI ${cleanNumber(point.ens160Aqi!)}',
-      if (point.tvocPpb != null) 'TVOC ${cleanNumber(point.tvocPpb!)} ppb',
-      if (point.eco2Ppm != null) 'eCO2 ${cleanNumber(point.eco2Ppm!)} ppm',
     ];
     return ListTile(
       contentPadding: EdgeInsets.zero,

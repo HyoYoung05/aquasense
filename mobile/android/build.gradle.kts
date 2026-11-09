@@ -2,6 +2,10 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        maven {
+            url = uri("https://jitpack.io")
+            content { includeGroup("com.github.espressif"); includeGroup("com.github.yuriy-budiyev") }
+        }
     }
 }
 

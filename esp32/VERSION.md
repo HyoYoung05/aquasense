@@ -2,7 +2,25 @@
 
 ## Current version
 
-0.8.17
+0.8.19
+
+## 0.8.19 - Remove failed combo sensor - 2026-11-09
+
+- Removed ENS160+AHT2x initialization, drivers, I2C polling, fault counters, and telemetry fields.
+- Retained the five remaining sensor modules and BLE Wi-Fi setup.
+- Built and uploaded to COM7; flash hashes verified. Live serial checks confirmed wastewater temperature, turbidity raw ADC, flow, and MQ-135 raw ADC readings.
+- Production heartbeat succeeds, but telemetry returns HTTP 422 (`ultrasonic_distance must be a JSON number`) while HC-SR04 reports NO_ECHO. The production partial-telemetry update is still required to accept independent readings without distance.
+
+## 0.8.18 - Owner Wi-Fi setup over BLE - 2026-11-08
+
+- Added a five-minute Security 1 provisioning window, opened by holding and
+  releasing BOOT for three seconds or issuing WIFI_SETUP on USB serial.
+- Generate a private per-device setup code, persist a confirmed owner network,
+  and prioritize it after restart without replacing working credentials on failure.
+- Firmware now requires the Huge APP partition for the provisioning libraries.
+- Flashed to the ESP32 on COM7 on 2026-11-09; all component hashes verified.
+- Startup serial output confirmed the Wi-Fi gate is active: no configured network connected.
+- Physical BLE provisioning and connected telemetry checks remain pending Wi-Fi setup.
 
 ## 0.8.17 - ENS160 + AHT2x polling - 2026-11-08
 

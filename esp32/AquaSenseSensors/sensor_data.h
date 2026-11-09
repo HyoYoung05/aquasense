@@ -33,17 +33,6 @@ struct SensorData {
   float cumulativeFlowLiters = NAN;
   SensorState flowState = SensorState::kDisabled;
 
-  bool ens160Valid = false;
-  uint8_t ens160Aqi = 0;
-  uint16_t ens160TvocPpb = 0;
-  uint16_t ens160Eco2Ppm = 0;
-  SensorState ens160State = SensorState::kDisabled;
-
-  bool aht2xValid = false;
-  float ambientTemperatureC = NAN;
-  float humidityPercent = NAN;
-  SensorState aht2xState = SensorState::kDisabled;
-
   bool mq135RawValid = false;
   uint16_t mq135LatestAdc = 0;
   uint16_t mq135RawAdc = 0;

@@ -19,13 +19,6 @@ struct PendingTelemetry {
   uint32_t flowPulseCount = 0;
   bool hasFlowRate = false;
   float flowRateLpm = NAN;
-  bool hasEns160 = false;
-  uint8_t ens160Aqi = 0;
-  uint16_t ens160TvocPpb = 0;
-  uint16_t ens160Eco2Ppm = 0;
-  bool hasAht2x = false;
-  float ambientTemperatureC = NAN;
-  float humidityPercent = NAN;
   bool hasGasRaw = false;
   uint16_t gasRawAdc = 0;
 };

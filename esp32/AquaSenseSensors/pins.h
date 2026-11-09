@@ -13,9 +13,6 @@ inline constexpr uint8_t DS18B20_DATA = 4;
 inline constexpr uint8_t FLOW_SIGNAL = 19;
 inline constexpr uint8_t TURBIDITY_ANALOG = 34;
 inline constexpr uint8_t MQ135_ANALOG = 35;
-inline constexpr uint8_t ENS160_SDA = 21;
-inline constexpr uint8_t ENS160_SCL = 22;
-inline constexpr uint8_t ENS160_INT = 26;
 
 static_assert(ULTRASONIC_TRIG != ULTRASONIC_ECHO, "Ultrasonic pins conflict");
 static_assert(TURBIDITY_ANALOG >= 32 && MQ135_ANALOG >= 32,

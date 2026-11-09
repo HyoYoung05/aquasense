@@ -48,10 +48,11 @@ Device connectivity now comes from the independent ESP32 heartbeat. The owner
 Dashboard status card intentionally displays only **ONLINE** or **OFFLINE**;
 ONLINE is green, OFFLINE is gray, and individual sensor availability remains in
 the sensor section.
-Monitoring now presents the required sensor measurements in one compact panel
-instead of separate cards. It groups ENS160 air-quality values, uses calibrated
-turbidity/gas values with raw ADC fallback, omits diagnostic flow-pulse and
-duplicate raw tiles, and retains separate Gas and Odor rows.
+Monitoring presents wastewater temperature, turbidity, flow, and MQ-135 Gas
+in one compact panel, with waste level and distance in the monitoring summary.
+Version 0.9.39+59 removes the failed ENS160+AHT2x module's ambient temperature,
+humidity, AQI, TVOC and eCO2 from current readings and history. Gas retains its
+warm-up and wiring-check messages. Level alerts remain enabled.
 Alerts uses equal-width responsive summary cards and aligned filters: Status
 and Severity share a phone row, Date Range spans the next row, and wide screens
 place all three controls in one row. Very narrow or enlarged-text layouts stack

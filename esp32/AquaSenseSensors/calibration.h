@@ -36,12 +36,6 @@ inline constexpr float TURBIDITY_NTU_COEFFICIENT_C = NAN;
 inline constexpr bool FLOW_PHYSICALLY_CALIBRATED = true;
 inline constexpr float FLOW_PULSES_PER_LITER = 450.0F;
 
-// ENS160 outputs use the sensor/library's AQI, TVOC, and eCO2 algorithms. AHT2x
-// values are supplied as compensation when both devices are valid. These flags
-// record pending comparison/stability validation; they do not invent offsets.
-inline constexpr bool ENS160_RESPONSE_VALIDATED = false;
-inline constexpr bool AHT2X_REFERENCE_VALIDATED = false;
-
 // MQ-135 remains raw/relative. No ppm conversion is permitted without a
 // documented clean-air baseline, module load resistance, target-gas curve, and
 // reference procedure.

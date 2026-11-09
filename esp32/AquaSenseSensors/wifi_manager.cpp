@@ -1,4 +1,5 @@
 #include "wifi_manager.h"
+#include "wifi_setup.h"
 
 #include <WiFi.h>
 #include <time.h>
@@ -8,6 +9,8 @@
 
 namespace {
 
+String ownerSsid;
+String ownerPassword;
 bool connectionAttemptActive = false;
 bool previouslyConnected = false;
 uint8_t nextNetworkIndex = 0;
@@ -57,7 +60,7 @@ bool slotConfigured(const WiFiSlot& slot) {
 }
 
 size_t configuredSlotCount() {
-  size_t count = 0;
+  size_t count = ownerSsid.isEmpty() ? 0U : 1U;
   for (const WiFiSlot& slot : WIFI_SLOTS) {
     if (slotConfigured(slot)) ++count;
   }
@@ -76,14 +79,16 @@ uint32_t connectionAttemptTimeoutMs(const uint32_t nowMs) {
 }
 
 bool startConnectionAttempt(const uint32_t nowMs) {
+  const WiFiSlot ownerSlot{ownerSsid.c_str(), ownerPassword.c_str()};
   const WiFiSlot* selected = nullptr;
-  for (size_t checked = 0; checked < WIFI_SLOT_COUNT; ++checked) {
+  for (size_t checked = 0; checked < WIFI_SLOT_COUNT + 1U; ++checked) {
     const uint8_t index = nextNetworkIndex;
     nextNetworkIndex = static_cast<uint8_t>((nextNetworkIndex + 1U) %
-                                            WIFI_SLOT_COUNT);
-    if (!slotConfigured(WIFI_SLOTS[index])) continue;
-    selected = &WIFI_SLOTS[index];
-    activeNetworkSlot = static_cast<uint8_t>(index + 1U);
+                                            (WIFI_SLOT_COUNT + 1U));
+    const WiFiSlot& slot = index == 0U ? ownerSlot : WIFI_SLOTS[index - 1U];
+    if (index == 0U ? ownerSsid.isEmpty() : !slotConfigured(slot)) continue;
+    selected = index == 0U ? &ownerSlot : &WIFI_SLOTS[index - 1U];
+    activeNetworkSlot = index;
     break;
   }
   if (selected == nullptr) {
@@ -116,6 +121,7 @@ uint32_t currentRetryDelayMs() {
 }  // namespace
 
 void networkBegin() {
+  loadOwnerWiFi(ownerSsid, ownerPassword);
   WiFi.persistent(false);
   WiFi.setAutoReconnect(false);
   WiFi.mode(WIFI_STA);

@@ -67,25 +67,7 @@ void printSensorData(const SensorData& data) {
   }
   Serial.printf("Status: %s\n\n", sensorStateName(data.flowState));
 
-  Serial.println(F("[5] ENS160 + AHT2x AIR QUALITY"));
-  if (data.aht2xValid) {
-    Serial.printf("Ambient temperature: %.2f C\n", data.ambientTemperatureC);
-    Serial.printf("Relative humidity: %.2f %%RH\n", data.humidityPercent);
-  } else {
-    Serial.println(F("Ambient temperature: N/A"));
-    Serial.println(F("Relative humidity: N/A"));
-  }
-  Serial.printf("AHT2x status: %s\n", sensorStateName(data.aht2xState));
-  if (data.ens160Valid) {
-    Serial.printf("ENS160 AQI: %u\n", data.ens160Aqi);
-    Serial.printf("ENS160 TVOC: %u ppb\n", data.ens160TvocPpb);
-    Serial.printf("ENS160 eCO2: %u ppm\n", data.ens160Eco2Ppm);
-  } else {
-    Serial.println(F("ENS160 AQI / TVOC / eCO2: N/A"));
-  }
-  Serial.printf("ENS160 status: %s\n\n", sensorStateName(data.ens160State));
-
-  Serial.println(F("[6] MQ-135 GAS / ODOR"));
+  Serial.println(F("[5] MQ-135 GAS"));
   if (data.mq135RawValid) {
     Serial.printf("Raw ADC: %u\n", data.mq135RawAdc);
     Serial.printf("Latest ADC: %u\n", data.mq135LatestAdc);

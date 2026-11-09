@@ -5,6 +5,7 @@ import '../../services/auth_service.dart';
 import '../../services/notification_permission_service.dart';
 import '../../theme/app_theme.dart';
 import 'user_guide_screen.dart';
+import 'device_wifi_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final AuthService auth;
@@ -371,6 +372,22 @@ class _SettingsScreenState extends State<SettingsScreen>
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => const UserGuideScreen(),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.wifi, color: emerald),
+                    title: const Text('Device Wi-Fi'),
+                    subtitle: const Text(
+                      'Connect your ESP32 to a new Wi-Fi network',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const DeviceWifiScreen(),
                       ),
                     ),
                   ),

@@ -51,6 +51,8 @@ android {
 
     buildTypes {
         release {
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "provisioning-rules.pro")
             // A debug-signed release is available only through an explicit local
             // validation opt-in. Production reads ignored key.properties values.
             signingConfig = when {
@@ -70,4 +72,9 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    implementation("com.github.espressif:esp-idf-provisioning-android:lib-2.4.4")
+    implementation("org.greenrobot:eventbus:3.3.1")
 }
