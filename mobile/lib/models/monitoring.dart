@@ -101,6 +101,45 @@ class MonitoringReading {
   }
 }
 
+class GasSensorRuntime {
+  final String bootId;
+  final String state;
+  final DateTime? warmupUntil;
+  final DateTime updatedAt;
+  final double? rawAdc;
+
+  const GasSensorRuntime({
+    required this.bootId,
+    required this.state,
+    required this.warmupUntil,
+    required this.updatedAt,
+    required this.rawAdc,
+  });
+
+  factory GasSensorRuntime.fromJson(Map<String, dynamic> json) {
+    final boot = json['boot_id'];
+    final state = json['state'];
+    final updated = DateTime.tryParse(json['updated_at'] as String? ?? '');
+    final until = _optionalDate(json['warmup_until']);
+    final raw = _number(json['gas_raw']);
+    if (boot is! String ||
+        boot.isEmpty ||
+        updated == null ||
+        !const ['WARMING_UP', 'READY', 'ERROR', 'DISABLED'].contains(state) ||
+        (state == 'WARMING_UP' && until == null) ||
+        (state == 'READY' && (raw == null || raw < 0 || raw > 4095))) {
+      throw const FormatException('Invalid Gas runtime.');
+    }
+    return GasSensorRuntime(
+      bootId: boot,
+      state: state as String,
+      warmupUntil: until,
+      updatedAt: updated,
+      rawAdc: raw,
+    );
+  }
+}
+
 class GreaseTrapMonitoring {
   final int establishmentId;
   final String businessName;
@@ -115,6 +154,7 @@ class GreaseTrapMonitoring {
   final bool isStale;
   final MonitoringReading? reading;
   final AlertPreview? activeAlert;
+  final GasSensorRuntime? gasRuntime;
 
   const GreaseTrapMonitoring({
     required this.establishmentId,
@@ -130,6 +170,7 @@ class GreaseTrapMonitoring {
     required this.isStale,
     required this.reading,
     this.activeAlert,
+    this.gasRuntime,
   });
 
   factory GreaseTrapMonitoring.fromJson(Map<String, dynamic> json) {
@@ -159,6 +200,11 @@ class GreaseTrapMonitoring {
       deviceCode: _optionalString(json['device_code']),
       deviceName: _optionalString(json['device_name']),
       firmwareVersion: _optionalString(json['firmware_version']),
+      gasRuntime: json['gas_runtime'] == null
+          ? null
+          : GasSensorRuntime.fromJson(
+              json['gas_runtime'] as Map<String, dynamic>,
+            ),
       deviceStatus: deviceStatus,
       lastSeenAt: _optionalDate(json['last_seen_at']),
       sensorState: sensorState,

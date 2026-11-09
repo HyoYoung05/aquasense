@@ -33,6 +33,12 @@ void gasSensorBegin(SensorData& data) {
   data.mq135State = SensorState::kWarmingUp;
 }
 
+uint32_t gasSensorWarmupRemainingMs(const uint32_t nowMs) {
+  const uint32_t elapsed = nowMs - warmupStartedMs;
+  return elapsed < AquaSenseConfig::MQ135_WARMUP_MS
+      ? AquaSenseConfig::MQ135_WARMUP_MS - elapsed : 0U;
+}
+
 void gasSensorUpdate(const uint32_t nowMs, SensorData& data) {
   if (!AquaSenseConfig::ENABLE_MQ135 ||
       !AquaSenseConfig::MQ135_INPUT_VOLTAGE_VERIFIED) return;

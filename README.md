@@ -2,6 +2,18 @@
 
 ## Project Overview
 
+Current owner app: **0.9.40+60**. Current ESP32 firmware: **0.8.20**.
+The website release identifier remains **1.4.32**; the pending telemetry API
+and database changes require a separate production deployment.
+
+The app supports owner Wi-Fi setup, five remaining sensor inputs, and a
+one-minute Gas warm-up with per-boot status reporting. ENS160+AHT2x and its
+ambient/air-quality displays have been removed. Level alerts remain enabled.
+See [Gas deployment instructions](docs/GAS_WARMUP_DEPLOYMENT.md) and
+[partial telemetry deployment](docs/PARTIAL_TELEMETRY_DEPLOYMENT.md).
+
+The release notes below the current-version section describe earlier releases.
+
 The current mobile dependency lockfile requires Flutter **3.44+** and Dart
 **3.12+**. Windows builds include the permission-handler plugin registration.
 
@@ -35,7 +47,7 @@ ultrasonic calibration, and owner APIs remain scoped to the signed-in owner's
 linked establishment. The owner app now reflows across compact phones,
 tablets, landscape displays, browsers, and enlarged accessibility text.
 
-AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 six-sensor firmware.
+AQUASENSE+ is an IoT-based Waste Cooking Oil Monitoring and Overflow Prevention System for grease traps in small food establishments. This repository contains the **Barangay Administrative Website and PHP backend**, the Flutter Owner application, and the ESP32 sensor firmware.
 
 The administrative website and PHP backend have completed **Phase 8 Final System Hardening and Production Preparation**. Version 1.4.19 adds a consistently aligned, responsive Alert Management filter grid. It keeps one dedicated development-only Admin login for the website and one Owner login for the mobile app while preserving existing local accounts and production role boundaries. Simulated administrative fixtures are excluded from owner-facing Monitoring and Alerts, owners can securely replace their sign-in email or temporary password from the app, Barangay Administrators can manage User Accounts and Alert Settings without receiving Administrative Core access, and authenticated ESP32 heartbeats separate device connectivity from sensor validity. Owner Monitoring visibly identifies the grease trap assigned to the authenticated account, while the API enforces the same owner scope for monitoring, history, and alerts. Establishment contact numbers remain required while establishment email is optional and validated when provided. The owner app renders ONLINE in green and OFFLINE in gray. Production Flutter builds receive the tracked public HTTPS API root, same-origin Flutter Web requests are accepted without weakening the explicit CORS allowlist, and owner profile photos use an authenticated JSON upload compatible with the production host.
 
@@ -50,40 +62,35 @@ problems. Environmental Management cannot see or directly open that workflow.
 
 ## Current Version
 
-The repository includes the final [ESP32 Hardware Phase 8](esp32/README.md)
-firmware **0.8.11** in `esp32/AquaSenseSensors`. It preserves HC-SR04, Wi-Fi, and
-retry-safe PHP telemetry, then adds independently valid drivers for DS18B20,
-SEN0189, YF-S201, the ENS160+AHT2x combination module, and MQ-135. Raw ADC
-values use dedicated database fields and are never mislabeled as NTU or gas
-ppm. The 2026-10-22 COM7 follow-up proved live physical telemetry through PHP,
-MySQL, website monitoring, and the Flutter monitoring model. Phase 6 centralizes calibration state, keeps
-uncalibrated NTU/L/min/ppm unavailable, and gates turbidity/flow alerts until
-physical calibration and threshold approval. Hardware Phases 4–8 remain
-PARTIAL because YF-S201 is not safely verified, ENS160 is not detected, and
-several connected signals require wiring/power stabilization and calibration.
-Phase 7 adds nonblocking Wi-Fi backoff, an eight-record bounded RAM FIFO,
-explicit HTTP failure classes, retry-stable UUIDs, I2C recovery, fault
-counters, and analog rail-fault rejection. The queue covers only brief powered
-outages; it is cleared by reset or power loss and drops the oldest record when
-full.
-COM3 must not be used. There is no microSD, OLED,
-buzzer, or DHT22. The Flutter source is tracked under
-[`mobile/`](mobile/README.md) at version **0.9.23+42**. Generated APKs,
-local API settings, Wi-Fi passwords, and temporary network credentials remain excluded.
-The current Android development build is verified with Flutter **3.41.6**.
+- Owner app **0.9.40+60**: Gas shows `Sensor warming up` during its one-minute
+  interval, current raw ADC when ready, and `Please check wiring of sensor`
+  after the interval without a valid reading. Restart detection requires the
+  updated production heartbeat and monitoring API; older cached readings alone
+  cannot establish whether the ESP32 restarted.
+- ESP32 firmware **0.8.20**: Gas warm-up starts before Wi-Fi connects. Heartbeats
+  carry a per-boot ID and Gas state, with a legacy heartbeat fallback for older
+  servers. The retained sensors are HC-SR04, DS18B20, SEN0189, YF-S201 and MQ-135.
+  BLE owner Wi-Fi setup remains available. Upload with Huge APP and erase-all off.
+- Backend: apply migration **018** for independent sensor telemetry and **019**
+  for Gas runtime before deploying the matching PHP files. Preserve private
+  server configuration. Unknown waste level must not clear an existing level
+  alert; valid measurements still control level alerts.
 
-Hardware Phase 8 keeps the revised paper's local acceptance path: sensors to
-ESP32, then a
-local Wi-Fi router, then Apache/PHP, MariaDB, website, and Flutter APIs. The
-same configurable endpoint supports the separate production HTTPS target.
+On 2026-11-09, COM7 produced Gas readings of approximately 392?422 raw ADC
+and successful HTTP 200 heartbeats. Production telemetry uploads returned
+HTTP 422: `ultrasonic_distance must be a JSON number.` This confirms the live
+API still rejects records without ultrasonic distance. Production activation
+remains pending; pushing this repository does not deploy the server update.
 
-Phase 8 is the final ESP32 hardware phase. Firmware **0.8.11** keeps the safe local
-hardware profile and a DS18B20 development pull-up fix after the six modules
-were connected, and applies the useful initialization details from the supplied
-combined-sensor sketch without adopting its obsolete GPIO27 flow pin or
-uncalibrated engineering-unit formulas. The private COM10 profile targets the
-production HTTPS API, and ENS160 checks both supported I2C addresses. Telemetry
-is sent only when the required HC-SR04 distance is valid.
+Source and change history: [mobile](mobile/README.md),
+[mobile versions](mobile/VERSION.md), [firmware](esp32/README.md), and
+[firmware versions](esp32/VERSION.md). APKs, generated firmware binaries,
+credentials, and private hardware configuration remain excluded from Git.
+
+## Historical hardware validation
+
+The following hardware readiness notes describe earlier Phase 8 validation;
+refer to the current-version section for the supported sensors and deployment.
 
 The locked GPIO map and target placements are documented without claiming
 installation. Physical latch/oil diversion is blocked because the paper has no

@@ -1,4 +1,5 @@
 #include "telemetry.h"
+#include "gas_sensor.h"
 
 #include <HTTPClient.h>
 #include <WiFiClient.h>
@@ -233,11 +234,18 @@ TelemetryResult sendPendingTelemetry(const PendingTelemetry& pending) {
   return postJsonToUrl(String(AquaSenseSecrets::API_URL), json);
 }
 
-TelemetryResult sendDeviceHeartbeat() {
+TelemetryResult sendDeviceHeartbeat(const SensorData& sensors) {
   if (!networkConnected()) {
     return {TelemetryOutcome::kOffline, 0, 0};
   }
-  char json[160];
+  static char bootId[37]{};
+  static bool runtimeRejected = false;
+  static uint32_t retryRuntimeAtMs = 0;
+  if (bootId[0] == '\0') generateUuidV4(bootId);
+  char json[384];
+  const uint32_t nowMs = millis();
+  const bool includeRuntime = !runtimeRejected ||
+      static_cast<int32_t>(nowMs - retryRuntimeAtMs) >= 0;
   const int length = snprintf(
       json, sizeof(json),
       "{\"device_id\":\"%s\",\"firmware_version\":\"%s\"}",
@@ -246,10 +254,43 @@ TelemetryResult sendDeviceHeartbeat() {
     return {TelemetryOutcome::kLocalConfigurationFailure, 0,
             AquaSenseConfig::CONFIGURATION_RETRY_MS};
   }
+  if (includeRuntime) {
+    const uint32_t remaining = sensors.mq135State == SensorState::kWarmingUp
+        ? gasSensorWarmupRemainingMs(nowMs) : 0U;
+    const char* state = remaining > 0U ? "WARMING_UP"
+        : sensors.mq135RawValid ? "READY"
+        : sensors.mq135State == SensorState::kDisabled ? "DISABLED" : "ERROR";
+    const int runtimeLength = snprintf(json, sizeof(json),
+        "{\"device_id\":\"%s\",\"firmware_version\":\"%s\","
+        "\"gas_runtime\":{\"boot_id\":\"%s\",\"state\":\"%s\","
+        "\"warmup_remaining_ms\":%lu%s",
+        AquaSenseConfig::DEVICE_CODE, AquaSenseConfig::FIRMWARE_VERSION,
+        bootId, state, static_cast<unsigned long>(remaining),
+        sensors.mq135RawValid ? "," : "}}");
+    if (runtimeLength < 0 || runtimeLength >= static_cast<int>(sizeof(json))) {
+      return {TelemetryOutcome::kLocalConfigurationFailure, 0,
+              AquaSenseConfig::CONFIGURATION_RETRY_MS};
+    }
+    if (sensors.mq135RawValid) {
+      snprintf(json + runtimeLength, sizeof(json) - runtimeLength,
+               "\"gas_raw\":%u}}", sensors.mq135RawAdc);
+    }
+  }
   Serial.printf("[HEARTBEAT] POST %s | firmware=%s\n",
                 AquaSenseConfig::DEVICE_CODE,
                 AquaSenseConfig::FIRMWARE_VERSION);
-  return postJsonToUrl(heartbeatEndpointUrl(), json);
+  TelemetryResult result = postJsonToUrl(heartbeatEndpointUrl(), json);
+  if (includeRuntime && result.httpStatus == 200) runtimeRejected = false;
+  if (includeRuntime && result.httpStatus == 422) {
+    // Preserve connectivity with older servers until the runtime API is deployed.
+    runtimeRejected = true;
+    retryRuntimeAtMs = millis() + 300000U;
+    snprintf(json, sizeof(json), "{\"device_id\":\"%s\",\"firmware_version\":\"%s\"}",
+             AquaSenseConfig::DEVICE_CODE, AquaSenseConfig::FIRMWARE_VERSION);
+    Serial.println(F("[HEARTBEAT] Gas runtime update unavailable; using legacy heartbeat"));
+    result = postJsonToUrl(heartbeatEndpointUrl(), json);
+  }
+  return result;
 }
 
 const char* telemetryOutcomeName(const TelemetryOutcome outcome) {

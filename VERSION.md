@@ -2,6 +2,21 @@
 
 1.4.32
 
+## Gas runtime, firmware 0.8.20 and owner app 0.9.40+60
+
+Date: 2026-11-09
+
+- Reduce Gas warm-up to one minute, starting before Wi-Fi connects.
+- Report per-boot Gas state and valid raw ADC through authenticated heartbeats;
+  hide cached Gas values after a detected restart without changing level alerts.
+- Add migration 019 and owner-scoped Gas runtime monitoring. Apply migration
+  018 as well if missing; deploy matching PHP after the migrations.
+- COM7 confirmed live Gas readings and HTTP 200 heartbeats, but production
+  sensor uploads still return HTTP 422 for missing ultrasonic distance.
+  Production API/database activation remains pending.
+- Update project, app and firmware READMEs with current versions and deployment
+  requirements. The website release identifier remains 1.4.32.
+
 ## Partial telemetry, firmware 0.8.17 and owner app 0.9.33+53
 
 Date: 2026-11-08

@@ -2,7 +2,14 @@
 
 ## Current Version
 
-0.9.39+59
+0.9.40+60
+
+## 0.9.40+60 - 2026-11-09
+
+- Reduce the Gas warm-up grace period to one minute.
+- Prefer heartbeat Gas runtime over cached readings: a new boot ID restarts warm-up and hides the previous Gas value.
+- Show the wiring-check message on expiry and current raw Gas when a ready heartbeat arrives. Other sensor displays remain unchanged.
+- Automatic reset indication requires migration 019 and the production heartbeat/monitoring PHP update; an APK alone cannot detect a reboot through the old API.
 
 ## 0.9.39+59 - 2026-11-09
 

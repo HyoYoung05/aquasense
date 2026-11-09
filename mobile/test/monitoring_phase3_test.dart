@@ -88,6 +88,7 @@ GreaseTrapMonitoring _trap({
   String status = 'ONLINE',
   bool stale = false,
   MonitoringReading? reading,
+  GasSensorRuntime? gasRuntime,
 }) => GreaseTrapMonitoring(
   establishmentId: 1,
   businessName: 'Demo Kusina',
@@ -101,6 +102,7 @@ GreaseTrapMonitoring _trap({
   sensorState: status == 'ONLINE' ? 'MEDIUM' : 'OFFLINE',
   isStale: stale,
   reading: reading ?? _reading(),
+  gasRuntime: gasRuntime,
 );
 
 MonitoringSnapshot _snapshot() => MonitoringSnapshot(
@@ -554,12 +556,12 @@ void main() {
       expect(panelText('Not available'), findsNothing);
       expect(panelText('Not connected'), findsNothing);
 
-      await tester.pump(const Duration(minutes: 2));
+      await tester.pump(const Duration(seconds: 30));
       await tester.pumpAndSettle();
       expect(panelText('Sensor warming up'), findsOneWidget);
       expect(panelText('Please check wiring of sensor'), findsNothing);
       // Refreshes must not restart the warm-up or fabricate readings on expiry.
-      await tester.pump(const Duration(minutes: 1));
+      await tester.pump(const Duration(seconds: 30));
       await tester.pumpAndSettle();
       expect(panelText('Please check wiring of sensor'), findsOneWidget);
 
@@ -591,6 +593,123 @@ void main() {
       auth.dispose();
     },
   );
+
+  testWidgets(
+    'Gas reset hides cached telemetry and restarts its one-minute warm-up',
+    (tester) async {
+      tester.view.physicalSize = const Size(900, 1500);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final repository = _FakeRepository();
+      MonitoringSnapshot current(
+        String boot,
+        String state, {
+        double? raw,
+        int second = 0,
+        String status = 'ONLINE',
+        int? updated,
+      }) {
+        final at = _at.add(Duration(seconds: second));
+        return MonitoringSnapshot(
+          generatedAt: at,
+          freshness: const Duration(minutes: 10),
+          traps: [
+            _trap(
+              status: status,
+              gasRuntime: GasSensorRuntime(
+                bootId: boot,
+                state: state,
+                warmupUntil: state == 'WARMING_UP'
+                    ? at.add(const Duration(minutes: 1))
+                    : null,
+                updatedAt: _at.add(Duration(seconds: updated ?? second)),
+                rawAdc: raw,
+              ),
+            ),
+          ],
+        );
+      }
+
+      repository.current = current('boot-a', 'READY', raw: 456);
+      final auth = _auth();
+      await tester.pumpWidget(_app(repository, auth));
+      await tester.pumpAndSettle();
+      final panel = find.byKey(const Key('sensor-summary-panel'));
+      Finder value(String text) =>
+          find.descendant(of: panel, matching: find.text(text));
+      expect(value('456 ADC (raw)'), findsOneWidget);
+      expect(value('725 calibrated'), findsNothing);
+      repository.current = current('boot-b', 'WARMING_UP');
+      await tester.pump(MonitoringScreen.refreshInterval);
+      await tester.pumpAndSettle();
+      expect(value('Sensor warming up'), findsOneWidget);
+      expect(value('456 ADC (raw)'), findsNothing);
+      expect(value('725 calibrated'), findsNothing);
+      expect(value('31.5 °C'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 30));
+      await tester.pumpAndSettle();
+      expect(value('Sensor warming up'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 30));
+      await tester.pumpAndSettle();
+      expect(value('Please check wiring of sensor'), findsOneWidget);
+      repository.current = current('boot-b', 'READY', raw: 777, second: 61);
+      await tester.pump(MonitoringScreen.refreshInterval);
+      await tester.pumpAndSettle();
+      expect(value('777 ADC (raw)'), findsOneWidget);
+      repository.current = current('boot-c', 'WARMING_UP', second: 62);
+      await tester.pump(MonitoringScreen.refreshInterval);
+      await tester.pumpAndSettle();
+      expect(value('Sensor warming up'), findsOneWidget);
+      expect(value('777 ADC (raw)'), findsNothing);
+      expect(value('Please check wiring of sensor'), findsNothing);
+      repository.current = current(
+        'boot-c',
+        'READY',
+        raw: 888,
+        second: 200,
+        updated: 62,
+      );
+      await tester.pump(MonitoringScreen.refreshInterval);
+      await tester.pumpAndSettle();
+      expect(value('Waiting for Gas status'), findsOneWidget);
+      expect(value('888 ADC (raw)'), findsNothing);
+      repository.current = current(
+        'boot-c',
+        'READY',
+        raw: 888,
+        second: 201,
+        status: 'OFFLINE',
+      );
+      await tester.pump(MonitoringScreen.refreshInterval);
+      await tester.pumpAndSettle();
+      expect(value('Device offline'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      auth.api.close();
+      auth.dispose();
+    },
+  );
+
+  test('Gas runtime model parses warm-up metadata and valid zero', () {
+    final runtime = GasSensorRuntime.fromJson({
+      'boot_id': 'boot-a',
+      'state': 'READY',
+      'gas_raw': 0,
+      'warmup_until': null,
+      'updated_at': '2026-10-04T06:35:00Z',
+    });
+    expect(runtime.rawAdc, 0);
+    expect(
+      () => GasSensorRuntime.fromJson({
+        'boot_id': 'boot-a',
+        'state': 'WARMING_UP',
+        'gas_raw': null,
+        'warmup_until': null,
+        'updated_at': '2026-10-04T06:35:00Z',
+      }),
+      throwsFormatException,
+    );
+  });
 
   testWidgets('range and sensor selectors reload history without fake zeroes', (
     tester,

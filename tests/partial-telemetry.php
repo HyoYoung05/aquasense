@@ -42,6 +42,21 @@ try {
     $monitor = mobile_monitoring($owner)['traps'][0];
     partial_check($monitor['sensor_state']==='LEVEL UNAVAILABLE' && $monitor['reading']['temperature_c']===30.25 && $monitor['reading']['waste_level_percent']===null && $monitor['active_alert']!==null, 'Owner monitoring returns partial data and preserves level alerts');
     partial_check(mobile_dashboard($owner)['establishments'][0]['traps'][0]['reading']['waste_level_percent']===null, 'Dashboard preserves missing level as null');
+    $gasRuntime = ['boot_id'=>'11111111-1111-4111-8111-111111111111','state'=>'WARMING_UP','warmup_remaining_ms'=>60000];
+    $heartbeat = ['device_id'=>$prefix,'firmware_version'=>'0.8.20','gas_runtime'=>$gasRuntime];
+    partial_check(phase3_record_heartbeat($pdo,$heartbeat,$key)['http_status']===200, 'Authenticated Gas runtime heartbeat accepted');
+    $gasMonitor = mobile_monitoring($owner)['traps'][0];
+    partial_check($gasMonitor['gas_runtime']['state']==='WARMING_UP' && $gasMonitor['gas_runtime']['gas_raw']===null && $gasMonitor['reading']['gas_raw_adc']===1300, 'Warm-up metadata overrides cached Gas without deleting historical telemetry');
+    phase3_record_heartbeat($pdo,['device_id'=>$prefix],$key);
+    partial_check(mobile_monitoring($owner)['traps'][0]['gas_runtime']['boot_id']===$gasRuntime['boot_id'], 'Legacy heartbeat does not erase runtime');
+    $ready = array_replace($gasRuntime,['state'=>'READY','warmup_remaining_ms'=>0,'gas_raw'=>377]);
+    phase3_record_heartbeat($pdo,array_replace($heartbeat,['gas_runtime'=>$ready]),$key);
+    partial_check(mobile_monitoring($owner)['traps'][0]['gas_runtime']['gas_raw']===377, 'Current Gas value can arrive independently through heartbeat');
+    $newBoot = array_replace($gasRuntime,['boot_id'=>'22222222-2222-4222-8222-222222222222']);
+    phase3_record_heartbeat($pdo,array_replace($heartbeat,['gas_runtime'=>$newBoot]),$key);
+    partial_check(mobile_monitoring($owner)['traps'][0]['gas_runtime']['gas_raw']===null, 'Reset clears current Gas measurement even with old telemetry retained');
+    try { phase3_record_heartbeat($pdo,$heartbeat,str_repeat('0',64)); throw new RuntimeException('Invalid key accepted'); }
+    catch (TelemetryException $e) { partial_check($e->httpStatus===401, 'Invalid device key cannot replace Gas runtime'); }
     $duplicate = phase3_ingest_telemetry($pdo,$payload,$key);
     partial_check($duplicate['duplicate']===true, 'Partial reading retry remains idempotent');
     $zero = phase3_ingest_telemetry($pdo,$base+['flow_rate'=>0.0],$key);

@@ -3,3 +3,4 @@
 #include "sensor_data.h"
 void gasSensorBegin(SensorData& data);
 void gasSensorUpdate(uint32_t nowMs, SensorData& data);
+uint32_t gasSensorWarmupRemainingMs(uint32_t nowMs);

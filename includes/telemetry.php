@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__.'/alert-engine.php';
+require_once __DIR__.'/gas-runtime.php';
 
 final class TelemetryException extends RuntimeException
 {
@@ -110,7 +111,7 @@ function phase3_telemetry_payload(array $body, array $config, DateTimeImmutable 
 
 function phase3_heartbeat_payload(array $body): array
 {
-    $allowed = ['device_id', 'firmware_version'];
+    $allowed = ['device_id', 'firmware_version', 'gas_runtime'];
     if (array_is_list($body) || array_diff(array_keys($body), $allowed)) {
         throw new TelemetryException(422, 'unknown_field', 'The heartbeat payload contains an unsupported field.');
     }
@@ -123,7 +124,8 @@ function phase3_heartbeat_payload(array $body): array
         || !preg_match('/^[A-Za-z0-9._+\-]{1,40}$/D', $firmware))) {
         throw new TelemetryException(422, 'invalid_firmware_version', 'firmware_version has an invalid format.');
     }
-    return ['device_id' => $body['device_id'], 'firmware_version' => $firmware];
+    return ['device_id' => $body['device_id'], 'firmware_version' => $firmware,
+        'gas_runtime' => array_key_exists('gas_runtime', $body) ? phase3_validate_gas_runtime($body['gas_runtime']) : null];
 }
 
 function phase3_record_heartbeat(PDO $pdo, array $body, string $deviceKey): array
@@ -137,7 +139,7 @@ function phase3_record_heartbeat(PDO $pdo, array $body, string $deviceKey): arra
     $pdo->beginTransaction();
     try {
         $query = $pdo->prepare(
-            'SELECT id,device_code,api_key_hash,is_active FROM devices WHERE device_code=? FOR UPDATE'
+            'SELECT id,device_code,api_key_hash,is_active,gas_runtime FROM devices WHERE device_code=? FOR UPDATE'
         );
         $query->execute([$data['device_id']]);
         $device = $query->fetch();
@@ -155,6 +157,13 @@ function phase3_record_heartbeat(PDO $pdo, array $body, string $deviceKey): arra
         $update->execute($data['firmware_version'] === null
             ? [$at, $device['id']]
             : [$at, $data['firmware_version'], $device['id']]);
+        if ($data['gas_runtime'] !== null) {
+            $previous = $device['gas_runtime'] === null ? null : json_decode($device['gas_runtime'], true, 32, JSON_THROW_ON_ERROR);
+            $runtime = phase3_gas_runtime_snapshot($data['gas_runtime'], $received, $previous);
+            $pdo->prepare('UPDATE devices SET gas_runtime=? WHERE id=?')->execute([
+                json_encode($runtime, JSON_THROW_ON_ERROR), $device['id'],
+            ]);
+        }
         $assignment = $pdo->prepare(
             'SELECT id FROM device_assignments WHERE device_id=? AND ended_at IS NULL LIMIT 1'
         );

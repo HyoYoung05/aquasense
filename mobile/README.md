@@ -1,5 +1,14 @@
 # AQUASENSE+ Carinderia Owner App
 
+Current version: **0.9.40+60**. Gas warm-up lasts one minute. Per-boot heartbeat
+status hides old Gas values after an ESP32 reset and supplies current raw ADC
+when ready. This requires production migrations 018/019 and the matching PHP
+update; the APK alone cannot activate it. See
+[deployment instructions](../docs/GAS_WARMUP_DEPLOYMENT.md).
+ENS160+AHT2x displays are removed; level alerts and the remaining sensors stay
+available. Android owners can configure ESP32 Wi-Fi from Device Wi-Fi settings.
+The following notes also include historical releases.
+
 The checked-in dependency lockfile requires Flutter **3.44+** and Dart **3.12+**.
 The Windows plugin files include permission-handler registration.
 

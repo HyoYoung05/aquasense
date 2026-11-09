@@ -1,6 +1,13 @@
 # AQUASENSE+ ESP32 Hardware — Final Phase 8
 
-Current firmware **0.8.19** removes the failed ENS160+AHT2x module, its drivers,
+Current firmware **0.8.20** starts a one-minute MQ-135 warm-up before Wi-Fi,
+reports per-boot Gas runtime through heartbeats, and falls back to legacy
+heartbeats when an older API rejects the new metadata. Accurate app reset
+indication requires migration 019 and the matching production PHP update;
+independent sensor telemetry also requires migration 018. See
+[deployment instructions](../docs/GAS_WARMUP_DEPLOYMENT.md).
+
+Firmware **0.8.19** removes the failed ENS160+AHT2x module, its drivers,
 I2C polling, fault reporting and telemetry fields. The remaining sensors are
 HC-SR04, DS18B20, SEN0189, YF-S201 and MQ-135. BLE owner Wi-Fi setup remains
 available. Use Huge APP (3MB No OTA/1MB SPIFFS) and disable erase-all when uploading.

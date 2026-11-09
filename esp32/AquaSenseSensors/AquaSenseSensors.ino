@@ -158,8 +158,9 @@ void handleTelemetryUpload(const uint32_t nowMs) {
 void handleHeartbeat(const uint32_t nowMs) {
   if (!networkConfigurationValid || !networkConnected() ||
       !timeReached(nowMs, nextHeartbeatMs)) return;
-  nextHeartbeatMs = nowMs + AquaSenseConfig::HEARTBEAT_INTERVAL_MS;
-  const TelemetryResult result = sendDeviceHeartbeat();
+  nextHeartbeatMs = nowMs + (sensorData.mq135State == SensorState::kWarmingUp
+      ? 5000U : AquaSenseConfig::HEARTBEAT_INTERVAL_MS);
+  const TelemetryResult result = sendDeviceHeartbeat(sensorData);
   Serial.printf("[HEARTBEAT] Outcome: %s | HTTP/result=%d\n",
                 telemetryOutcomeName(result.outcome), result.httpStatus);
   if (result.outcome == TelemetryOutcome::kAccepted) {
@@ -347,7 +348,6 @@ void beginSensorProcessing(const uint32_t nowMs) {
   temperatureSensorBegin(sensorData);
   turbiditySensorBegin(sensorData);
   flowSensorBegin(sensorData);
-  gasSensorBegin(sensorData);
   lastStatusMs = nowMs;
   lastSensorStartMs = nowMs - AquaSenseConfig::SENSOR_INTERVAL_MS;
   nextTelemetryCaptureMs = nowMs +
@@ -366,6 +366,8 @@ void beginSensorProcessing(const uint32_t nowMs) {
 void setup() {
   Serial.begin(AquaSenseConfig::SERIAL_BAUD);
   delay(AquaSenseConfig::STARTUP_DELAY_MS);
+  gasSensorBegin(sensorData);
+  Serial.println(F("[GAS] One-minute warm-up starts at device startup"));
   printHardwareSummary();
   Serial.printf("Ultrasonic algorithm check: %s\n",
                 ultrasonicAlgorithmCheck() ? "PASS" : "FAIL");

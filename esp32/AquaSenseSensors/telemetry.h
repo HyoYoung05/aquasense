@@ -45,5 +45,5 @@ void createPendingTelemetry(float distanceCm, const SensorData& sensors,
                             uint32_t queueSequence, uint32_t capturedUptimeMs,
                             PendingTelemetry& pending);
 TelemetryResult sendPendingTelemetry(const PendingTelemetry& pending);
-TelemetryResult sendDeviceHeartbeat();
+TelemetryResult sendDeviceHeartbeat(const SensorData& sensors);
 const char* telemetryOutcomeName(TelemetryOutcome outcome);

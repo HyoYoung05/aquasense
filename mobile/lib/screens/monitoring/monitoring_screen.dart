@@ -16,7 +16,7 @@ import '../alerts/alert_detail_screen.dart';
 
 class MonitoringScreen extends StatefulWidget {
   static const refreshInterval = Duration(seconds: 5);
-  static const sensorWarmupInterval = Duration(minutes: 3);
+  static const sensorWarmupInterval = Duration(minutes: 1);
 
   final AuthService auth;
   final MonitoringRepository? repository;
@@ -39,6 +39,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
   Timer? refreshTimer;
   final Map<(int, SensorMetric), Timer> sensorWarmupTimers = {};
   final Set<(int, SensorMetric)> sensorWarmupExpired = {};
+  final Map<int, String> gasBootIds = {};
   MonitoringSnapshot? snapshot;
   TelemetryHistory? history;
   int? selectedTrapId;
@@ -638,10 +639,29 @@ class _MonitoringScreenState extends State<MonitoringScreen>
 
   void _updateSensorWarmups(MonitoringSnapshot current) {
     final missing = <(int, SensorMetric)>{};
+    final remaining = <(int, SensorMetric), Duration>{};
     for (final trap in current.traps) {
       if (trap.deviceStatus != 'ONLINE') continue;
-      if (trap.reading?.gasValue == null && trap.reading?.gasRawAdc == null) {
-        missing.add((trap.greaseTrapId, SensorMetric.gas));
+      final key = (trap.greaseTrapId, SensorMetric.gas);
+      final runtime = trap.gasRuntime;
+      if (runtime != null) {
+        if (gasBootIds[trap.greaseTrapId] != runtime.bootId) {
+          sensorWarmupTimers.remove(key)?.cancel();
+          sensorWarmupExpired.remove(key);
+          gasBootIds[trap.greaseTrapId] = runtime.bootId;
+        }
+        if (runtime.state == 'WARMING_UP') {
+          missing.add(key);
+          final duration = runtime.warmupUntil!.difference(current.generatedAt);
+          remaining[key] = duration.isNegative
+              ? Duration.zero
+              : duration > MonitoringScreen.sensorWarmupInterval
+              ? MonitoringScreen.sensorWarmupInterval
+              : duration;
+        }
+      } else if (trap.reading?.gasValue == null &&
+          trap.reading?.gasRawAdc == null) {
+        missing.add(key);
       }
     }
     for (final key in sensorWarmupTimers.keys.toList()) {
@@ -653,9 +673,10 @@ class _MonitoringScreenState extends State<MonitoringScreen>
     for (final key in missing) {
       sensorWarmupTimers.putIfAbsent(
         key,
-        () => Timer(MonitoringScreen.sensorWarmupInterval, () {
-          if (mounted) setState(() => sensorWarmupExpired.add(key));
-        }),
+        () =>
+            Timer(remaining[key] ?? MonitoringScreen.sensorWarmupInterval, () {
+              if (mounted) setState(() => sensorWarmupExpired.add(key));
+            }),
       );
     }
   }
@@ -666,6 +687,21 @@ class _MonitoringScreenState extends State<MonitoringScreen>
     return sensorWarmupExpired.contains((trap.greaseTrapId, metric))
         ? 'Please check wiring of sensor'
         : 'Sensor warming up';
+  }
+
+  String _gasRuntimeValue(GreaseTrapMonitoring trap, GasSensorRuntime runtime) {
+    if (trap.deviceStatus != 'ONLINE') return 'Device offline';
+    if (refreshError != null) return 'Waiting for connection';
+    if (snapshot!.generatedAt.difference(runtime.updatedAt) >
+        const Duration(seconds: 90)) {
+      return 'Waiting for Gas status';
+    }
+    return switch (runtime.state) {
+      'READY' => '${cleanNumber(runtime.rawAdc!)} ADC (raw)',
+      'WARMING_UP' => _sensorStartupStatus(trap, SensorMetric.gas),
+      'DISABLED' => 'Gas sensor disabled',
+      _ => 'Please check wiring of sensor',
+    };
   }
 
   Widget _sensorOverview(GreaseTrapMonitoring trap) {
@@ -680,7 +716,10 @@ class _MonitoringScreenState extends State<MonitoringScreen>
         : reading?.flowPulseCount != null
         ? 'Not calibrated'
         : 'Not connected';
-    final gas = reading?.gasValue != null
+    final runtime = trap.gasRuntime;
+    final gas = runtime != null
+        ? _gasRuntimeValue(trap, runtime)
+        : reading?.gasValue != null
         ? measured(reading!.gasValue, 'calibrated', 'Not connected')
         : measured(
             reading?.gasRawAdc,

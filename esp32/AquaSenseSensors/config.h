@@ -40,7 +40,7 @@
 
 namespace AquaSenseConfig {
 
-inline constexpr char FIRMWARE_VERSION[] = "0.8.19";
+inline constexpr char FIRMWARE_VERSION[] = "0.8.20";
 inline constexpr char POWER_MODE[] =
     "USB DEVELOPMENT - EXTERNAL DC NOT VERIFIED";
 inline constexpr bool EXTERNAL_DC_POWER_VERIFIED = false;
@@ -109,7 +109,7 @@ inline constexpr uint32_t FLOW_INTERVAL_MS = 1000;
 inline constexpr uint32_t MQ135_INTERVAL_MS = 5000;
 // Minimum development stabilization gate. The installed MQ-135 may require
 // longer initial conditioning according to its actual module documentation.
-inline constexpr uint32_t MQ135_WARMUP_MS = 180000;
+inline constexpr uint32_t MQ135_WARMUP_MS = 60000;
 
 inline constexpr uint16_t ADC_MAX_COUNT = 4095;
 // Counts at either ADC rail usually indicate a short, open/divider fault, or

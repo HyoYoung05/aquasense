@@ -2,7 +2,14 @@
 
 ## Current version
 
-0.8.19
+0.8.20
+
+## 0.8.20 - Gas reset runtime heartbeat - 2026-11-09
+
+- Keep MQ-135 warm-up at 60,000 ms and report a per-boot UUID, Gas state, remaining warm-up, and valid raw Gas through authenticated heartbeats.
+- Start Gas warm-up during device startup so Wi-Fi connection delay does not restart the interval. Other sensors retain their existing startup behavior.
+- Send heartbeats every five seconds during Gas warm-up; retain normal cadence afterward.
+- Retry a legacy heartbeat if an older server rejects runtime metadata, and probe runtime support again after five minutes.
 
 ## 0.8.19 - Remove failed combo sensor - 2026-11-09
 
