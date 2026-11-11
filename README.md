@@ -2,6 +2,21 @@
 
 ## Project Overview
 
+### Screenshots
+
+Live website sign-in screens captured on 2026-11-11. The deployed website shown
+here displays v1.4.27; these captures do not represent the newer local release.
+
+**Desktop website**
+
+![AQUASENSE+ website sign-in on desktop](docs/screenshots/website-login-desktop.png)
+
+**Website on a phone-sized screen**
+
+<img src="docs/screenshots/website-login-mobile.png" alt="AQUASENSE+ website sign-in at phone width" width="390">
+
+The phone-width image is the responsive website, not the Flutter owner app.
+
 Current owner app: **0.9.40+60**. Current ESP32 firmware: **0.8.20**.
 The website release identifier remains **1.4.32**; the pending telemetry API
 and database changes require a separate production deployment.
