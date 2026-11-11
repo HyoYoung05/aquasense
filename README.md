@@ -4,14 +4,16 @@
 
 ### Screenshots
 
-Live website sign-in screens captured on 2026-11-11. The deployed website shown
+Website sign-in screens captured on 2026-11-11. The deployed website shown
 here displays v1.4.27; these captures do not represent the newer local release.
+The phone-width image is a layout preview with browser-only footer positioning,
+card contrast and background corrections; those corrections are not deployed.
 
 **Desktop website**
 
 ![AQUASENSE+ website sign-in on desktop](docs/screenshots/website-login-desktop.png)
 
-**Website on a phone-sized screen**
+**Website on a phone-sized screen — corrected layout preview**
 
 <img src="docs/screenshots/website-login-mobile.png" alt="AQUASENSE+ website sign-in at phone width" width="390">
 
