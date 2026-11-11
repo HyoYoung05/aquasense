@@ -13,9 +13,12 @@ card contrast and background corrections; those corrections are not deployed.
 
 ![AQUASENSE+ website sign-in on desktop](docs/screenshots/website-login-desktop.png)
 
-**Website on a phone-sized screen — corrected layout preview**
+**Website on iPhone 16 — corrected layout preview**
 
-<img src="docs/screenshots/website-login-mobile.png" alt="AQUASENSE+ website sign-in at phone width" width="390">
+[<img src="docs/screenshots/website-login-iphone16-3x.png" alt="AQUASENSE+ website sign-in, iPhone 16 layout preview" width="393">](docs/screenshots/website-login-iphone16-3x.png)
+
+Captured at 393 × 852 CSS pixels with a 3× device pixel ratio. Click the preview
+to open the full-resolution image.
 
 The phone-width image is the responsive website, not the Flutter owner app.
 
