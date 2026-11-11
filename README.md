@@ -95,7 +95,7 @@ refer to the current-version section for the supported sensors and deployment.
 The locked GPIO map and target placements are documented without claiming
 installation. Physical latch/oil diversion is blocked because the paper has no
 approved actuator, driver, GPIO, power, or fail-safe circuit. Automated grease
-extraction and backup power are not implemented, and external SMS/push providers
+extraction and backup power are not implemented, and external push providers
 are not configured. See [Final assembly and installation](docs/FINAL_ASSEMBLY.md)
 and the [Phase 8 completion report](esp32/PHASE8-TEST-REPORT.md).
 
@@ -200,7 +200,7 @@ The server enforces the same boundaries on direct URLs. Hiding a sidebar item is
   25-record history pages, owned detail records, and one active Monitoring
   preview without administrative actions or notes.
 - Development simulation still passes through the device telemetry API and exercises the same alert pipeline.
-- Push, email, and SMS remain outside Phase 4. The retained Phase 4 suite now passes 35 alert, authorization, CSRF, Compliance Ledger, and integration checks.
+- Push and email remain outside Phase 4. The retained Phase 4 suite now passes 35 alert, authorization, CSRF, Compliance Ledger, and integration checks.
 
 The 2026-09-30 AQS-001 development simulation used the real HTTP telemetry endpoint. A normal 60% reading created no alert; 80% created HIGH_LEVEL; 92% created CRITICAL_LEVEL and OVERFLOW_WARNING; a repeated critical reading updated those records; 42 °C created EMULSION_WARNING. The CLI offline check created DEVICE_OFFLINE after the configured timeout, and resumed normal telemetry resolved it. Readings 404 through 409 and their resolved alert history remain marked as simulated.
 
