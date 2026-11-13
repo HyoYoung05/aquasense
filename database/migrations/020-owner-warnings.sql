@@ -1,0 +1,6 @@
+-- Append owner-triggered warning types without changing existing alerts.
+ALTER TABLE alerts MODIFY alert_type ENUM(
+    'HIGH_LEVEL','CRITICAL_LEVEL','OVERFLOW_WARNING','OVERFLOW','HIGH_TEMPERATURE',
+    'EMULSION_WARNING','HIGH_TURBIDITY','ABNORMAL_FLOW','DEVICE_OFFLINE',
+    'MANUAL_WARNING','MANUAL_CRITICAL'
+) NOT NULL;

@@ -9,6 +9,7 @@ import '../../models/dashboard_snapshot.dart';
 import '../../models/oil_surrender.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/alert_delivery_service.dart';
 import '../../services/dashboard_service.dart';
 import '../../services/monitoring_service.dart';
 import '../../services/notification_permission_service.dart';
@@ -88,7 +89,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(widget.notificationPermissions.requestAfterSignIn());
+      unawaited(() async {
+        await widget.notificationPermissions.requestAfterSignIn();
+        if (mounted) {
+          await AlertDeliveryService.sync(widget.auth.alertDeliverySession);
+        }
+      }());
     });
     loadDashboard();
   }

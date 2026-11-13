@@ -1,6 +1,181 @@
 # AQUASENSE+ Version History
 
-1.4.32
+1.4.45
+
+- Repository update: exclude the separate warning app and Android APK/AAB files; keep private configuration files ignored.
+
+## 0.9.48+68 - 2026-11-13
+
+- Center the Android alert overlay horizontally and vertically using screen-centered window gravity with zero offsets.
+- Apply the same position to real critical alerts and the Settings pop-up preview.
+- Preserve dismiss/open controls, optional overlay permission, timeout and alert monitoring behavior.
+- Android APK build and signature verification passed; installed 0.9.48+68 on Z2464N with existing app data preserved.
+- Back up development sources and the preceding production-API APK separately.
+
+## 0.9.47+67 - 2026-11-13
+
+- Rename the settings category for Notifications and Display over other apps to App Permission.
+- Distinguish Android notification permission from the Alert monitoring switch; show a clear recovery action when permission is enabled but monitoring is off.
+- Correct the stopped-monitor status so it does not ask users with permission already granted to enable it again.
+- Back up development sources and the preceding production-API APK separately. Warning app and backend remain unchanged.
+- Verified on Z2464N: monitoring preference was off while Android permission was granted. Enabled monitoring without clearing sign-in, observed real critical alert 14777 as a high-priority Android notification, and installed 0.9.47+67 with monitoring still enabled. All 11 delivery/settings checks passed; analyzer clean; APK signature verified.
+
+## 1.4.45 - Clearer owner warning messages - 2026-11-13
+
+- Use Critical grease trap alert with a short instruction to check the trap immediately.
+- Simplify the normal manual warning message; keep owner-report metadata and audit history unchanged.
+- Refresh messages on active/acknowledged manual warnings only, retaining resolved history and all sensor measurements.
+- Back up development/production sources and affected active alert rows before updating.
+
+## 1.4.44 - Separate owner warning app - 2026-11-13
+
+- Add warning_app 1.0.0+1 as a separate Android app with owner sign-in, assigned-trap selection, Send warning and Send critical warning.
+- Add authenticated owner-warning.php using existing owner tokens and assignment authorization; create independent owner-reported alerts without changing telemetry or existing sensor alerts.
+- Add migration 020 to append MANUAL_WARNING/MANUAL_CRITICAL alert types. Preserve all existing data.
+- Keep active repeated button presses idempotent, rate-limit new warnings, audit the owner action, and use the existing website/owner alert delivery.
+- Preserve development/production backups and a full production SQL export before migrating.
+- Permit only the new authenticated route in the existing mobile API allowlist. Fix the undefined flash helper after staff alert actions so successful resolution returns normally.
+- Verified live owner authentication, rejection of another assignment, warning creation, duplicate protection, owner Alerts API and staff website visibility, and staff resolution. Verification warnings were resolved and their history retained. All 169 pre-existing alerts were preserved by migration 020. Six Flutter checks, analyzer and PHP contract/lint passed; APK signature verified.
+
+## 1.4.43 - Monitoring history status filter - 2026-11-13
+
+- Add All statuses, Low, Normal, High and Critical to the website Monitoring history filters.
+- Filter in the database before counting or paging; use the same filter for displayed chart readings and history rows.
+- Keep the chosen status, date range and grease trap in pagination links; Apply starts from page one.
+- Support the same validated status in the staff history API; preserve existing default behavior for the mobile API.
+- Back up development/production files separately; preserve all sensor records.
+- Published and verified production 1.4.43. Live checks passed for all four statuses and All, matching rows/counts, last-page clamping, invalid-status rejection, pagination preservation and phone filter layout. PHP lint and history render regression passed.
+
+## 1.4.42 - Monitoring history raw sensor values - 2026-11-13
+
+- Display stored turbidity and MQ-135 raw ADC readings in Monitoring history when calibrated measurements are absent, matching Latest readings.
+- Keep calibrated readings preferred, preserve real zero values, and label raw measurements with ADC (raw).
+- Show Not measured for missing odor; do not invent an odor reading from the gas signal.
+- Preserve all stored telemetry and keep mobile/ESP32 firmware unchanged.
+- Backed up development and production files; deployed and source-verified admin/monitoring.php with production version 1.4.42. Health HTTP 200. Authenticated live history rendered 50 raw-turbidity rows and 42 raw-gas rows; 50 missing odor entries correctly showed Not measured. PHP lint and the actual-template regression check passed.
+
+## 0.9.46+66 - 2026-11-13
+
+- Make Monitoring graphs adapt to phone/tablet width instead of using one fixed plot height.
+- Place sensor units above the graph, fit time labels inside both edges, reduce label density on phones and use compact large-value axis labels.
+- Keep tooltips inside the plot with the reading time and value; retain measured values, missing-reading gaps and 10-row history pagination.
+- Preserve development sources and the preceding production-API APK in separate backup folders.
+- Verified 23 monitoring/chart checks, narrow and tablet chart previews with large text, and a clean analyzer. Installed 0.9.46+66 on Z2464N without clearing app data.
+
+## Mobile Android alert delivery 0.9.45+65 - 2026-11-13
+
+- Implement Android alert notifications and optional short critical-alert overlays, rather than permission controls alone.
+- Poll the existing owner-scoped HTTPS alerts API with a visible foreground monitoring service, bounded requests and retry backoff.
+- Add monitoring on/off, status, Test notification and Test pop-up in Settings.
+- Stop delivery on sign-out/session rejection; keep service credentials in memory only. Deduplicate alerts and cancel resolved alerts on the next successful poll.
+- Android may pause/stop monitoring; reopen the app to resume. This is not force-stop-proof push delivery. Android 15+ limits dataSync foreground service runtime.
+- Back up development sources and the preceding production-API APK separately; keep website and firmware unchanged.
+- Validation: 11 Flutter delivery/settings checks passed; analyzer clean; APK signature verified. Installed 0.9.45+65 on Z2464N without clearing data. Verified a successful owner-scoped API poll, foreground monitoring notification, real high-importance test notification, and visible test overlay above the home screen. No test alerts inserted into production.
+
+## Reapply partial telemetry - 2026-11-13
+
+- Reapply the pre-rollback telemetry contract at the user?s request.
+- Allow other valid sensor readings when ultrasonic distance is unavailable and keep missing level as null/UNKNOWN.
+- Restore actual latest readings in website and owner monitoring; preserve the original record times.
+- Keep Gas runtime support, the null-safe Monitoring history template, and all stored records.
+- Back up affected development/production files before applying.
+- Passed 28 payload/runtime/render checks, PHP lint, live health HTTP 200, and an invalid-key partial-payload authentication check without inserting data.
+- Physical ESP32 verification is pending because COM10 was disconnected during this update.
+
+## Partial telemetry rollback - 2026-11-13
+
+- Restore required ultrasonic distance for telemetry ingestion at the user?s request.
+- Latest website/owner monitoring uses the last valid level record with its actual timestamp.
+- Retain every incomplete reading in stored history; keep Gas heartbeat support and null-safe history rendering.
+- Back up current production/development state before rollback.
+- HC-SR04 firmware code is identical to the prior implementation; no firmware changes or reflashing.
+
+## Monitoring history render correction - 2026-11-13
+
+- Publish the missing null-value guard in the production Monitoring history table, matching development.
+- Display unavailable waste level as Not available; retain real 0.0% and measured values.
+- Prevent the service-error artwork from appearing inside a partially rendered history table.
+- Back up the affected development/production files and add a regression check using the actual history template.
+- Verified the authenticated live Monitoring page returns HTTP 200, renders 50 history rows and pagination, and contains no nested error layout.
+
+## Telemetry API contract activation - 2026-11-12
+
+- Publish the existing partial-sensor telemetry validation so one unavailable ultrasonic sensor does not block other valid measurements.
+- Keep missing distance and waste level null/UNKNOWN and preserve existing level alerts until a valid reading recovers.
+- Accept and persist authenticated Gas runtime metadata; expose it through owner monitoring.
+- Keep owner monitoring history at 10 readings per page.
+- Back up affected development/production files and export a fresh production database backup; retain all existing records.
+- Add database-independent firmware/API payload contract regression checks.
+- Passed 12 payload contract and 15 Gas runtime checks and PHP lint. Live COM10 telemetry returned HTTP 201 and heartbeats HTTP 200; all 10,032 pre-existing sensor rows remain.
+- Full local database integration checks could not run because the development MariaDB endpoint on port 3307 was stopped; production schema and actual device persistence were verified directly.
+
+## ESP32 build cleanup - 2026-11-12
+
+- Firmware 0.8.21 archives obsolete ENS160/AHT2x and I2C source files that referenced removed configuration and data fields.
+- Apply the cleanup to development firmware and the Arduino IDE sketch after separate backups.
+
+## Mobile complete page strip - 2026-11-12
+
+- Owner app 0.9.44+64 exposes every history page in a horizontally scrollable number strip.
+- Swiping scrolls the numbers; tapping opens the selected page with 10 readings.
+- Preserve backups of development sources and the preceding production-API APK.
+
+## Mobile swipe history - 2026-11-12
+
+- Owner app 0.9.43+63 uses horizontal swipes for previous/next history pages without direction buttons.
+- Preserve 10 readings, page numbers, request guards, and failed-request data.
+- Back up development sources and the previous production-API APK.
+
+## Settings-only manual navigation - 2026-11-12
+
+- Remove the duplicate Help and guides sidebar entry.
+- Keep the user manual accessible from Settings and highlight Settings on the manual page.
+
+## Website personal settings - 2026-11-12
+
+- Add Settings in the sidebar for all three website staff roles.
+- Group account contact details, password changes, user manual, and authorized Alert Settings links.
+- Require current-password verification and CSRF protection, validate unique contact/email and existing password rules, and audit changes.
+- Limit failed password checks per account and prevent submitted target IDs from changing another user.
+- Preserve existing Alert Settings permissions and operational policy forms.
+- Passed local validation/security checks and all three role previews at 390px; deployed the page, helper, manual update, and sidebar link with production backups.
+
+## Barangay personnel website manual - 2026-11-12
+
+- Add a quick walkthrough and expandable user manual in Help and guides.
+- Tailor action steps to System Admin, Barangay Admin, and Environmental Management permissions.
+- Cover monitoring, alerts, oil surrender review, rice distribution, reports, account administration, and device support.
+- Verify all three staff role views, keyboard topic controls, and 390px manual layout.
+- Publish the manual, scoped styles, and sidebar link to production; preserve backups and verify saved source and public stylesheet.
+
+## Production database schema update - 2026-11-12
+
+- Applied migration 018 to allow unknown waste level and UNKNOWN level status.
+- Applied migration 019 to add nullable device Gas runtime JSON.
+- Exported a full production SQL backup before migration.
+- Verified matching row counts and existing-column content fingerprints across all 20 tables, including 10,032 sensor readings.
+- Matching production telemetry PHP deployment remains a separate activation step.
+
+## Production pagination patch - 2026-11-12
+
+- Applied the tested pagination changes to the live server's public directory.
+- Backed up the original production monitoring page, stylesheet, monitoring script, and header before updating.
+- Preserved production-specific code by patching the four existing files.
+- Verified public CSS/JavaScript content, horizontal dragging with live assets, and the Monitoring sign-in entry point.
+
+## Mobile numbered history navigation - 2026-11-12
+
+- Owner app 0.9.42+62 aligns Previous/Next buttons and adds a five-button numbered page window.
+- Keep mobile monitoring history at 10 readings per page.
+- Allow all website Monitoring page numbers to scroll horizontally by touch or mouse dragging, with Previous/Next controls.
+- Version monitoring CSS/JavaScript by file modification time so uploaded assets refresh even when the production release label differs.
+
+## Monitoring history pagination - 2026-11-12
+
+- Add Previous/Next and a bounded page-number window to website Monitoring history.
+- Keep navigation responsive and preserve grease-trap and date filters.
+- Return 10 owner history readings per page and replace Load more with Previous/Next in owner app 0.9.41+61.
+- Support older 50-row owner API responses while displaying 10 readings per mobile page.
 
 ## Gas runtime, firmware 0.8.20 and owner app 0.9.40+60
 

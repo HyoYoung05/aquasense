@@ -37,7 +37,7 @@ Older firmware heartbeats remain accepted. Firmware 0.8.20 retries the legacy
 heartbeat format when the old server rejects `gas_runtime`, preserving device
 connectivity. It retries metadata support after five minutes. Automatic reset
 display is unavailable until the production database and PHP updates are deployed.
-No deployment connection was available during this implementation.
+Production activation completed on 2026-11-12 with backend 1.4.38 and firmware 0.8.21. A fresh SQL export and separate development/production file backups were saved. Actual device AQS-003 on COM10 returned HTTP 200 for Gas runtime heartbeats and HTTP 201 for partial telemetry. All 10,032 sensor rows existing before the update were retained. Missing ultrasonic distance and fill are stored as NULL/UNKNOWN while other available sensor measurements are saved.
 
 ## Verification
 

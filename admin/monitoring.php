@@ -3,8 +3,8 @@ declare(strict_types=1);
 require dirname(__DIR__).'/includes/bootstrap.php';
 require_once dirname(__DIR__).'/includes/monitoring.php';
 $user=require_staff();$pageTitle='Monitoring';$activeNav='monitoring';$pageScript='assets/js/monitoring.js';
-$latest=phase3_monitoring_latest();$trapId=query_id('trap_id');$range=(string)($_GET['range']??'today');$from=isset($_GET['from'])?(string)$_GET['from']:null;$to=isset($_GET['to'])?(string)$_GET['to']:null;$history=null;$errors=[];
-if($trapId){try{$history=phase3_monitoring_history($trapId,$range,$from,$to,max(1,(int)($_GET['page']??1)));}catch(InvalidArgumentException $error){$errors[]=$error->getMessage();}}
+$latest=phase3_monitoring_latest();$trapId=query_id('trap_id');$range=(string)($_GET['range']??'today');$from=isset($_GET['from'])?(string)$_GET['from']:null;$to=isset($_GET['to'])?(string)$_GET['to']:null;$history=null;$errors=[];$status=$_GET['status']??'ALL';
+if($trapId){try{$history=phase3_monitoring_history($trapId,$range,$from,$to,max(1,(int)($_GET['page']??1)),50,$status);$status=$history['status'];}catch(InvalidArgumentException $error){$errors[]=$error->getMessage();}}
 $chart=[];if($history)foreach(array_reverse($history['readings']) as $reading)$chart[]=['time'=>$reading['recorded_at'],'level'=>$reading['waste_level_percent'],'distance'=>$reading['ultrasonic_distance_cm']];$hasDistance=(bool)array_filter($chart,fn($point)=>$point['distance']!==null);
 $chartJson=json_encode($chart,JSON_THROW_ON_ERROR);require dirname(__DIR__).'/includes/header.php';
 ?>
@@ -17,9 +17,37 @@ $chartJson=json_encode($chart,JSON_THROW_ON_ERROR);require dirname(__DIR__).'/in
 <?php if(!$latest['traps']): ?><tr><td colspan="15" class="empty-state">No grease traps are registered for monitoring.</td></tr><?php endif; ?></tbody></table></div></section>
 <?php if($history): ?>
 <section class="panel section-panel"><div class="panel-heading"><div><h2><?= e($history['trap']['business_name'].' · '.$history['trap']['name']) ?></h2><p>Calibration: <?= $history['trap']['empty_distance_cm']===null?'Not configured':e($history['trap']['empty_distance_cm'].' cm empty · '.$history['trap']['full_distance_cm'].' cm full') ?></p></div><a class="button button-secondary button-small" href="<?= e(url('admin/grease-trap-view.php?id='.(int)$history['trap']['id'])) ?>">Grease trap details</a></div>
-<form class="history-filter" method="get"><input type="hidden" name="trap_id" value="<?= (int)$trapId ?>"><label>Period<select name="range"><option value="today"<?= selected($range,'today') ?>>Today</option><option value="24h"<?= selected($range,'24h') ?>>Last 24 hours</option><option value="7d"<?= selected($range,'7d') ?>>Last 7 days</option><option value="30d"<?= selected($range,'30d') ?>>Last 30 days</option><option value="custom"<?= selected($range,'custom') ?>>Custom range</option></select></label><label>From<input type="date" name="from" value="<?= e($from??'') ?>"></label><label>To<input type="date" name="to" value="<?= e($to??'') ?>"></label><button class="button button-secondary" type="submit">Apply</button></form>
+<form class="history-filter" method="get"><input type="hidden" name="trap_id" value="<?= (int)$trapId ?>"><label>Period<select name="range"><option value="today"<?= selected($range,'today') ?>>Today</option><option value="24h"<?= selected($range,'24h') ?>>Last 24 hours</option><option value="7d"<?= selected($range,'7d') ?>>Last 7 days</option><option value="30d"<?= selected($range,'30d') ?>>Last 30 days</option><option value="custom"<?= selected($range,'custom') ?>>Custom range</option></select></label><label>From<input type="date" name="from" value="<?= e($from??'') ?>"></label><label>To<input type="date" name="to" value="<?= e($to??'') ?>"></label><label>Status<select name="status"><option value="ALL"<?= selected($status,'ALL') ?>>All statuses</option><?php foreach(['LOW'=>'Low','NORMAL'=>'Normal','HIGH'=>'High','CRITICAL'=>'Critical'] as $value=>$label): ?><option value="<?= e($value) ?>"<?= selected($status,$value) ?>><?= e($label) ?></option><?php endforeach; ?></select></label><button class="button button-secondary" type="submit">Apply</button></form>
 <?php if($chart): ?><div class="telemetry-charts" data-history-chart='<?= e($chartJson) ?>'><article><h3>Waste level history</h3><canvas id="level-history-chart" width="700" height="260" aria-label="Waste level history chart"></canvas></article><?php if($hasDistance): ?><article><h3>Ultrasonic distance history</h3><canvas id="distance-history-chart" width="700" height="260" aria-label="Ultrasonic distance history chart"></canvas></article><?php endif; ?></div><?php endif; ?>
-<div class="table-scroll"><table><thead><tr><th>Recorded</th><th>Device</th><th>Waste level</th><th>Distance</th><th>Temperature</th><th>Turbidity</th><th>Flow</th><th>Gas</th><th>Odor</th><th>Status</th><th>Source</th></tr></thead><tbody><?php foreach($history['readings'] as $reading): ?><tr><td><?= e(display_date($reading['recorded_at'])) ?></td><td><?= e($reading['device_code']) ?></td><td><?= $reading['waste_level_percent']===null?'Not available':e(number_format($reading['waste_level_percent'],1).'%') ?></td><td><?= $reading['ultrasonic_distance_cm']===null?'Not available':e(number_format($reading['ultrasonic_distance_cm'],2).' cm') ?></td><td><?= $reading['temperature_c']===null?'Not available':e(number_format($reading['temperature_c'],1).' °C') ?></td><td><?= $reading['turbidity_ntu']===null?'Not available':e(number_format($reading['turbidity_ntu'],1).' NTU') ?></td><td><?= $reading['flow_rate_lpm']===null?'Not available':e(number_format($reading['flow_rate_lpm'],2).' L/min') ?></td><td><?= $reading['gas_value']===null?'Not available':e(number_format($reading['gas_value'],1)) ?></td><td><?= $reading['odor_value']===null?'Not available':e(number_format($reading['odor_value'],1)) ?></td><td><?= e($reading['level_status']) ?></td><td><?= $reading['is_simulated']?'Development simulation':($reading['is_test']?'Development test':'Device') ?></td></tr><?php endforeach; ?><?php if(!$history['readings']): ?><tr><td colspan="11" class="empty-state">No telemetry exists in this period.</td></tr><?php endif; ?></tbody></table></div>
-<?php if($history['pages']>1): ?><nav class="pagination" aria-label="History pages"><?php for($i=1;$i<=$history['pages'];$i++): ?><a class="<?= $i===$history['page']?'current':'' ?>" href="?<?= e(http_build_query(['trap_id'=>$trapId,'range'=>$range,'from'=>$from,'to'=>$to,'page'=>$i])) ?>"><?= $i ?></a><?php endfor; ?></nav><?php endif; ?></section>
+<div class="table-scroll"><table><thead><tr><th>Recorded</th><th>Device</th><th>Waste level</th><th>Distance</th><th>Temperature</th><th>Turbidity</th><th>Flow</th><th>Gas</th><th>Odor</th><th>Status</th><th>Source</th></tr></thead><tbody><?php foreach($history['readings'] as $reading): ?><tr><td><?= e(display_date($reading['recorded_at'])) ?></td><td><?= e($reading['device_code']) ?></td><td><?= $reading['waste_level_percent']===null?'Not available':e(number_format($reading['waste_level_percent'],1).'%') ?></td><td><?= $reading['ultrasonic_distance_cm']===null?'Not available':e(number_format($reading['ultrasonic_distance_cm'],2).' cm') ?></td><td><?= $reading['temperature_c']===null?'Not available':e(number_format($reading['temperature_c'],1).' °C') ?></td><td><?= $reading['turbidity_ntu']!==null?e(number_format($reading['turbidity_ntu'],1).' NTU'):(($reading['turbidity_raw_adc']??null)!==null?e(number_format($reading['turbidity_raw_adc'],0).' ADC (raw)'):'Not available') ?></td><td><?= $reading['flow_rate_lpm']===null?'Not available':e(number_format($reading['flow_rate_lpm'],2).' L/min') ?></td><td><?= $reading['gas_value']!==null?e(number_format($reading['gas_value'],1).' calibrated'):(($reading['gas_raw_adc']??null)!==null?e(number_format($reading['gas_raw_adc'],0).' ADC (raw)'):'Not available') ?></td><td><?= $reading['odor_value']===null?'Not measured':e(number_format($reading['odor_value'],1)) ?></td><td><?= e($reading['level_status']) ?></td><td><?= $reading['is_simulated']?'Development simulation':($reading['is_test']?'Development test':'Device') ?></td></tr><?php endforeach; ?><?php if(!$history['readings']): ?><tr><td colspan="11" class="empty-state">No readings match this period and status.</td></tr><?php endif; ?></tbody></table></div>
+<?php if ($history['pages'] > 1):
+    $currentPage = $history['page'];
+    $totalPages = $history['pages'];
+    $historyPageUrl = static fn(int $page): string => '?' . http_build_query([
+        'trap_id' => $trapId, 'range' => $range, 'from' => $from, 'to' => $to, 'status' => $status, 'page' => $page,
+    ]);
+    $visiblePages = range(1, $totalPages);
+?>
+<nav class="pagination monitoring-pagination" aria-label="History pages">
+    <?php if ($currentPage > 1): ?>
+        <a href="<?= e($historyPageUrl($currentPage - 1)) ?>" rel="prev">Previous</a>
+    <?php else: ?>
+        <span class="pagination-disabled" aria-disabled="true">Previous</span>
+    <?php endif; ?>
+    <div class="pagination-numbers" aria-label="Page numbers">
+    <?php $previousPage = 0; foreach ($visiblePages as $page): ?>
+        <?php if ($previousPage && $page > $previousPage + 1): ?><span aria-hidden="true">...</span><?php endif; ?>
+        <a class="<?= $page === $currentPage ? 'current' : '' ?>" href="<?= e($historyPageUrl($page)) ?>"<?= $page === $currentPage ? ' aria-current="page"' : '' ?>><?= $page ?></a>
+        <?php $previousPage = $page; ?>
+    <?php endforeach; ?>
+    </div>
+    <?php if ($currentPage < $totalPages): ?>
+        <a href="<?= e($historyPageUrl($currentPage + 1)) ?>" rel="next">Next</a>
+    <?php else: ?>
+        <span class="pagination-disabled" aria-disabled="true">Next</span>
+    <?php endif; ?>
+    <span class="pagination-summary">Page <?= $currentPage ?> of <?= $totalPages ?></span>
+</nav>
+<?php endif; ?></section>
 <?php endif; ?>
 <?php require dirname(__DIR__).'/includes/footer.php'; ?>

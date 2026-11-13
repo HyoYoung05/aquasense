@@ -2,9 +2,40 @@
 
 ## Project Overview
 
-Current owner app: **0.9.40+60**. Current ESP32 firmware: **0.8.20**.
-The website release identifier remains **1.4.32**; the pending telemetry API
-and database changes require a separate production deployment.
+Website/API **1.4.45** uses shorter owner-triggered warning messages in the website, owner app and alert pop-ups. Manual critical alerts read: **Critical grease trap alert** ? **Urgent attention is needed. Please check the grease trap immediately.** Sensor readings and owner-report audit metadata remain unchanged.
+
+Website/API **1.4.44** adds the separate AQUASENSE+ Warnings Android app (maintained separately; excluded from this repository), version **1.0.0+1**. An owner can create a warning or critical warning for their assigned grease trap. These are real owner-reported alerts, visible in the website and existing owner app; no sensor readings are fabricated or overwritten.
+
+Website **1.4.43** adds Low, Normal, High and Critical filters to Monitoring history. Filtering covers the selected period, charts, result count and every history page. All statuses remains the default.
+
+Website **1.4.42** shows raw turbidity and gas readings in Monitoring history when no calibrated reading is available. Raw values are labeled ADC (raw), including valid zeroes. Missing odor is shown as Not measured; a separate odor reading must be supplied by the device. No sensor values or stored records are changed. The production history page was verified after publishing: raw turbidity and gas values are visible in stored history.
+
+Website/backend **1.4.41** reapplies partial-sensor telemetry at the user?s request. Available valid sensor measurements can upload independently of ultrasonic distance; missing distance and fill remain unknown. Current monitoring returns the actual latest reading again. The null-safe website history rendering fix is retained. Separate development and production backups were saved before reapplying.
+
+Website/backend **1.4.40** rolls back partial level telemetry at the user?s request. Sensor ingestion again requires a valid ultrasonic distance. Latest monitoring selects the most recent valid distance and fill record and keeps its original timestamp; newer incomplete records remain in the database and history. Gas heartbeat support and the history rendering fix remain. HC-SR04 firmware code was unchanged, so no firmware flash was needed.
+
+Website **1.4.39** synchronizes the production Monitoring history template with development so missing waste levels render as **Not available**. This prevents a PHP rendering error from inserting the service-error layout into the history table. Real zero levels still display as 0.0%.
+
+Website/backend **1.4.38** activates the existing partial-sensor telemetry and Gas runtime API contract. Valid temperature, turbidity, flow, or Gas data can be accepted when ultrasonic distance is unavailable; missing distance and fill stay unknown. Authenticated heartbeat metadata records current Gas status. Development and production files and the production database were backed up before publishing. Live AQS-003 telemetry returned HTTP 201, heartbeats returned HTTP 200, and all 10,032 pre-existing sensor rows were retained.
+
+Owner app **0.9.45+65** offers every monitoring-history page in a horizontally scrollable number strip. Swipe the numbers left/right and tap any page; 10 readings per page remain. Development files and the previous production-API APK were backed up.
+
+Owner app **0.9.43+63** replaces monitoring history Previous/Next buttons with left/right swipes. Numbered shortcuts and 10 readings per page remain. Development sources and the previous production-API APK were backed up before the change.
+
+Website **1.4.37** keeps Help and guides under **Settings → Open user manual** and removes the duplicate sidebar link. Settings stays highlighted while reading the manual.
+
+Website **1.4.36** adds **Settings** for each staff member to update their own optional email, required contact number, and password. Changes require the current password, use server validation and attempt limits, and are recorded in the audit log. Settings also links to Help and guides and, for authorized administrators, Alert Settings.
+
+Website **1.4.35** adds a Barangay personnel manual under **Help and guides** in the sidebar. The quick walkthrough and expandable topics cover monitoring, alerts, oil surrender review, rice incentives, reports, account help, and device support. Instructions match each staff role and adapt to small screens.
+
+Production database migrations **018** and **019** were applied on 2026-11-12 after a full SQL backup. Existing-column content fingerprints and row counts matched across all 20 tables, including 10,032 sensor readings. The matching telemetry and owner-monitoring PHP update was deployed as backend 1.4.38 and verified with the physical ESP32 on COM10.
+
+The website pagination patch was deployed on 2026-11-12 to the live server’s `public` directory. All history page numbers scroll horizontally by touch or mouse dragging, with Previous/Next navigation. Production files were backed up and their saved contents verified.
+
+Monitoring history in website **1.4.34** has Previous/Next links and a complete page-number strip that supports horizontal swiping and mouse dragging. Owner app **0.9.42+62** uses aligned Previous/Next controls and five numbered page buttons with **10 readings per page**. The app also splits older 50-row API responses into 10-row pages. Date and owner filters remain applied while paging.
+
+Current owner app: **0.9.48+68**. Current ESP32 firmware: **0.8.21**.
+The website release identifier is **1.4.45**. Database migrations 018 and 019 were applied on 2026-11-12; partial telemetry and Gas runtime support were activated in 1.4.38.
 
 The app supports owner Wi-Fi setup, five remaining sensor inputs, and a
 one-minute Gas warm-up with per-boot status reporting. ENS160+AHT2x and its
@@ -775,3 +806,11 @@ remain pending.
 The administrator simulator is available only in development and requires a device credential. Device keys can be generated or rotated from Device Details, appear once, and are never stored as plaintext. The simulator calls the HTTP endpoint and does not insert into MySQL directly.
 
 Validation includes the retained Phase 1–7, mobile, CORS, session, production configuration, and ultrasonic suites plus `php tests/phase8.php --allow-local-fixtures` and `php tests/fresh-install.php --allow-temporary-database`. See [TEST_REPORT.md](docs/TEST_REPORT.md) for the exact release run. Test credentials remain excluded from Git.
+
+Owner app 0.9.45+65 implements Android alert delivery and optional critical-alert overlays, with Settings tests and a visible monitoring service. Android background limits apply; reopening the app resumes monitoring. See mobile/README.md. Website/backend remains 1.4.41.
+
+Owner app 0.9.46+66 improves the Monitoring graph layout for phones and tablets with fitted axis labels, responsive height and readable tooltips. Sensor measurements, website and firmware are unchanged.
+
+Owner app 0.9.47+67 groups notification/overlay permissions under App Permission and provides clear recovery when Android permission is granted but the alert monitor is switched off.
+
+Owner app 0.9.48+68 centers Android alert overlays on the screen.

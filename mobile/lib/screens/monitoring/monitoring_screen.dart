@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/monitoring.dart';
@@ -11,6 +10,7 @@ import '../../services/alerts_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/loading_widget.dart';
+import '../../widgets/telemetry_chart.dart';
 import '../../widgets/state_panel.dart';
 import '../alerts/alert_detail_screen.dart';
 
@@ -52,7 +52,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
   bool loading = true;
   bool refreshing = false;
   bool historyLoading = false;
-  bool loadingMore = false;
+  final historyPageScrollController = ScrollController();
 
   @override
   void initState() {
@@ -67,6 +67,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     refreshTimer?.cancel();
+    historyPageScrollController.dispose();
     for (final timer in sensorWarmupTimers.values) {
       timer.cancel();
     }
@@ -148,13 +149,18 @@ class _MonitoringScreenState extends State<MonitoringScreen>
     if (selectedTrapId != null) await _loadHistory(preserve: true);
   }
 
-  Future<void> _loadHistory({bool preserve = false}) async {
+  Future<void> _loadHistory({
+    bool preserve = false,
+    int page = 1,
+    bool reset = true,
+  }) async {
     final trapId = selectedTrapId;
     if (trapId == null || historyLoading) return;
+    final requestedPage = preserve ? (history?.page ?? page) : page;
     setState(() {
       historyLoading = true;
       historyError = null;
-      if (!preserve) history = null;
+      if (!preserve && reset) history = null;
     });
     try {
       final result = await repository.loadHistory(
@@ -162,6 +168,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
         range: range,
         from: customRange?.start,
         to: customRange?.end,
+        page: requestedPage,
       );
       if (!mounted || trapId != selectedTrapId) return;
       setState(() {
@@ -180,29 +187,8 @@ class _MonitoringScreenState extends State<MonitoringScreen>
     }
   }
 
-  Future<void> _loadMore() async {
-    final current = history;
-    if (current == null || !current.hasMore || loadingMore) return;
-    setState(() => loadingMore = true);
-    try {
-      final next = await repository.loadHistory(
-        greaseTrapId: current.trapId,
-        range: range,
-        from: customRange?.start,
-        to: customRange?.end,
-        page: current.page + 1,
-      );
-      if (mounted) setState(() => history = current.append(next));
-    } on ApiException catch (error) {
-      if (mounted && error.type != ApiErrorType.unauthorized) {
-        setState(() => historyError = error.message);
-      }
-    } finally {
-      if (mounted) setState(() => loadingMore = false);
-    }
-  }
-
   Future<void> _selectRange(HistoryRange value) async {
+    if (historyLoading) return;
     if (value == HistoryRange.custom) {
       final now = DateTime.now();
       final chosen = await showDateRangePicker(
@@ -854,38 +840,87 @@ class _MonitoringScreenState extends State<MonitoringScreen>
             ],
             _metricSelector(history!),
             const SizedBox(height: 14),
-            _TelemetryChart(history: history!, metric: selectedMetric),
+            TelemetryChart(history: history!, metric: selectedMetric),
             const SizedBox(height: 14),
             _statistics(history!, selectedMetric),
             const Divider(height: 36),
             Text(
-              '${history!.total} reading${history!.total == 1 ? '' : 's'} in range',
+              'Showing ${history!.readings.length} of ${history!.total} readings',
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             for (final point in history!.readings) _HistoryTile(point: point),
-            if (history!.hasMore) ...[
+            const SizedBox(height: 12),
+            if (historyLoading) ...[
+              const LinearProgressIndicator(),
               const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: loadingMore ? null : _loadMore,
-                icon: loadingMore
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.expand_more),
-                label: Text(
-                  loadingMore
-                      ? 'Loading…'
-                      : 'Load more (${history!.page}/${history!.pages})',
-                ),
-              ),
             ],
+            _historyPagination(),
           ],
         ],
       ),
     ),
   );
+
+  Widget _historyPagination() {
+    final current = history!;
+    return Column(
+      children: [
+        const Text(
+          'Swipe the page numbers left or right. Tap a page to open it.',
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 56,
+          child: Scrollbar(
+            controller: historyPageScrollController,
+            thumbVisibility: true,
+            child: ListView.separated(
+              key: const Key('history-page-strip'),
+              controller: historyPageScrollController,
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(bottom: 12),
+              itemCount: current.pages,
+              separatorBuilder: (_, _) => const SizedBox(width: 6),
+              itemBuilder: (context, index) {
+                final page = index + 1;
+                return Semantics(
+                  selected: page == current.page,
+                  label: 'History page $page',
+                  child: SizedBox(
+                    width: current.pages.toString().length > 3 ? 72 : 52,
+                    child: OutlinedButton(
+                      key: Key('history-page-$page'),
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        backgroundColor: page == current.page ? emerald : null,
+                        foregroundColor: page == current.page
+                            ? Colors.white
+                            : emerald,
+                        disabledForegroundColor: page == current.page
+                            ? Colors.white
+                            : null,
+                      ),
+                      onPressed: historyLoading || page == current.page
+                          ? null
+                          : () => _loadHistory(page: page, reset: false),
+                      child: Text('$page'),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Page ${current.page} of ${current.pages}',
+          key: const Key('history-page-indicator'),
+        ),
+      ],
+    );
+  }
 
   Widget _rangeChip(HistoryRange option) => ChoiceChip(
     key: Key('range-${option.apiValue}'),
@@ -897,7 +932,7 @@ class _MonitoringScreenState extends State<MonitoringScreen>
       child: FittedBox(fit: BoxFit.scaleDown, child: Text(option.label)),
     ),
     selected: range == option,
-    onSelected: (_) => _selectRange(option),
+    onSelected: historyLoading ? null : (_) => _selectRange(option),
   );
 
   Widget _metricSelector(TelemetryHistory value) {
@@ -949,119 +984,6 @@ class _MonitoringScreenState extends State<MonitoringScreen>
   String _shortDate(DateTime value) =>
       '${value.year}-${value.month.toString().padLeft(2, '0')}-'
       '${value.day.toString().padLeft(2, '0')}';
-}
-
-class _TelemetryChart extends StatelessWidget {
-  final TelemetryHistory history;
-  final SensorMetric metric;
-
-  const _TelemetryChart({required this.history, required this.metric});
-
-  @override
-  Widget build(BuildContext context) {
-    if (!history.readings.any((point) => metric.valueOf(point) != null)) {
-      return _InlineState(
-        icon: Icons.info_outline,
-        text:
-            'No ${metric.label.toLowerCase()} readings were received for this range.',
-      );
-    }
-    final points = history.readings.reversed.toList(growable: false);
-    final spots = <FlSpot>[];
-    for (var index = 0; index < points.length; index++) {
-      final value = metric.valueOf(points[index]);
-      spots.add(
-        value == null ? FlSpot.nullSpot : FlSpot(index.toDouble(), value),
-      );
-    }
-    final multiDay = const {
-      HistoryRange.last7Days,
-      HistoryRange.last30Days,
-      HistoryRange.custom,
-    }.contains(history.range);
-    return Semantics(
-      label: '${metric.label} history chart with actual backend readings',
-      child: SizedBox(
-        height: 260,
-        child: LineChart(
-          LineChartData(
-            minY: metric == SensorMetric.wasteLevel ? 0 : null,
-            maxY: metric == SensorMetric.wasteLevel ? 100 : null,
-            gridData: const FlGridData(show: true),
-            borderData: FlBorderData(show: true),
-            lineTouchData: LineTouchData(
-              enabled: true,
-              touchTooltipData: LineTouchTooltipData(
-                getTooltipColor: (_) => forest,
-                fitInsideHorizontally: true,
-                fitInsideVertically: true,
-                getTooltipItems: (spots) => spots
-                    .map(
-                      (spot) => LineTooltipItem(
-                        '${cleanNumber(spot.y)} ${metric.unit}',
-                        const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-            titlesData: FlTitlesData(
-              topTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              rightTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              leftTitles: AxisTitles(
-                axisNameWidget: Text(metric.unit),
-                sideTitles: const SideTitles(
-                  showTitles: true,
-                  reservedSize: 42,
-                ),
-              ),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 32,
-                  interval: points.length <= 2 ? 1 : (points.length - 1) / 2,
-                  getTitlesWidget: (value, meta) {
-                    final index = value.round();
-                    if (index < 0 || index >= points.length) {
-                      return const SizedBox.shrink();
-                    }
-                    return SideTitleWidget(
-                      meta: meta,
-                      child: Text(
-                        chartTime(points[index].recordedAt, multiDay: multiDay),
-                        style: const TextStyle(fontSize: 10),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            lineBarsData: [
-              LineChartBarData(
-                spots: spots,
-                color: emerald,
-                barWidth: 3,
-                isCurved: false,
-                dotData: const FlDotData(show: true),
-                belowBarData: BarAreaData(
-                  show: true,
-                  color: mint.withValues(alpha: 0.3),
-                ),
-              ),
-            ],
-          ),
-          duration: const Duration(milliseconds: 250),
-        ),
-      ),
-    );
-  }
 }
 
 class _HistoryTile extends StatelessWidget {

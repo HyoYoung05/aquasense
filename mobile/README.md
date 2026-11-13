@@ -1,6 +1,8 @@
 # AQUASENSE+ Carinderia Owner App
 
-Current version: **0.9.40+60**. Gas warm-up lasts one minute. Per-boot heartbeat
+Current version: **0.9.48+68**. Monitoring history has all page numbers in a horizontal strip: swipe left/right through the numbers and tap a page to open its 10 readings. No Previous/Next buttons. Scrolling the strip does not change readings until a page is selected.
+
+Gas telemetry notes. Gas warm-up lasts one minute. Per-boot heartbeat
 status hides old Gas values after an ESP32 reset and supplies current raw ADC
 when ready. This requires production migrations 018/019 and the matching PHP
 update; the APK alone cannot activate it. See
@@ -509,3 +511,17 @@ or emulator was connected for installed-device interaction.
 - [Capstone mobile demo](../docs/MOBILE_DEMO.md)
 - [Mobile production checklist](../docs/MOBILE_PRODUCTION_CHECKLIST.md)
 - [Mobile version history](VERSION.md)
+
+## Android alert delivery (0.9.45+65)
+
+Sign in, open Settings, enable Notifications and Alert monitoring, and optionally allow Display over other apps. Use Test notification / Test pop-up to check delivery without creating database records. A persistent Android notification shows when the service is running; its Stop button turns monitoring off.
+
+The service reads only the signed-in owner's unresolved alerts through the configured HTTPS API. New warnings/critical alerts create Android notifications; new critical alerts can also show a dismissible 15-second overlay while another app is open and the phone is unlocked. Alerts are deduplicated; resolved alerts are removed after a successful poll. Session tokens are not saved by the native service.
+
+Monitoring retries network failures, but Android may stop or limit background services. Android 15+ limits dataSync foreground-service runtime (six hours per 24 hours). Force-stop, reboot, revoked permission or session expiry requires reopening/signing in. Continuous closed-app push would require a separately configured push backend; this build does not claim that support.
+
+Monitoring graph layout (0.9.46+66): responsive plot height, units above the chart, edge-fitted time labels and compact number labels. Phones show fewer time labels; tooltips show the exact value and reading time. Measurements, invalid-reading gaps and pagination are unchanged.
+
+In 0.9.47+67, Notifications and Display over other apps are grouped under App Permission. Android permission alone does not run alert delivery: keep Alert monitoring switched on. Settings shows a Turn on alert monitoring action when permission is granted but monitoring is off. Both apps must use the owner account assigned to the same grease trap.
+
+Version 0.9.48+68 places alert pop-ups in the center of the screen, both for critical alerts and the Settings preview.

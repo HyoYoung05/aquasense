@@ -30,3 +30,8 @@ config/*.local.php
 /credentials.txt
 /mobile/release/
 /mobile/temporary-network-testing/
+
+# Keep the separate warning app and Android packages local.
+/warning_app/
+*.apk
+*.aab

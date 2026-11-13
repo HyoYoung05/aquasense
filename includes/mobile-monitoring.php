@@ -174,7 +174,8 @@ function mobile_monitoring_history(int $ownerId, int $trapId, string $range, ?st
     if (!$ownerTrap->fetchColumn()) {
         return null;
     }
-    $history = phase3_monitoring_history($trapId, $range, $from, $to, $page, 50);
+    $history = phase3_monitoring_history($trapId, $range, $from, $to, $page, 10);
+    $history['page_size'] = 10;
     $trap = $history['trap'];
     $history['trap'] = [
         'id' => (int) $trap['id'],

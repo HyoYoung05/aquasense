@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'services/alert_delivery_service.dart';
 import 'config/app_config.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/login/login_screen.dart';
@@ -85,12 +87,32 @@ class OwnerApp extends StatefulWidget {
   State<OwnerApp> createState() => _OwnerAppState();
 }
 
-class _OwnerAppState extends State<OwnerApp> {
+class _OwnerAppState extends State<OwnerApp> with WidgetsBindingObserver {
   final messenger = GlobalKey<ScaffoldMessengerState>();
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    widget.auth.addListener(_syncAlerts);
     widget.auth.restore();
+  }
+
+  void _syncAlerts() {
+    if (widget.auth.state != AuthState.checking) {
+      unawaited(AlertDeliveryService.sync(widget.auth.alertDeliverySession));
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _syncAlerts();
+  }
+
+  @override
+  void dispose() {
+    widget.auth.removeListener(_syncAlerts);
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   Future<void> signOut() async {

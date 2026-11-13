@@ -14,9 +14,9 @@ $notificationTitle = $notificationCount === 0
     <meta name="theme-color" content="#103f3b">
     <link rel="icon" type="image/png" href="<?= e(url('assets/images/barangay-san-antonio-logo.png')) ?>">
     <title><?= e($pageTitle) ?> · AQUASENSE+</title>
-    <link rel="stylesheet" href="<?= e(url('assets/css/style.css')) ?>?v=<?= e(APP_VERSION) ?>">
+    <link rel="stylesheet" href="<?= e(url('assets/css/style.css')) ?>?v=<?= e(APP_VERSION . '-' . filemtime(dirname(__DIR__) . '/assets/css/style.css')) ?>">
     <script src="<?= e(url('assets/js/app.js')) ?>?v=<?= e(APP_VERSION) ?>" defer></script>
-    <?php if (!empty($pageScript)): ?><script src="<?= e(url($pageScript)) ?>?v=<?= e(APP_VERSION) ?>" defer></script><?php endif; ?>
+    <?php if (!empty($pageScript)): ?><script src="<?= e(url($pageScript)) ?>?v=<?= e(APP_VERSION . '-' . filemtime(dirname(__DIR__) . '/' . $pageScript)) ?>" defer></script><?php endif; ?>
 </head>
 <body class="dashboard-page">
 <a class="skip-link" href="#main-content">Skip to content</a>

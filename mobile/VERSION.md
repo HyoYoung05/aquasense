@@ -2,7 +2,68 @@
 
 ## Current Version
 
-0.9.40+60
+0.9.48+68
+
+## 0.9.48+68 - 2026-11-13
+
+- Center the Android alert overlay horizontally and vertically using screen-centered window gravity with zero offsets.
+- Apply the same position to real critical alerts and the Settings pop-up preview.
+- Preserve dismiss/open controls, optional overlay permission, timeout and alert monitoring behavior.
+- Android APK build and signature verification passed; installed 0.9.48+68 on Z2464N with existing app data preserved.
+- Back up development sources and the preceding production-API APK separately.
+
+## 0.9.47+67 - 2026-11-13
+
+- Rename the settings category for Notifications and Display over other apps to App Permission.
+- Distinguish Android notification permission from the Alert monitoring switch; show a clear recovery action when permission is enabled but monitoring is off.
+- Correct the stopped-monitor status so it does not ask users with permission already granted to enable it again.
+- Back up development sources and the preceding production-API APK separately. Warning app and backend remain unchanged.
+- Verified on Z2464N: monitoring preference was off while Android permission was granted. Enabled monitoring without clearing sign-in, observed real critical alert 14777 as a high-priority Android notification, and installed 0.9.47+67 with monitoring still enabled. All 11 delivery/settings checks passed; analyzer clean; APK signature verified.
+
+## 0.9.46+66 - 2026-11-13
+
+- Make Monitoring graphs adapt to phone/tablet width instead of using one fixed plot height.
+- Place sensor units above the graph, fit time labels inside both edges, reduce label density on phones and use compact large-value axis labels.
+- Keep tooltips inside the plot with the reading time and value; retain measured values, missing-reading gaps and 10-row history pagination.
+- Preserve development sources and the preceding production-API APK in separate backup folders.
+- Verified 23 monitoring/chart checks, narrow and tablet chart previews with large text, and a clean analyzer. Installed 0.9.46+66 on Z2464N without clearing app data.
+
+## 0.9.45+65 - 2026-11-13
+
+- Implement Android alert notifications and optional short critical-alert overlays, rather than permission controls alone.
+- Poll the existing owner-scoped HTTPS alerts API with a visible foreground monitoring service, bounded requests and retry backoff.
+- Add monitoring on/off, status, Test notification and Test pop-up in Settings.
+- Stop delivery on sign-out/session rejection; keep service credentials in memory only. Deduplicate alerts and cancel resolved alerts on the next successful poll.
+- Android may pause/stop monitoring; reopen the app to resume. This is not force-stop-proof push delivery. Android 15+ limits dataSync foreground service runtime.
+- Back up development sources and the preceding production-API APK separately; keep website and firmware unchanged.
+- Validation: 11 Flutter delivery/settings checks passed; analyzer clean; APK signature verified. Installed 0.9.45+65 on Z2464N without clearing data. Verified a successful owner-scoped API poll, foreground monitoring notification, real high-importance test notification, and visible test overlay above the home screen. No test alerts inserted into production.
+
+## 0.9.44+64 - 2026-11-12
+
+- Show every history page number in a horizontally scrollable strip, with a visible scrollbar.
+- Swipe the number strip left/right, then tap a page to show its 10 readings.
+- Remove the five-number window and reading-swipe navigation; keep direction buttons removed.
+- Preserve the selected readings on failed requests and back up development sources and previous APK.
+
+## 0.9.43+63 - 2026-11-12
+
+- Replace Monitoring history Previous/Next buttons with left/right swipe navigation.
+- Keep 10 readings per page, numbered page shortcuts, and the page indicator.
+- Ignore swipes beyond the first/last page and while a request is running; preserve readings on failure.
+- Back up development files and the previous production-API APK before editing.
+
+## 0.9.42+62 - 2026-11-12
+
+- Align Monitoring Previous and Next buttons on one row.
+- Add five numbered history-page buttons with the current page highlighted.
+- Keep 10 readings per page and support direct page selection on narrow phones.
+
+## 0.9.41+61 - 2026-11-12
+
+- Display 10 monitoring-history readings per page through the updated owner API.
+- Use Previous/Next controls and a current-page indicator instead of appending history.
+- Preserve the selected history page during manual refresh and retain displayed readings if navigation fails.
+- Supports both the website 1.4.33 history API and older 50-row history responses.
 
 ## 0.9.40+60 - 2026-11-09
 

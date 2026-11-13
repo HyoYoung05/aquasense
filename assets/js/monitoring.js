@@ -8,3 +8,45 @@ if(monitoringRoot){
 }
 const historyRoot=document.querySelector('[data-history-chart]');
 if(historyRoot){const points=JSON.parse(historyRoot.dataset.historyChart);const draw=(id,key,label,color)=>{const canvas=document.getElementById(id),ctx=canvas?.getContext('2d'),usable=points.filter(point=>point[key]!==null);if(!ctx||!usable.length)return;const width=canvas.width,height=canvas.height,pad=45,values=usable.map(point=>Number(point[key])),min=Math.min(...values),max=Math.max(...values),span=Math.max(1,max-min);ctx.strokeStyle='#dbe5df';ctx.beginPath();ctx.moveTo(pad,15);ctx.lineTo(pad,height-pad);ctx.lineTo(width-15,height-pad);ctx.stroke();ctx.fillStyle='#536963';ctx.font='12px Segoe UI';ctx.fillText(`${label}: ${min.toFixed(1)}–${max.toFixed(1)}`,pad,14);ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();usable.forEach((point,index)=>{const x=pad+(index/Math.max(1,usable.length-1))*(width-pad-20),y=height-pad-((Number(point[key])-min)/span)*(height-pad-25);index?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();};draw('level-history-chart','level','Waste level %','#197b66');draw('distance-history-chart','distance','Distance cm','#347fa0');}
+
+// Keep the selected page visible and support dragging the page-number strip.
+for (const strip of document.querySelectorAll('.pagination-numbers')) {
+    const selectedPage = strip.querySelector('[aria-current="page"]');
+    if (selectedPage) {
+        strip.scrollLeft = selectedPage.offsetLeft - strip.offsetLeft
+            - (strip.clientWidth - selectedPage.offsetWidth) / 2;
+    }
+    let startX = 0;
+    let startScroll = 0;
+    let pressed = false;
+    let dragged = false;
+    strip.addEventListener('pointerdown', (event) => {
+        if (event.pointerType !== 'mouse' || event.button !== 0) return;
+        startX = event.clientX;
+        startScroll = strip.scrollLeft;
+        pressed = true;
+        dragged = false;
+    });
+    strip.addEventListener('pointermove', (event) => {
+        if (!pressed || event.pointerType !== 'mouse') return;
+        const distance = event.clientX - startX;
+        if (Math.abs(distance) <= 4 && !dragged) return;
+        dragged = true;
+        strip.classList.add('is-dragging');
+        event.preventDefault();
+        strip.scrollLeft = startScroll - distance;
+    });
+    const stopDrag = () => {
+        pressed = false;
+        strip.classList.remove('is-dragging');
+    };
+    window.addEventListener('pointerup', stopDrag);
+    strip.addEventListener('pointerleave', stopDrag);
+    strip.addEventListener('dragstart', (event) => event.preventDefault());
+    strip.addEventListener('click', (event) => {
+        if (!dragged) return;
+        event.preventDefault();
+        event.stopPropagation();
+        dragged = false;
+    }, true);
+}

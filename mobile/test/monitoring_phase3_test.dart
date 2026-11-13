@@ -180,6 +180,89 @@ Widget _app(_FakeRepository repository, AuthService auth) => MaterialApp(
 );
 
 void main() {
+  for (final serverPageSize in [10, 50]) {
+    test(
+      'history service shows ten rows with $serverPageSize-row API pages',
+      () async {
+        final auth = _auth(
+          client: MockClient((request) async {
+            if (request.url.path.endsWith('profile.php')) {
+              return http.Response(
+                jsonEncode({
+                  'success': true,
+                  'data': {
+                    'user': {
+                      'id': 1,
+                      'full_name': 'Test Owner',
+                      'email': 'owner@example.test',
+                    },
+                  },
+                }),
+                200,
+              );
+            }
+            expect(request.url.queryParameters['grease_trap_id'], '12');
+            expect(request.url.queryParameters['page_size'], '10');
+            final page = int.parse(request.url.queryParameters['page']!);
+            final pages = (53 / serverPageSize).ceil();
+            final actualPage = page.clamp(1, pages);
+            final first = (actualPage - 1) * serverPageSize;
+            return http.Response(
+              jsonEncode({
+                'success': true,
+                'data': {
+                  'trap': {
+                    'id': 12,
+                    'name': 'Main Trap',
+                    'business_name': 'Demo Kusina',
+                  },
+                  'range': 'today',
+                  'from': '2026-10-03T00:00:00Z',
+                  'to': '2026-10-04T00:00:00Z',
+                  'page': actualPage,
+                  'pages': pages,
+                  'total': 53,
+                  if (serverPageSize == 10) 'page_size': 10,
+                  'readings': List.generate(
+                    (53 - first).clamp(0, serverPageSize),
+                    (index) => {
+                      'device_code': 'AQS-001',
+                      'waste_level_percent': first + index,
+                      'is_simulated': false,
+                      'is_test': false,
+                      'level_status': 'NORMAL',
+                      'recorded_at': '2026-10-04T06:35:00Z',
+                    },
+                  ),
+                },
+              }),
+              200,
+            );
+          }),
+        );
+        await auth.restore();
+        final service = MonitoringService(auth);
+        for (final page in [1, 2, 5, 6, 1]) {
+          final history = await service.loadHistory(
+            greaseTrapId: 12,
+            range: HistoryRange.today,
+            page: page,
+          );
+          expect(history.page, page);
+          expect(history.pages, 6);
+          expect(history.readings.length, page == 6 ? 3 : 10);
+          expect(history.readings.first.wasteLevel, (page - 1) * 10);
+          expect(
+            history.readings.last.wasteLevel,
+            page == 6 ? 52 : page * 10 - 1,
+          );
+        }
+        auth.api.close();
+        auth.dispose();
+      },
+    );
+  }
+
   test(
     'monitoring models preserve valid zero, null sensors, and unknown fields',
     () {
@@ -783,10 +866,76 @@ void main() {
     auth.dispose();
   });
 
-  testWidgets('history pagination appends a bounded second page', (
+  testWidgets(
+    'history page taps replace ten readings and preserve the page on failure',
+    (tester) async {
+      tester.view.physicalSize = const Size(900, 1500);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final repository = _FakeRepository()
+        ..history = (trap, range, page) => _history(
+          trapId: trap,
+          range: range,
+          page: page,
+          pages: 2,
+          readings: List.generate(
+            10,
+            (index) =>
+                _point(index + (page - 1) * 10, waste: page == 1 ? 58 : 30),
+          ),
+        );
+      final auth = _auth();
+      await tester.pumpWidget(_app(repository, auth));
+      await tester.pumpAndSettle();
+      final indicator = find.byKey(const Key('history-page-indicator'));
+      await tester.dragUntilVisible(
+        indicator,
+        find.byType(ListView),
+        const Offset(0, -500),
+      );
+      Future<void> openPage(int page) async {
+        final button = find.byKey(Key('history-page-$page'));
+        await tester.ensureVisible(button);
+        await tester.pumpAndSettle();
+        await tester.tap(button);
+        await tester.pumpAndSettle();
+      }
+
+      expect(find.byKey(const Key('history-next-page')), findsNothing);
+      expect(find.byKey(const Key('history-previous-page')), findsNothing);
+      expect(find.text('Page 1 of 2'), findsOneWidget);
+      expect(find.byType(ListTile), findsNWidgets(10));
+      await openPage(2);
+      expect(repository.historyCalls.last.$3, 2);
+      expect(find.text('Page 2 of 2'), findsOneWidget);
+      expect(find.byType(ListTile), findsNWidgets(10));
+      final callsAtEnd = repository.historyCalls.length;
+      await openPage(2);
+      expect(repository.historyCalls.length, callsAtEnd);
+      expect(find.textContaining('30%'), findsWidgets);
+      repository.historyError = const ApiException(
+        'History temporarily unavailable.',
+        type: ApiErrorType.serverError,
+      );
+      await openPage(1);
+      expect(find.text('Page 2 of 2'), findsOneWidget);
+      expect(find.byType(ListTile), findsNWidgets(10));
+      repository.historyError = null;
+      await openPage(1);
+      expect(repository.historyCalls.last.$3, 1);
+      expect(find.text('Page 1 of 2'), findsOneWidget);
+      expect(find.byType(ListTile), findsNWidgets(10));
+      await tester.pumpWidget(const SizedBox());
+      auth.api.close();
+      auth.dispose();
+    },
+  );
+
+  testWidgets('all history pages scroll horizontally on a narrow phone', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(900, 1500);
+    tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -795,24 +944,42 @@ void main() {
         trapId: trap,
         range: range,
         page: page,
-        pages: 2,
-        readings: page == 1 ? [_point(0)] : [_point(30, waste: 30)],
+        pages: 30,
+        readings: List.generate(10, (index) => _point((page - 1) * 10 + index)),
       );
     final auth = _auth();
     await tester.pumpWidget(_app(repository, auth));
     await tester.pumpAndSettle();
-    final loadMore = find.widgetWithText(OutlinedButton, 'Load more (1/2)');
-    await tester.dragUntilVisible(
-      loadMore,
-      find.byType(ListView),
-      const Offset(0, -500),
+    final strip = find.byKey(const Key('history-page-strip'));
+    final outer = find.byWidgetPredicate(
+      (widget) => widget is ListView && widget.scrollDirection == Axis.vertical,
     );
-    await tester.ensureVisible(loadMore);
+    await tester.dragUntilVisible(strip, outer, const Offset(0, -400));
+    await tester.ensureVisible(strip);
     await tester.pumpAndSettle();
-    tester.widget<OutlinedButton>(loadMore).onPressed!();
+    final calls = repository.historyCalls.length;
+    final last = find.byKey(const Key('history-page-30'));
+    await tester.dragUntilVisible(last, strip, const Offset(-250, 0));
+    await tester.ensureVisible(last);
     await tester.pumpAndSettle();
-    expect(repository.historyCalls.last.$3, 2);
-    expect(find.textContaining('30%'), findsWidgets);
+    expect(repository.historyCalls.length, calls);
+    expect(find.text('Page 1 of 30'), findsOneWidget);
+    await tester.tap(last);
+    await tester.pumpAndSettle();
+    expect(repository.historyCalls.last.$3, 30);
+    expect(find.text('Page 30 of 30'), findsOneWidget);
+    final first = find.byKey(const Key('history-page-1'));
+    await tester.dragUntilVisible(first, strip, const Offset(250, 0));
+    await tester.ensureVisible(first);
+    await tester.pumpAndSettle();
+    expect(repository.historyCalls.last.$3, 30);
+    await tester.tap(first);
+    await tester.pumpAndSettle();
+    expect(repository.historyCalls.last.$3, 1);
+    expect(find.byType(ListTile), findsNWidgets(10));
+    expect(find.text('Previous'), findsNothing);
+    expect(find.text('Next'), findsNothing);
+    expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
     auth.api.close();
     auth.dispose();
@@ -849,7 +1016,7 @@ void main() {
         await tester.pumpWidget(_app(repository, auth));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
-        await tester.fling(find.byType(ListView), const Offset(0, -1200), 2000);
+        await tester.fling(find.byType(ListView).first, const Offset(0, -1200), 2000);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         expect(find.text('Telemetry History'), findsOneWidget);

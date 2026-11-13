@@ -50,6 +50,10 @@ class AuthService extends ChangeNotifier {
   String? error;
   String? notice;
   String? _token;
+  Map<String, Object>? get alertDeliverySession =>
+      state == AuthState.signedIn && user != null && _token != null
+      ? {'ownerId': user!.id, 'apiBaseUrl': api.baseUrl, 'token': _token!}
+      : null;
   int _generation = 0;
   bool _mustClear = false;
   bool _restoring = false;

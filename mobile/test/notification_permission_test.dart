@@ -6,6 +6,7 @@ import 'package:aquasense_mobile/services/api_service.dart';
 import 'package:aquasense_mobile/services/auth_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -80,6 +81,21 @@ class _FakePermissionManager implements AppPermissionManager {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('aquasense/alert_delivery'),
+          (_) async => {'supported': false},
+        );
+  });
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('aquasense/alert_delivery'),
+          null,
+        );
+  });
   test(
     'notification permission is not requested on unsupported platforms',
     () async {
@@ -124,7 +140,7 @@ void main() {
     expect(find.text('owner@aquasense.test'), findsOneWidget);
     expect(find.text('Security'), findsOneWidget);
     expect(find.text('Password'), findsOneWidget);
-    expect(find.text('App permissions'), findsOneWidget);
+    expect(find.text('App Permission'), findsOneWidget);
     expect(find.text('Notifications'), findsOneWidget);
     expect(find.text('Display over other apps'), findsOneWidget);
     expect(find.text('Enable notifications'), findsOneWidget);
@@ -198,6 +214,76 @@ void main() {
     expect(find.text('new-owner@example.test'), findsOneWidget);
     expect(find.text('Email address updated.'), findsOneWidget);
   });
+
+  testWidgets(
+    'Android settings runs both delivery tests and stops monitoring',
+    (tester) async {
+      _useTallView(tester);
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final methods = <String>[];
+      var enabled = false;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+            const MethodChannel('aquasense/alert_delivery'),
+            (call) async {
+              methods.add(call.method);
+              if (call.method.startsWith('test')) return true;
+              if (call.method == 'setEnabled') {
+                enabled = call.arguments['enabled'] as bool;
+              }
+              return {
+                'supported': true,
+                'enabled': enabled,
+                'running': enabled,
+                'status': enabled ? 'Monitoring alerts' : 'Stopped',
+              };
+            },
+          );
+      final auth = _auth(
+        (_) => _success({
+          'user': {
+            'id': 24,
+            'full_name': 'Test Owner',
+            'email': 'owner@aquasense.test',
+          },
+        }),
+      );
+      await auth.restore();
+      final permissions = _FakePermissionManager()
+        ..notifications = AppPermissionState.enabled
+        ..overlay = AppPermissionState.enabled;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SettingsScreen(auth: auth, permissionManager: permissions),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('App Permission'), findsOneWidget);
+      expect(find.textContaining('Permission is enabled, but alert monitoring is off.'), findsOneWidget);
+      await tester.ensureVisible(find.text('Turn on alert monitoring'));
+      await tester.tap(find.text('Turn on alert monitoring'));
+      await tester.pumpAndSettle();
+      expect(enabled, isTrue);
+      expect(find.text('Turn on alert monitoring'), findsNothing);
+      await tester.ensureVisible(find.text('Test notification'));
+      await tester.tap(find.text('Test notification'));
+      await tester.pumpAndSettle();
+      expect(methods, contains('testNotification'));
+      await tester.ensureVisible(find.text('Test pop-up'));
+      await tester.tap(find.text('Test pop-up'));
+      await tester.pumpAndSettle();
+      expect(methods, contains('testOverlay'));
+      await tester.ensureVisible(find.text('Alert monitoring'));
+      await tester.tap(find.byType(SwitchListTile));
+      await tester.pumpAndSettle();
+      expect(enabled, isFalse);
+      expect(find.text('Stopped'), findsOneWidget);
+      debugDefaultTargetPlatformOverride = null;
+    },
+  );
 
   testWidgets('password change clears the owner session', (tester) async {
     _useTallView(tester);

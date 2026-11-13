@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/alert_delivery_service.dart';
 import '../../services/notification_permission_service.dart';
 import '../../theme/app_theme.dart';
 import 'user_guide_screen.dart';
@@ -28,6 +29,8 @@ class _SettingsScreenState extends State<SettingsScreen>
   bool _loading = true;
   bool _requestingNotification = false;
   bool _requestingOverlay = false;
+  Map<String, dynamic> _delivery = {};
+  bool _testing = false;
   final _emailController = TextEditingController();
   final _emailPasswordController = TextEditingController();
   final _currentPasswordController = TextEditingController();
@@ -62,11 +65,14 @@ class _SettingsScreenState extends State<SettingsScreen>
       widget.permissionManager.notificationStatus(),
       widget.permissionManager.overlayStatus(),
     ]);
+    await AlertDeliveryService.sync(widget.auth.alertDeliverySession);
+    final delivery = await AlertDeliveryService.status();
     if (!mounted) return;
     setState(() {
       _notificationState = states[0];
       _overlayState = states[1];
       _loading = false;
+      _delivery = delivery;
     });
   }
 
@@ -79,6 +85,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       _notificationState = state;
       _requestingNotification = false;
     });
+    await _refresh();
   }
 
   Future<void> _requestOverlay() async {
@@ -89,6 +96,31 @@ class _SettingsScreenState extends State<SettingsScreen>
       _overlayState = state;
       _requestingOverlay = false;
     });
+    await _refresh();
+  }
+
+  Future<void> _testAlert(bool overlay) async {
+    setState(() => _testing = true);
+    final message = await AlertDeliveryService.test(overlay: overlay);
+    if (!mounted) return;
+    setState(() => _testing = false);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _toggleMonitoring(bool enabled) async {
+    final result = await AlertDeliveryService.setEnabled(
+      enabled,
+      widget.auth.alertDeliverySession,
+    );
+    if (!mounted) return;
+    if (result['error'] != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result['error'] as String)));
+    }
+    await _refresh();
   }
 
   Future<void> _openSettings() async {
@@ -427,7 +459,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 ),
                 const SizedBox(height: 22),
                 const _SettingsSectionHeading(
-                  title: 'App permissions',
+                  title: 'App Permission',
                   description:
                       'Android access used for owner alert notifications.',
                 ),
@@ -440,23 +472,100 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                   )
                 else ...[
+                  if (_delivery['supported'] == true) ...[
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text('Alert monitoring'),
+                              subtitle: Text(
+                                _delivery['status'] as String? ??
+                                    'Enable notifications to start monitoring.',
+                              ),
+                              value: _delivery['enabled'] == true,
+                              onChanged: _toggleMonitoring,
+                            ),
+                            const Text(
+                              'Keep monitoring on to receive alerts while using another app. Android may pause it; reopen AQUASENSE+ to restart.',
+                              style: TextStyle(color: muted),
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                OutlinedButton.icon(
+                                  onPressed: _testing
+                                      ? null
+                                      : () => _testAlert(false),
+                                  icon: const Icon(
+                                    Icons.notifications_outlined,
+                                  ),
+                                  label: const Text('Test notification'),
+                                ),
+                                OutlinedButton.icon(
+                                  onPressed: _testing
+                                      ? null
+                                      : () => _testAlert(true),
+                                  icon: const Icon(
+                                    Icons.picture_in_picture_alt_outlined,
+                                  ),
+                                  label: const Text('Test pop-up'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
                   _PermissionCard(
                     icon: Icons.notifications_active_outlined,
                     title: 'Notifications',
                     description:
-                        'Allows AQUASENSE+ to show alert notifications when Android notification delivery is available.',
+                        'Show warnings and critical alerts for your assigned grease trap in your phone notification panel.',
                     state: _notificationState!,
                     busy: _requestingNotification,
                     enableLabel: 'Enable notifications',
                     onEnable: _requestNotifications,
                     onOpenSettings: _openSettings,
                   ),
+                  if (_delivery['supported'] == true &&
+                      _notificationState == AppPermissionState.enabled &&
+                      _delivery['enabled'] != true) ...[
+                    const SizedBox(height: 10),
+                    Card(
+                      color: mintSurface,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text(
+                              'Permission is enabled, but alert monitoring is off. Turn it on to receive new warnings.',
+                              style: TextStyle(color: forest),
+                            ),
+                            const SizedBox(height: 12),
+                            FilledButton(
+                              onPressed: () => _toggleMonitoring(true),
+                              child: const Text('Turn on alert monitoring'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 14),
                   _PermissionCard(
                     icon: Icons.picture_in_picture_alt_outlined,
                     title: 'Display over other apps',
                     description:
-                        'Optional Android access for urgent AQUASENSE+ pop-up surfaces above another app. Enable only if your device permits it.',
+                        'Show a short pop-up for new critical alerts while you use another app. Your phone must be unlocked and alert monitoring must be running.',
                     state: _overlayState!,
                     busy: _requestingOverlay,
                     enableLabel: 'Allow display over other apps',

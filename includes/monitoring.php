@@ -43,14 +43,18 @@ function phase3_history_bounds(string $range,?string $from,?string $to):array
     return[$start,$now->modify('+1 second')];
 }
 
-function phase3_monitoring_history(int $trapId,string $range='today',?string $from=null,?string $to=null,int $page=1,int $limit=50):array
+function phase3_monitoring_history(int $trapId,string $range='today',?string $from=null,?string $to=null,int $page=1,int $limit=50,mixed $status='ALL'):array
 {
+    if (!is_string($status) || !in_array(strtoupper(trim($status)), ['ALL','LOW','NORMAL','HIGH','CRITICAL'], true)) throw new InvalidArgumentException('Choose a valid history status.');
+    $status = strtoupper(trim($status));
     if(!in_array($range,['1h','today','24h','7d','30d','custom'],true))$range='today';
     [$start,$end]=phase3_history_bounds($range,$from,$to);$page=max(1,$page);$limit=max(1,min(100,$limit));$pdo=db();
     $trapQuery=$pdo->prepare('SELECT g.id,g.name,g.trap_code,g.empty_distance_cm,g.full_distance_cm,g.low_threshold,g.medium_threshold,g.high_threshold,g.critical_threshold,e.business_name FROM grease_traps g JOIN establishments e ON e.id=g.establishment_id WHERE g.id=?');$trapQuery->execute([$trapId]);$trap=$trapQuery->fetch();if(!$trap)throw new InvalidArgumentException('Grease trap was not found.');
     $params=[$trapId,$start->format('Y-m-d H:i:s'),$end->format('Y-m-d H:i:s')];
-    $count=$pdo->prepare('SELECT COUNT(*) FROM sensor_readings r JOIN device_assignments a ON a.id=r.device_assignment_id WHERE a.grease_trap_id=? AND r.recorded_at>=? AND r.recorded_at<?');$count->execute($params);$total=(int)$count->fetchColumn();$pages=max(1,(int)ceil($total/$limit));$page=min($page,$pages);$offset=($page-1)*$limit;
-    $q=$pdo->prepare("SELECT r.id,d.device_code,r.ultrasonic_distance_cm,r.waste_level_percent,r.device_reported_percent,r.temperature_c,r.turbidity_ntu,r.turbidity_raw_adc,r.flow_rate_lpm,r.flow_pulse_count,r.gas_value,r.odor_value,r.gas_raw_adc,r.ambient_temperature_c,r.humidity_percent,r.ens160_aqi,r.tvoc_ppb,r.eco2_ppm,r.level_status,r.is_simulated,r.is_test,r.recorded_at,r.received_at FROM sensor_readings r JOIN device_assignments a ON a.id=r.device_assignment_id JOIN devices d ON d.id=a.device_id WHERE a.grease_trap_id=? AND r.recorded_at>=? AND r.recorded_at<? ORDER BY r.recorded_at DESC,r.id DESC LIMIT $limit OFFSET $offset");$q->execute($params);$readings=$q->fetchAll();
+    $where = 'a.grease_trap_id=? AND r.recorded_at>=? AND r.recorded_at<?';
+    if ($status !== 'ALL') { $where .= ' AND r.level_status=?'; $params[] = $status; }
+    $count=$pdo->prepare('SELECT COUNT(*) FROM sensor_readings r JOIN device_assignments a ON a.id=r.device_assignment_id WHERE '.$where);$count->execute($params);$total=(int)$count->fetchColumn();$pages=max(1,(int)ceil($total/$limit));$page=min($page,$pages);$offset=($page-1)*$limit;
+    $q=$pdo->prepare("SELECT r.id,d.device_code,r.ultrasonic_distance_cm,r.waste_level_percent,r.device_reported_percent,r.temperature_c,r.turbidity_ntu,r.turbidity_raw_adc,r.flow_rate_lpm,r.flow_pulse_count,r.gas_value,r.odor_value,r.gas_raw_adc,r.ambient_temperature_c,r.humidity_percent,r.ens160_aqi,r.tvoc_ppb,r.eco2_ppm,r.level_status,r.is_simulated,r.is_test,r.recorded_at,r.received_at FROM sensor_readings r JOIN device_assignments a ON a.id=r.device_assignment_id JOIN devices d ON d.id=a.device_id WHERE $where ORDER BY r.recorded_at DESC,r.id DESC LIMIT $limit OFFSET $offset");$q->execute($params);$readings=$q->fetchAll();
     foreach($readings as &$reading){$reading['id']=(int)$reading['id'];foreach(['ultrasonic_distance_cm','waste_level_percent','device_reported_percent','temperature_c','turbidity_ntu','turbidity_raw_adc','flow_rate_lpm','flow_pulse_count','gas_value','odor_value','gas_raw_adc','ambient_temperature_c','humidity_percent','ens160_aqi','tvoc_ppb','eco2_ppm'] as $key)$reading[$key]=$reading[$key]===null?null:(float)$reading[$key];$reading['is_simulated']=(bool)$reading['is_simulated'];$reading['is_test']=(bool)$reading['is_test'];}unset($reading);
-    return ['trap'=>$trap,'range'=>$range,'from'=>$start->format('c'),'to'=>$end->format('c'),'page'=>$page,'pages'=>$pages,'total'=>$total,'readings'=>$readings];
+    return ['trap'=>$trap,'range'=>$range,'status'=>$status,'from'=>$start->format('c'),'to'=>$end->format('c'),'page'=>$page,'pages'=>$pages,'total'=>$total,'readings'=>$readings];
 }

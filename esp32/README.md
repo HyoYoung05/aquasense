@@ -1,5 +1,7 @@
 # AQUASENSE+ ESP32 Hardware — Final Phase 8
 
+Firmware **0.8.21** removes unused ENS160/AHT2x and I2C source files from the active Arduino sketch. Those retired sources referenced fields removed in 0.8.19 and prevented compilation. The five remaining sensor paths, network configuration, and telemetry behavior are preserved. Development and production copies were backed up before the cleanup.
+
 Current firmware **0.8.20** starts a one-minute MQ-135 warm-up before Wi-Fi,
 reports per-boot Gas runtime through heartbeats, and falls back to legacy
 heartbeats when an older API rejects the new metadata. Accurate app reset

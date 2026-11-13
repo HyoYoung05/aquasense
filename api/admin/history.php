@@ -9,5 +9,5 @@ if(($_SERVER['REQUEST_METHOD']??'')!=='GET'){header('Allow: GET');history_api_re
 $user=current_user();if(!$user)history_api_reply(401,['success'=>false,'message'=>'Authentication required.']);
 if(!in_array($user['role_slug'],['system_admin','administrator','environmental_staff'],true))history_api_reply(403,['success'=>false,'message'=>'Access denied.']);
 $trap=filter_input(INPUT_GET,'grease_trap_id',FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);if(!$trap)history_api_reply(422,['success'=>false,'message'=>'Select a grease trap.']);
-try{$data=phase3_monitoring_history((int)$trap,(string)($_GET['range']??'today'),isset($_GET['from'])?(string)$_GET['from']:null,isset($_GET['to'])?(string)$_GET['to']:null,max(1,(int)($_GET['page']??1)));history_api_reply(200,['success'=>true,'data'=>$data]);}
+try{$data=phase3_monitoring_history((int)$trap,(string)($_GET['range']??'today'),isset($_GET['from'])?(string)$_GET['from']:null,isset($_GET['to'])?(string)$_GET['to']:null,max(1,(int)($_GET['page']??1)),50,$_GET['status']??'ALL');history_api_reply(200,['success'=>true,'data'=>$data]);}
 catch(InvalidArgumentException $error){history_api_reply(422,['success'=>false,'message'=>$error->getMessage()]);}

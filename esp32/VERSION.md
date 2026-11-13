@@ -2,7 +2,14 @@
 
 ## Current version
 
-0.8.20
+0.8.21
+
+## 0.8.21 - Retired source build cleanup - 2026-11-12
+
+- Archive unused environment_sensor and i2c_bus source/header files outside the Arduino sketch.
+- Fix compilation against the current five-sensor configuration without restoring retired hardware.
+- Preserve separate development and production backups before changes.
+- Verified Arduino ESP32 core 3.3.12 / ESP32 Dev Module / Huge APP build: 1,880,248 bytes flash (59%) and 65,844 bytes static RAM (20%).
 
 ## 0.8.20 - Gas reset runtime heartbeat - 2026-11-09
 

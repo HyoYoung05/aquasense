@@ -5,6 +5,8 @@ require_once __DIR__ . '/compliance.php';
 function phase4_alert_definitions(): array
 {
     return [
+        'MANUAL_WARNING'=>['label'=>'Grease trap warning','severity'=>'WARNING','sensor'=>'owner_report','message'=>'Please check the grease trap and take action if needed.'],
+        'MANUAL_CRITICAL'=>['label'=>'Critical grease trap alert','severity'=>'CRITICAL','sensor'=>'owner_report','message'=>'Urgent attention is needed. Please check the grease trap immediately.'],
         'HIGH_LEVEL'=>['label'=>'High level','severity'=>'WARNING','sensor'=>'waste_level_percent','message'=>'Grease trap level is high and should be monitored.'],
         'CRITICAL_LEVEL'=>['label'=>'Critical level','severity'=>'CRITICAL','sensor'=>'waste_level_percent','message'=>'Grease trap is nearing maximum capacity. Service is recommended immediately.'],
         'OVERFLOW_WARNING'=>['label'=>'Overflow warning','severity'=>'CRITICAL','sensor'=>'waste_level_percent','message'=>'Grease trap is at critical capacity and may overflow soon.'],
